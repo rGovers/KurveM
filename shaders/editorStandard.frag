@@ -11,19 +11,15 @@ layout(location = 10) uniform sampler2D MainTex;
 
 layout(location = 0) out vec4 color;
 
-const float shine = 10.0f;
+const float shine = 5.0f;
 
-const mat3 lightMat = mat3(
-   0.5602514,  0.4397486,  0.7019541,
-   0.4397486,  0.5602514, -0.7019541,
-  -0.7019541,  0.7019541,  0.1205028);
+const vec3 lightDir = vec3(0.1f, -0.1f, -1.0f);
 
 void main()
 {
     // Rotating light with the camera
     // Using to ensure lighting in editor on all angles
-    mat3 lfMat = mat3(View) * lightMat;
-    vec3 lDir = lfMat[2];
+    vec3 lDir = inverse(mat3(View)) * normalize(lightDir);
     float l = max(dot(lDir, vNormal), 0.0f);
 
     float lS = max(sign(l), 0.0f);
@@ -34,5 +30,5 @@ void main()
     float sA = max(dot(hDir, vNormal), 0.0f);
     float s = lS * pow(sA, shine);
 
-    color = vec4(0.5f.xxx * l + s.xxx, 1.0f);
+    color = vec4(0.5f.xxx * l.xxx + s.xxx, 1.0f);
 }

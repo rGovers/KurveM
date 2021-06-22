@@ -28,6 +28,8 @@ public:
     CreateObjectAction(Workspace* a_workspace, Object* a_parent, e_CreateObjectType a_type = CreateObjectType_Empty);
     ~CreateObjectAction();
 
+    virtual e_ActionType GetActionType();
+
     virtual bool Redo();
     virtual bool Execute();
     virtual bool Revert();

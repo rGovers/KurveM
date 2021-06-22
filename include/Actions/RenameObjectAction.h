@@ -18,6 +18,10 @@ public:
     RenameObjectAction(const char* a_oldName, const char* a_newName, Object* a_object);
     ~RenameObjectAction();
 
+    virtual e_ActionType GetActionType();
+
+    void SetNewName(const char* a_newName);
+
     virtual bool Redo();
     virtual bool Execute();
     virtual bool Revert();

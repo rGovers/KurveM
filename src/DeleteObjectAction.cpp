@@ -18,6 +18,11 @@ DeleteObjectAction::~DeleteObjectAction()
     }
 }
 
+e_ActionType DeleteObjectAction::GetActionType() 
+{
+    return ActionType_DeleteObject;
+}
+
 bool DeleteObjectAction::Redo()
 {
     return Execute();
@@ -32,6 +37,8 @@ bool DeleteObjectAction::Execute()
     {
         m_workspace->RemoveObject(m_object);
     }
+
+    m_workspace->RemoveSelectedObject(m_object);
 
     m_held = true;
 

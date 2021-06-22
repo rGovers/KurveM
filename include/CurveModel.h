@@ -96,6 +96,10 @@ public:
         return m_faces;
     }
 
+    inline unsigned int GetNodeCount() const
+    {
+        return m_nodeCount;
+    }
     inline Node3Cluster* GetNodes() const
     {
         return m_nodes;

@@ -28,6 +28,8 @@ private:
 
     std::list<Object*>           m_selectedObjects;
 
+    Action*                      m_curAction;
+
     inline bool UndoEnabled() const
     {
         return m_actionStack.size() > 0 && m_actionStackIndex != m_actionStack.begin();
@@ -68,6 +70,10 @@ public:
 
     void AddObject(Object* a_object);
     void RemoveObject(Object* a_object);
+
+    void ClearSelectedObjects();
+    void AddSelectedObject(Object* a_object);
+    void RemoveSelectedObject(Object* a_object);
 
     void DefaultWindowConfig();
 

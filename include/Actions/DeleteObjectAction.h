@@ -21,6 +21,8 @@ public:
     DeleteObjectAction(Workspace* a_workspace, Object* a_object);
     ~DeleteObjectAction();
 
+    virtual e_ActionType GetActionType();
+
     virtual bool Redo();
     virtual bool Execute();
     virtual bool Revert();

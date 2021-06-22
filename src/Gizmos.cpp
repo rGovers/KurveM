@@ -101,6 +101,11 @@ void Gizmos::DrawAll(Camera* a_camera, const glm::vec2& a_winSize)
 
 void Gizmos::DrawLine(const glm::vec3& a_start, const glm::vec3& a_end, float a_width, const glm::vec4& a_color)
 {
+    if (a_end == a_start)
+    {
+        return;
+    }
+
     const glm::vec3 forward = glm::normalize(a_end - a_start);
 
     glm::vec3 up = glm::vec3(0, 1, 0);
@@ -128,10 +133,38 @@ void Gizmos::DrawLine(const glm::vec3& a_start, const glm::vec3& a_end, float a_
     Instance->m_indices.emplace_back(indexC);
     Instance->m_indices.emplace_back(indexD);
 }
+void Gizmos::DrawLine(const glm::vec3& a_start, const glm::vec3& a_end, const glm::vec3& a_up, float a_width, const glm::vec4& a_color)
+{
+    if (a_end == a_start)
+    {
+        return;
+    }
+
+    const glm::vec3 forward = glm::normalize(a_end - a_start);
+
+    const glm::vec3 right = glm::cross(a_up, forward);
+
+    const unsigned int indexA = Instance->m_vertices.size();
+    Instance->m_vertices.emplace_back(GizmoVertex{ glm::vec4(a_start + right * a_width, 1.0f), a_color });
+    const unsigned int indexB = Instance->m_vertices.size();
+    Instance->m_vertices.emplace_back(GizmoVertex{ glm::vec4(a_start - right * a_width, 1.0f), a_color });
+    const unsigned int indexC = Instance->m_vertices.size();
+    Instance->m_vertices.emplace_back(GizmoVertex{ glm::vec4(a_end + right * a_width, 1.0f), a_color });
+    const unsigned int indexD = Instance->m_vertices.size();
+    Instance->m_vertices.emplace_back(GizmoVertex{ glm::vec4(a_end - right * a_width, 1.0f), a_color });
+
+    Instance->m_indices.emplace_back(indexA);
+    Instance->m_indices.emplace_back(indexC);
+    Instance->m_indices.emplace_back(indexB);
+
+    Instance->m_indices.emplace_back(indexB);
+    Instance->m_indices.emplace_back(indexC);
+    Instance->m_indices.emplace_back(indexD);
+}
 
 void Gizmos::DrawCircle(const glm::vec3& a_position, const glm::vec3& a_dir, float a_radius, int a_steps, const glm::vec4& a_color)
 {
-    const glm::vec3 vec = glm::vec3(0, 0, a_radius);
+    const glm::vec3 vec = glm::vec3(0, a_radius, 0);
 
     for (int i = 0; i < a_steps; ++i)
     {
@@ -149,10 +182,10 @@ void Gizmos::DrawCircleFilled(const glm::vec3& a_position, const glm::vec3& a_di
     const unsigned int centerIndex = Instance->m_vertices.size();
     Instance->m_vertices.emplace_back(GizmoVertex{ glm::vec4(a_position, 1.0f), a_color });
 
-    const glm::vec3 vec = glm::vec3(0, 0, a_radius);
+    const glm::vec4 vec = glm::vec4(0, a_radius, 0, 1);
 
-    glm::quat q = glm::angleAxis(0.0f, a_dir);
-    Instance->m_vertices.emplace_back(GizmoVertex{ glm::vec4(a_position + (q * vec), 1.0f), a_color });
+    glm::quat q = glm::angleAxis(glm::pi<float>() * 2.0f, a_dir);
+    Instance->m_vertices.emplace_back(GizmoVertex{ glm::vec4(a_position + (q * vec).xyz(), 1.0f), a_color });
 
     for (int i = 1; i <= a_steps; ++i)
     {
@@ -161,7 +194,7 @@ void Gizmos::DrawCircleFilled(const glm::vec3& a_position, const glm::vec3& a_di
         glm::quat q = glm::angleAxis(angle, a_dir);
         
         unsigned int index = Instance->m_vertices.size();
-        Instance->m_vertices.emplace_back(GizmoVertex{ glm::vec4(a_position + (q * vec), 1.0f), a_color });
+        Instance->m_vertices.emplace_back(GizmoVertex{ glm::vec4(a_position + (q * vec).xyz(), 1.0f), a_color });
 
         Instance->m_indices.emplace_back(centerIndex);
         Instance->m_indices.emplace_back(index - 1);

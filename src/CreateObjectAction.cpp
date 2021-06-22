@@ -21,6 +21,11 @@ CreateObjectAction::~CreateObjectAction()
 
 }
 
+e_ActionType CreateObjectAction::GetActionType()
+{
+    return ActionType_CreateObject;
+}
+
 bool CreateObjectAction::Redo()
 {
     return Execute();
@@ -39,6 +44,9 @@ bool CreateObjectAction::Execute()
         {
             m_workspace->AddObject(m_object);
         }
+
+        m_workspace->ClearSelectedObjects();
+        m_workspace->AddSelectedObject(m_object);
     }
 
     unsigned int nodeCount = 0;

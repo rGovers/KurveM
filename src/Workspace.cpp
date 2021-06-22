@@ -8,6 +8,8 @@
 #include "Actions/CreateObjectAction.h"
 #include "Actions/DeleteObjectAction.h"
 #include "Actions/RenameObjectAction.h"
+#include "Actions/ScaleObjectAction.h"
+#include "Actions/TranslateObjectAction.h"
 #include "Application.h"
 #include "CurveModel.h"
 #include "Datastore.h"
@@ -17,6 +19,7 @@
 #include "Object.h"
 #include "RenderTexture.h"
 #include "Texture.h"
+#include "Transform.h"
 
 const char* EditorMode_String[] = { "Object Mode", "Edit Mode" };
 
@@ -25,6 +28,8 @@ Workspace::Workspace()
     m_currentDir = nullptr;
 
     New();
+
+    m_curAction = nullptr;
 
     m_init = true;
     m_reset = false;
@@ -210,6 +215,35 @@ void Workspace::RemoveObject(Object* a_object)
     }
 }
 
+void Workspace::ClearSelectedObjects()
+{
+    m_selectedObjects.clear();
+}
+void Workspace::AddSelectedObject(Object* a_object)
+{
+    for (auto iter = m_selectedObjects.begin(); iter != m_selectedObjects.end(); ++iter)
+    {
+        if ((*iter)->GetID() == a_object->GetID())
+        {
+            return;
+        }
+    }
+
+    m_selectedObjects.emplace_back(a_object);
+}
+void Workspace::RemoveSelectedObject(Object* a_object)
+{
+    for (auto iter = m_selectedObjects.begin(); iter != m_selectedObjects.end(); ++iter)
+    {
+        if ((*iter)->GetID() == a_object->GetID())
+        {
+            m_selectedObjects.erase(iter);
+
+            return;
+        }
+    }
+}
+
 void Workspace::DefaultWindowConfig()
 {
     const Application* app = Application::GetInstance();
@@ -228,7 +262,7 @@ void Workspace::DefaultWindowConfig()
     ImGui::DockBuilderSetNodePos(id, { windowXPos, windowYPos + m_barSize });
     ImGui::DockBuilderSetNodeSize(id, { windowWidth, windowHeight - m_barSize});
 
-    const float topSideScale = 0.1f;
+    const float topSideScale = 0.125f;
     const float leftSideScale = 0.1f;
     const float rightSideScale = 0.15f;
 
@@ -279,6 +313,8 @@ bool Workspace::ObjectHeirachyGUI(Object* a_object, bool* a_blockMenu)
 
     if (ImGui::Selectable(("[" + std::to_string(a_object->GetID()) + "] " + name).c_str(), selected))
     {
+        m_curAction = nullptr;
+
         ImGuiIO& io = ImGui::GetIO();
 
         if (io.KeyCtrl)
@@ -489,7 +525,7 @@ void Workspace::Update(double a_delta)
 		const ImVec2 vMax = ImGui::GetWindowContentRegionMax();
         const ImVec2 size = { vMax.x - vMin.x, vMax.y - vMin.y };
 
-        m_editor->Update(a_delta, { pos.x, pos.y }, { size.x, size.y });
+        m_editor->Update(a_delta, { pos.x + vMin.x, pos.y + vMin.y }, { size.x, size.y });
 
         const RenderTexture* renderTexture = m_editor->GetRenderTexture();
         const Texture* texture = renderTexture->GetTexture();
@@ -528,6 +564,7 @@ void Workspace::Update(double a_delta)
     {
         const e_EditorMode currentIndex = m_editor->GetEditorMode();
 
+        ImGui::PushItemWidth(240);
         if (ImGui::BeginCombo("##combo", EditorMode_String[m_editor->GetEditorMode()]))
         {
             for (int i = 0; i < EditorMode_End; ++i)
@@ -549,6 +586,26 @@ void Workspace::Update(double a_delta)
 
             ImGui::EndCombo();
         }
+
+        if (ImGui::Button("Front Faces"))
+        {
+            m_editor->SetEditorFaceCullingMode(EditorFaceCullingMode_Back);
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Back Faces"))
+        {
+            m_editor->SetEditorFaceCullingMode(EditorFaceCullingMode_Front);
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Both Faces"))
+        {
+            m_editor->SetEditorFaceCullingMode(EditorFaceCullingMode_None);
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("No Faces"))
+        {
+            m_editor->SetEditorFaceCullingMode(EditorFaceCullingMode_All);
+        }
     }
     ImGui::End();
 
@@ -559,6 +616,7 @@ void Workspace::Update(double a_delta)
         {
 
         }
+        ImGui::SameLine();
         if (ImGui::Button("Rotate"))
         {
 
@@ -640,6 +698,7 @@ void Workspace::Update(double a_delta)
             if (m_selectedObjects.size() == 1)
             {
                 Object* obj = *m_selectedObjects.begin();
+                Transform* transform = obj->GetTransform();
 
                 char* buff = new char[1024];
 
@@ -659,12 +718,77 @@ void Workspace::Update(double a_delta)
 
                 if (ImGui::InputText("Name", buff, 1000))
                 {
-                    Action* action = new RenameObjectAction(name, buff, obj);
-                    if (!PushAction(action))
+                    if (m_curAction != nullptr && m_curAction->GetActionType() == ActionType_RenameObject)
                     {
-                        printf("Error Renaming Object \n");
+                        RenameObjectAction* action = (RenameObjectAction*)m_curAction;
 
-                        delete action;
+                        action->SetNewName(buff);
+                        action->Execute();
+                    }
+                    else
+                    {
+                        Action* action = new RenameObjectAction(name, buff, obj);
+                        if (!PushAction(action))
+                        {
+                            printf("Error Renaming Object \n");
+
+                            delete action;
+                        }
+                        else
+                        {
+                            m_curAction = action;
+                        }
+                    }
+                }
+
+                glm::vec3 pos = transform->Translation();
+                if (ImGui::DragFloat3("Position", (float*)&pos, 0.1f))
+                {
+                    if (m_curAction != nullptr && m_curAction->GetActionType() == ActionType_TranslateObject)
+                    {
+                        TranslateObjectAction* action = (TranslateObjectAction*)m_curAction;
+
+                        action->SetTranslation(pos);
+                        action->Execute();
+                    }
+                    else
+                    {
+                        Action* action = new TranslateObjectAction(pos, obj);
+                        if (!PushAction(action))
+                        {
+                            printf("Error Renaming Object \n");
+
+                            delete action;
+                        }  
+                        else
+                        {
+                            m_curAction = action;
+                        }
+                    }
+                }
+                glm::vec3 scale = transform->Scale();
+                if (ImGui::DragFloat3("Scale", (float*)&scale, 0.1f))
+                {
+                    if (m_curAction != nullptr && m_curAction->GetActionType() == ActionType_ScaleObject)
+                    {
+                        ScaleObjectAction* action = (ScaleObjectAction*)m_curAction;
+
+                        action->SetScale(scale);
+                        action->Execute();
+                    }
+                    else
+                    {
+                        Action* action = new ScaleObjectAction(scale, obj);
+                        if (!PushAction(action))
+                        {
+                            printf("Error Renaming Object \n");
+
+                            delete action;
+                        }  
+                        else
+                        {
+                            m_curAction = action;
+                        }
                     }
                 }
 
@@ -675,7 +799,7 @@ void Workspace::Update(double a_delta)
 
                     if (ImGui::InputInt("Model Resolution", &triSteps))
                     {
-                        model->SetSteps(glm::max(triSteps, 0));
+                        model->SetSteps(glm::max(triSteps, 1));
                         model->Triangulate();
                     }
                 }
