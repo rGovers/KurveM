@@ -27,4 +27,5 @@ public:
 
     glm::vec3 GetPoint(const BezierCurveNode3& a_other, float a_lerp) const;
     static glm::vec3 GetPoint(const BezierCurveNode3& a_pointA, const BezierCurveNode3& a_pointB, float a_lerp);
+    static glm::vec3 GetPointScaled(const BezierCurveNode3& a_pointA, const BezierCurveNode3& a_pointB, float a_scale, float a_lerp);
 };
