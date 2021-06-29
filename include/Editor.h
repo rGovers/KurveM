@@ -1,5 +1,6 @@
 #pragma once
 
+class Action;
 class Camera;
 class Object;
 class RenderTexture;
@@ -43,7 +44,9 @@ private:
     unsigned char            m_mouseDown;
     glm::vec2                m_startPos;
 
-    std::list<Node3Cluster*> m_selectedNodes;
+    std::list<unsigned int>  m_selectedNodes;
+
+    Action*                  m_curAction;
 
     void DrawObject(Object* a_object, const glm::vec2& a_winSize);
 

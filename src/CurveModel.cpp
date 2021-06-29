@@ -80,7 +80,7 @@ void CurveModel::Triangulate()
                         nodes[i] = m_nodes[face.Index[i]].Nodes[face.ClusterIndex[i]];
                     } 
 
-                    const glm::vec3 tpV = nodes[FaceIndex_3Point_AB].Position();
+                    const glm::vec3 tpV = nodes[FaceIndex_3Point_AB].GetPosition();
 
                     // Still not 100% and I suspect I went down the wrong path trying to triangulate it 
                     // Should be close enough for demo purposes however will need to fix down the line
@@ -173,20 +173,20 @@ void CurveModel::Triangulate()
                         const float iStep = (float)i / m_steps;
                         const float nIStep = (float)(i + 1) / m_steps;
 
-                        const glm::vec3 pointABLeft = BezierCurveNode3::GetPoint(nodes[FaceIndex_4Point_AB], nodes[FaceIndex_4Point_BA], iStep);
-                        const glm::vec3 pointABRight = BezierCurveNode3::GetPoint(nodes[FaceIndex_4Point_AB], nodes[FaceIndex_4Point_BA], nIStep);
-                        const glm::vec3 pointCDLeft = BezierCurveNode3::GetPoint(nodes[FaceIndex_4Point_CD], nodes[FaceIndex_4Point_DC], iStep);
-                        const glm::vec3 pointCDRight = BezierCurveNode3::GetPoint(nodes[FaceIndex_4Point_CD], nodes[FaceIndex_4Point_DC], nIStep);
+                        const glm::vec3 pointABLeft = BezierCurveNode3::GetPointScaled(nodes[FaceIndex_4Point_AB], nodes[FaceIndex_4Point_BA], 2.0f, iStep);
+                        const glm::vec3 pointABRight = BezierCurveNode3::GetPointScaled(nodes[FaceIndex_4Point_AB], nodes[FaceIndex_4Point_BA], 2.0f, nIStep);
+                        const glm::vec3 pointCDLeft = BezierCurveNode3::GetPointScaled(nodes[FaceIndex_4Point_CD], nodes[FaceIndex_4Point_DC], 2.0f, iStep);
+                        const glm::vec3 pointCDRight = BezierCurveNode3::GetPointScaled(nodes[FaceIndex_4Point_CD], nodes[FaceIndex_4Point_DC], 2.0f, nIStep);
 
                         for (int j = 0; j < m_steps; ++j)
                         {
                             const float jStep = (float)j / m_steps;
                             const float nJStep = (float)(j + 1) / m_steps;
 
-                            const glm::vec3 pointACLeft = BezierCurveNode3::GetPoint(nodes[FaceIndex_4Point_AC], nodes[FaceIndex_4Point_CA], jStep);
-                            const glm::vec3 pointACRight = BezierCurveNode3::GetPoint(nodes[FaceIndex_4Point_AC], nodes[FaceIndex_4Point_CA], nJStep);
-                            const glm::vec3 pointDBLeft = BezierCurveNode3::GetPoint(nodes[FaceIndex_4Point_BD], nodes[FaceIndex_4Point_DB], jStep);
-                            const glm::vec3 pointDBRight = BezierCurveNode3::GetPoint(nodes[FaceIndex_4Point_BD], nodes[FaceIndex_4Point_DB], nJStep);
+                            const glm::vec3 pointACLeft = BezierCurveNode3::GetPointScaled(nodes[FaceIndex_4Point_AC], nodes[FaceIndex_4Point_CA], 2.0f, jStep);
+                            const glm::vec3 pointACRight = BezierCurveNode3::GetPointScaled(nodes[FaceIndex_4Point_AC], nodes[FaceIndex_4Point_CA], 2.0f, nJStep);
+                            const glm::vec3 pointDBLeft = BezierCurveNode3::GetPointScaled(nodes[FaceIndex_4Point_BD], nodes[FaceIndex_4Point_DB], 2.0f, jStep);
+                            const glm::vec3 pointDBRight = BezierCurveNode3::GetPointScaled(nodes[FaceIndex_4Point_BD], nodes[FaceIndex_4Point_DB], 2.0f, nJStep);
 
                             const glm::vec3 LLA = glm::mix(pointABLeft, pointCDLeft, jStep);
                             const glm::vec3 LHA = glm::mix(pointABLeft, pointCDLeft, nJStep);

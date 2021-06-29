@@ -4,6 +4,7 @@
 #include <glm/gtx/quaternion.hpp>
 #include <stdio.h>
 
+#include "Actions/MoveNodeHandleAction.h"
 #include "Application.h"
 #include "BezierCurveNode3.h"
 #include "Camera.h"
@@ -28,6 +29,8 @@ Editor::Editor(Workspace* a_workspace)
 
     m_camera = new Camera();
     m_camera->SetFOV(0.6911504f);
+
+    m_curAction = nullptr;
 
     Transform* transform = m_camera->GetTransform();
     transform->Translation() = { 0.0f, -2.5f, -10.0f };
@@ -150,7 +153,7 @@ void Editor::DrawObject(Object* a_object, const glm::vec2& a_winSize)
                     bool selected = false;
                     for (auto iter = m_selectedNodes.begin(); iter != m_selectedNodes.end(); ++iter)
                     {
-                        if (*iter == &(nodes[i]))
+                        if (*iter == i)
                         {
                             selected = true;
 
@@ -160,19 +163,19 @@ void Editor::DrawObject(Object* a_object, const glm::vec2& a_winSize)
 
                     if (!selected)
                     {
-                        BezierCurveNode3 curve = nodes[i].Nodes[0];
+                        const BezierCurveNode3 curve = nodes[i].Nodes[0];
 
-                        const glm::vec4 pos = modelMatrix * glm::vec4(curve.Position(), 1);
+                        const glm::vec4 pos = modelMatrix * glm::vec4(curve.GetPosition(), 1);
 
                         Gizmos::DrawCircleFilled(pos.xyz(), camFor, 0.025f, 10, glm::vec4(0.61f, 0.35f, 0.02f, 1.00f));
                     }
                     else
                     {
-                        std::vector<BezierCurveNode3> nodeCluster = nodes[i].Nodes;
+                        const std::vector<BezierCurveNode3> nodeCluster = nodes[i].Nodes;
                         for (auto iter = nodeCluster.begin(); iter != nodeCluster.end(); ++iter)
                         {
-                            const glm::vec4 pos = modelMatrix * glm::vec4(iter->Position(), 1);
-                            const glm::vec4 handlePos = modelMatrix * glm::vec4(iter->HandlePosition(), 1);
+                            const glm::vec4 pos = modelMatrix * glm::vec4(iter->GetPosition(), 1);
+                            const glm::vec4 handlePos = modelMatrix * glm::vec4(iter->GetHandlePosition(), 1);
 
                             Gizmos::DrawLine(pos, handlePos, camFor, 0.005f, glm::vec4(0.93f, 0.53f, 0.00f, 1.00f));
                             Gizmos::DrawCircleFilled(handlePos, camFor, 0.05f, 15, glm::vec4(0.93f, 0.53f, 0.00f, 1.00f));
@@ -226,6 +229,13 @@ void Editor::Update(double a_delta, const glm::vec2& a_winPos, const glm::vec2& 
 
     const glm::mat4 viewProj = proj * view;
 
+    const glm::quat camQuat = camTransform->Quaternion();
+    const glm::mat4 camRotMatrix = glm::toMat4(camQuat);
+
+    const glm::vec3 camForward = camRotMatrix[2].xyz();
+    const glm::vec3 camUp = camRotMatrix[1].xyz();
+    const glm::vec3 camRight = camRotMatrix[0].xyz();
+
     const glm::vec2 curCursorPos = (cursorPos - (a_winPos + halfWinSize)) / halfWinSize;
 
     if (ImGui::IsWindowHovered())
@@ -235,6 +245,60 @@ void Editor::Update(double a_delta, const glm::vec2& a_winPos, const glm::vec2& 
             if (!(m_mouseDown & 0b1 << 0))
             {
                 m_startPos = curCursorPos;
+
+                if (m_curAction != nullptr)
+                {
+                    switch (m_curAction->GetActionType())
+                    {
+                    case ActionType_MoveNodeHandle:
+                    {
+                        m_curAction = nullptr;
+
+                        break;
+                    }
+                    }
+                }
+
+                const std::list<Object*> selectedObjects = m_workspace->GetSelectedObjects();
+
+                const Object* obj = *selectedObjects.begin();
+                if (obj != nullptr)
+                {
+                    CurveModel* model = obj->GetCurveModel();
+                    const Node3Cluster* nodes = model->GetNodes();
+
+                    const Transform* transform = obj->GetTransform();
+
+                    const glm::mat4 transformMat = transform->ToMatrix();
+
+                    for (auto iter = m_selectedNodes.begin(); iter != m_selectedNodes.end(); ++iter)
+                    {
+                        const unsigned int nodeIndex = *iter;
+                        const Node3Cluster node = nodes[nodeIndex];
+
+                        for (auto nodeIter = node.Nodes.begin(); nodeIter != node.Nodes.end(); ++nodeIter)
+                        {
+                            if (SelectionControl::NodeHandleInPoint(viewProj, curCursorPos, 0.05f, transformMat, *nodeIter))
+                            {
+                                m_curAction = new MoveNodeHandleAction(nodeIter - node.Nodes.begin(), nodeIndex, model, curCursorPos, camRight, camUp);
+                                if (!m_workspace->PushAction(m_curAction))
+                                {
+                                    printf("Error moving node handle");
+
+                                    delete m_curAction;
+                                    m_curAction = nullptr;
+                                }
+
+                                break;
+                            }
+                        }
+
+                        if (m_curAction != nullptr)
+                        {
+                            break;
+                        }
+                    }
+                }
             }
 
             m_mouseDown |= 0b1 << 0;
@@ -259,68 +323,75 @@ void Editor::Update(double a_delta, const glm::vec2& a_winPos, const glm::vec2& 
                 const std::list<Object*> selectedObjects = m_workspace->GetSelectedObjects();
 
                 const Object* obj = *selectedObjects.begin();
-                const Transform* transform = obj->GetTransform();
-
-                const glm::mat4 transformMat = transform->ToMatrix();
-
-                const CurveModel* curveModel = obj->GetCurveModel();
-
-                const unsigned int nodeCount = curveModel->GetNodeCount();
-                Node3Cluster* nodes = curveModel->GetNodes();
-
-                if (io.KeyShift)
+                if (obj != nullptr)
                 {
-                    for (unsigned int i = 0; i < nodeCount; ++i)
-                    {
-                        Node3Cluster* node = &(nodes[i]);
-                        if (SelectionControl::NodeInSelection(viewProj, min, max, transformMat, node->Nodes[0]))
-                        {
-                            m_selectedNodes.emplace_back(node);
-                        }
-                    }
-                }
-                else if (io.KeyCtrl)
-                {
-                    for (unsigned int i = 0; i < nodeCount; ++i)
-                    {
-                        Node3Cluster* node = &(nodes[i]);
-                        if (SelectionControl::NodeInSelection(viewProj, min, max, transformMat, node->Nodes[0]))
-                        {
-                            bool found = false;
+                    const Transform* transform = obj->GetTransform();
 
-                            for (auto iter = m_selectedNodes.begin(); iter != m_selectedNodes.end(); ++iter)
+                    const glm::mat4 transformMat = transform->ToMatrix();
+
+                    const CurveModel* curveModel = obj->GetCurveModel();
+
+                    const unsigned int nodeCount = curveModel->GetNodeCount();
+                    Node3Cluster* nodes = curveModel->GetNodes();
+
+                    if (!(m_curAction != nullptr && m_curAction->GetActionType() == ActionType_MoveNodeHandle))
+                    {
+                        if (io.KeyShift)
+                        {
+                            for (unsigned int i = 0; i < nodeCount; ++i)
                             {
-                                if (*iter == node)
+                                const Node3Cluster node = nodes[i];
+                                if (SelectionControl::NodeInSelection(viewProj, min, max, transformMat, node.Nodes[0]))
                                 {
-                                    found = true;
-
-                                    m_selectedNodes.erase(iter);
-
-                                    break;
+                                    m_selectedNodes.emplace_back(i);
                                 }
                             }
-
-                            if (!found)
+                        }
+                        else if (io.KeyCtrl)
+                        {
+                            for (unsigned int i = 0; i < nodeCount; ++i)
                             {
-                                m_selectedNodes.emplace_back(node);
+                                const Node3Cluster node = nodes[i];
+                                if (SelectionControl::NodeInSelection(viewProj, min, max, transformMat, node.Nodes[0]))
+                                {
+                                    bool found = false;
+
+                                    for (auto iter = m_selectedNodes.begin(); iter != m_selectedNodes.end(); ++iter)
+                                    {
+                                        if (*iter == i)
+                                        {
+                                            found = true;
+
+                                            m_selectedNodes.erase(iter);
+
+                                            break;
+                                        }
+                                    }
+
+                                    if (!found)
+                                    {
+                                        m_selectedNodes.emplace_back(i);
+                                    }
+                                }
+                            }
+                        }
+                        else
+                        {
+                            m_selectedNodes.clear();
+
+                            for (unsigned int i = 0; i < nodeCount; ++i)
+                            {
+                                const Node3Cluster node = nodes[i];
+                                if (SelectionControl::NodeInSelection(viewProj, min, max, transformMat, node.Nodes[0]))
+                                {
+                                    m_selectedNodes.emplace_back(i);
+                                }
                             }
                         }
                     }
                 }
-                else
-                {
-                    m_selectedNodes.clear();
-
-                    for (unsigned int i = 0; i < nodeCount; ++i)
-                    {
-                        Node3Cluster* node = &(nodes[i]);
-                        if (SelectionControl::NodeInSelection(viewProj, min, max, transformMat, node->Nodes[0]))
-                        {
-                            m_selectedNodes.emplace_back(node);
-                        }
-                    }
-                }
-
+                
+                
                 break;
             }
         }
@@ -332,62 +403,65 @@ void Editor::Update(double a_delta, const glm::vec2& a_winPos, const glm::vec2& 
 
     if (m_mouseDown & 0b1 << 0)
     {
-        // Dirty but cannot be stuffed making screen space gizmos
-        const glm::vec2 min = glm::min(m_startPos, curCursorPos);
-        const glm::vec2 max = glm::max(m_startPos, curCursorPos);
+        if (m_curAction != nullptr && m_curAction->GetActionType() == ActionType_MoveNodeHandle)
+        {
+            MoveNodeHandleAction* action = (MoveNodeHandleAction*)m_curAction;
+            action->SetCursorPos(curCursorPos);
 
-        const glm::vec4 sTL = glm::vec4(glm::vec2(min.x, min.y), -0.99f, 1.0f);
-        const glm::vec4 sTR = glm::vec4(glm::vec2(max.x, min.y), -0.99f, 1.0f);
-        const glm::vec4 sBL = glm::vec4(glm::vec2(min.x, max.y), -0.99f, 1.0f);
-        const glm::vec4 sBR = glm::vec4(glm::vec2(max.x, max.y), -0.99f, 1.0f);
+            action->Execute();
+        }
+        else
+        {
+            // Dirty but cannot be stuffed making screen space gizmos
+            const glm::vec2 min = glm::min(m_startPos, curCursorPos);
+            const glm::vec2 max = glm::max(m_startPos, curCursorPos);
 
-        glm::vec4 tlVP = projInv * sTL;
-        tlVP /= tlVP.w;
-        glm::vec4 trVP = projInv * sTR;
-        trVP /= trVP.w;
-        glm::vec4 blVP = projInv * sBL;
-        blVP /= blVP.w;
-        glm::vec4 brVP = projInv * sBR;
-        brVP /= brVP.w;
+            const glm::vec4 sTL = glm::vec4(glm::vec2(min.x, min.y), -0.99f, 1.0f);
+            const glm::vec4 sTR = glm::vec4(glm::vec2(max.x, min.y), -0.99f, 1.0f);
+            const glm::vec4 sBL = glm::vec4(glm::vec2(min.x, max.y), -0.99f, 1.0f);
+            const glm::vec4 sBR = glm::vec4(glm::vec2(max.x, max.y), -0.99f, 1.0f);
 
-        const glm::vec4 tlWP = viewInv * tlVP;
-        const glm::vec4 trWP = viewInv * trVP;
-        const glm::vec4 blWP = viewInv * blVP;
-        const glm::vec4 brWP = viewInv * brVP;
+            glm::vec4 tlVP = projInv * sTL;
+            tlVP /= tlVP.w;
+            glm::vec4 trVP = projInv * sTR;
+            trVP /= trVP.w;
+            glm::vec4 blVP = projInv * sBL;
+            blVP /= blVP.w;
+            glm::vec4 brVP = projInv * sBR;
+            brVP /= brVP.w;
 
-        const glm::vec3 f = viewInv[2].xyz();
+            const glm::vec4 tlWP = viewInv * tlVP;
+            const glm::vec4 trWP = viewInv * trVP;
+            const glm::vec4 blWP = viewInv * blVP;
+            const glm::vec4 brWP = viewInv * brVP;
 
-        Gizmos::DrawLine(tlWP.xyz(), trWP.xyz(), f, 0.0001f, glm::vec4(0.93f, 0.53f, 0.00f, 1.00f));
-        Gizmos::DrawLine(trWP.xyz(), brWP.xyz(), f, 0.0001f, glm::vec4(0.93f, 0.53f, 0.00f, 1.00f));
-        Gizmos::DrawLine(brWP.xyz(), blWP.xyz(), f, 0.0001f, glm::vec4(0.93f, 0.53f, 0.00f, 1.00f));
-        Gizmos::DrawLine(blWP.xyz(), tlWP.xyz(), f, 0.0001f, glm::vec4(0.93f, 0.53f, 0.00f, 1.00f));
+            const glm::vec3 f = viewInv[2].xyz();
+
+            Gizmos::DrawLine(tlWP.xyz(), trWP.xyz(), f, 0.0001f, glm::vec4(0.93f, 0.53f, 0.00f, 1.00f));
+            Gizmos::DrawLine(trWP.xyz(), brWP.xyz(), f, 0.0001f, glm::vec4(0.93f, 0.53f, 0.00f, 1.00f));
+            Gizmos::DrawLine(brWP.xyz(), blWP.xyz(), f, 0.0001f, glm::vec4(0.93f, 0.53f, 0.00f, 1.00f));
+            Gizmos::DrawLine(blWP.xyz(), tlWP.xyz(), f, 0.0001f, glm::vec4(0.93f, 0.53f, 0.00f, 1.00f));
+        }   
     }
     if (m_mouseDown & 0b1 << 1)
     {
-        const glm::quat quat = camTransform->Quaternion();
-        const glm::mat4 rotMat = glm::toMat4(quat);
-
-        const glm::vec3 forward = rotMat[2].xyz();
-        const glm::vec3 up = rotMat[1].xyz();
-        const glm::vec3 right = rotMat[0].xyz();
-
         glm::vec3 mov = glm::vec3(0);
 
         if (glfwGetKey(window, GLFW_KEY_W))
         {
-            mov -= forward;
+            mov -= camForward;
         }
         if (glfwGetKey(window, GLFW_KEY_S))
         {
-            mov += forward;
+            mov += camForward;
         }
         if (glfwGetKey(window, GLFW_KEY_A))
         {
-            mov -= right;
+            mov -= camRight;
         }
         if (glfwGetKey(window, GLFW_KEY_D))
         {
-            mov += right;
+            mov += camRight;
         }
 
         camTransform->Translation() += mov * 2.0f * (float)a_delta;
@@ -398,7 +472,7 @@ void Editor::Update(double a_delta, const glm::vec2& a_winPos, const glm::vec2& 
 
         if (mouseMove.x != -FLT_MAX && mouseMove.y != -FLT_MAX)
         {
-            camTransform->Quaternion() = glm::angleAxis(-camMov.x, glm::vec3(0.0f, 1.0f, 0.0f)) * glm::angleAxis(camMov.y, right) * quat;
+            camTransform->Quaternion() = glm::angleAxis(-camMov.x, glm::vec3(0.0f, 1.0f, 0.0f)) * glm::angleAxis(camMov.y, camRight) * camQuat;
         }
     }
 

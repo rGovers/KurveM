@@ -1,8 +1,25 @@
 #include "SelectionControl.h"
 
-bool SelectionControl::NodeHandleInSelection(const glm::mat4& a_viewProj, const glm::vec2& a_start, const glm::vec2& a_end, const glm::mat4& a_world, BezierCurveNode3 a_node)
+bool SelectionControl::NodeHandleInPoint(const glm::mat4& a_viewProj, const glm::vec2& a_point, float a_radius, const glm::mat4& a_world, const BezierCurveNode3& a_node)
 {
-    const glm::vec4 handlePos = glm::vec4(a_node.HandlePosition(), 1);
+    const glm::vec4 handlePos = glm::vec4(a_node.GetHandlePosition(), 1);
+
+    glm::vec4 fPos = a_viewProj * a_world * handlePos; 
+    fPos /= fPos.w;
+
+    const glm::vec2 diff = fPos.xy() - a_point;
+    const float len = glm::length(diff);
+
+    if (len <= a_radius)
+    {
+        return true;
+    }
+
+    return false;
+}
+bool SelectionControl::NodeHandleInSelection(const glm::mat4& a_viewProj, const glm::vec2& a_start, const glm::vec2& a_end, const glm::mat4& a_world, const BezierCurveNode3& a_node)
+{
+    const glm::vec4 handlePos = glm::vec4(a_node.GetHandlePosition(), 1);
 
     glm::vec4 fPos = a_viewProj * a_world * handlePos; 
     fPos /= fPos.w;
@@ -15,9 +32,9 @@ bool SelectionControl::NodeHandleInSelection(const glm::mat4& a_viewProj, const 
 
     return false;
 }
-bool SelectionControl::NodeInSelection(const glm::mat4& a_viewProj, const glm::vec2& a_start, const glm::vec2& a_end, const glm::mat4& a_world, BezierCurveNode3 a_node)
+bool SelectionControl::NodeInSelection(const glm::mat4& a_viewProj, const glm::vec2& a_start, const glm::vec2& a_end, const glm::mat4& a_world, const BezierCurveNode3& a_node)
 {
-    const glm::vec4 nodePos = glm::vec4(a_node.Position(), 1);
+    const glm::vec4 nodePos = glm::vec4(a_node.GetPosition(), 1);
 
     glm::vec4 fPos = a_viewProj * a_world * nodePos; 
     fPos /= fPos.w;

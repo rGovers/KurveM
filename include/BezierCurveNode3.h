@@ -16,13 +16,22 @@ public:
     BezierCurveNode3(const glm::vec3& a_pos, const glm::vec3& a_handlePos);
     ~BezierCurveNode3();
 
-    glm::vec3& Position() 
+    inline glm::vec3 GetPosition() const
     {
         return m_pos;
     }
-    glm::vec3& HandlePosition()
+    inline void SetPosition(const glm::vec3& a_position)
+    {
+        m_pos = a_position;
+    }
+
+    inline glm::vec3 GetHandlePosition() const
     {
         return m_handle;
+    }
+    inline void SetHandlePosition(const glm::vec3& a_handle)
+    {
+        m_handle = a_handle;
     }
 
     glm::vec3 GetPoint(const BezierCurveNode3& a_other, float a_lerp) const;
