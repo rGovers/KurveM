@@ -8,6 +8,13 @@ class Action;
 class Editor;
 class Object;
 
+enum e_ObjectPropertiesTab
+{
+    ObjectPropertiesTab_Object,
+    ObjectPropertiesTab_Curve,
+    ObjectPropertiesTab_End,
+};
+
 class Workspace
 {
 private:
@@ -21,6 +28,8 @@ private:
 
     bool                         m_init;
     bool                         m_reset;
+
+    e_ObjectPropertiesTab        m_propertiesMode;
 
     std::list<Action*>           m_actionStack;
     std::list<Action*>::iterator m_actionStackIndex;

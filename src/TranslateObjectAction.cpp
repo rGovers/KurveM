@@ -3,26 +3,35 @@
 #include "Object.h"
 #include "Transform.h"
 
-TranslateObjectAction::TranslateObjectAction(const glm::vec3& a_newPos, Object* a_object)
+TranslateObjectAction::TranslateObjectAction(const glm::vec3& a_newPos, Object* a_object) : 
+    TranslateObjectAction(a_newPos, &a_object, 1)
 {
-    m_object = a_object;
-    
+
+}
+TranslateObjectAction::TranslateObjectAction(const glm::vec3& a_newPos, Object** a_objects, unsigned int a_objectCount)
+{
+    m_objectCount = a_objectCount;
+
+    m_objects = new Object*[m_objectCount];
+    m_oldPos = new glm::vec3[m_objectCount];
+
     m_newPos = a_newPos;
-    m_oldPos = m_object->GetTransform()->Translation();
+
+    for (unsigned int i = 0; i < m_objectCount; ++i)
+    {
+        m_objects[i] = a_objects[i];
+        m_oldPos[i] = m_objects[i]->GetTransform()->Translation();
+    }
 }
 TranslateObjectAction::~TranslateObjectAction()
 {
-
+    delete[] m_objects;
+    delete[] m_oldPos;
 }
 
 e_ActionType TranslateObjectAction::GetActionType()
 {
     return ActionType_TranslateObject;
-}
-
-void TranslateObjectAction::SetTranslation(const glm::vec3& a_newPos)
-{
-    m_newPos = a_newPos;
 }
 
 bool TranslateObjectAction::Redo()
@@ -31,13 +40,19 @@ bool TranslateObjectAction::Redo()
 }
 bool TranslateObjectAction::Execute()
 {
-    m_object->GetTransform()->Translation() = m_newPos;
+    for (unsigned int i = 0; i < m_objectCount; ++i)
+    {
+        m_objects[i]->GetTransform()->Translation() = m_newPos;
+    }
 
     return true;
 }
 bool TranslateObjectAction::Revert()
 {
-    m_object->GetTransform()->Translation() = m_oldPos;
+    for (unsigned int i = 0; i < m_objectCount; ++i)
+    {
+        m_objects[i]->GetTransform()->Translation() = m_oldPos[i];
+    }
 
     return true;
 }

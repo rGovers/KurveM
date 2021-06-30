@@ -4,6 +4,7 @@
 #include <glm/gtx/quaternion.hpp>
 #include <stdio.h>
 
+#include "Actions/MoveNodeAction.h"
 #include "Actions/MoveNodeHandleAction.h"
 #include "Application.h"
 #include "BezierCurveNode3.h"
@@ -73,6 +74,27 @@ void DrawCurve(int a_steps, const glm::mat4& a_modelMatrix, BezierCurveNode3& a_
     }
 }
 
+bool Editor::IsMovingCurveNodeHandle(const Node3Cluster& a_node, unsigned int a_nodeIndex, CurveModel* a_model, const glm::mat4& a_viewProj, const glm::vec2& a_cursorPos, const glm::mat4& a_transform, const glm::vec3& a_up, const glm::vec3& a_right)
+{
+    for (auto nodeIter = a_node.Nodes.begin(); nodeIter != a_node.Nodes.end(); ++nodeIter)
+    {
+        if (SelectionControl::NodeHandleInPoint(a_viewProj, a_cursorPos, 0.05f, a_transform, *nodeIter))
+        {
+            m_curAction = new MoveNodeHandleAction(nodeIter - a_node.Nodes.begin(), a_nodeIndex, a_model, a_cursorPos, a_right, a_up);
+            if (!m_workspace->PushAction(m_curAction))
+            {
+                printf("Error moving node handle");
+
+                delete m_curAction;
+                m_curAction = nullptr;
+            }
+
+            return true;
+        }
+    }
+
+    return false;
+}
 void Editor::DrawObject(Object* a_object, const glm::vec2& a_winSize)
 {
     a_object->Draw(m_camera, a_winSize);
@@ -251,6 +273,7 @@ void Editor::Update(double a_delta, const glm::vec2& a_winPos, const glm::vec2& 
                     switch (m_curAction->GetActionType())
                     {
                     case ActionType_MoveNodeHandle:
+                    case ActionType_MoveNode:
                     {
                         m_curAction = nullptr;
 
@@ -274,26 +297,8 @@ void Editor::Update(double a_delta, const glm::vec2& a_winPos, const glm::vec2& 
                     for (auto iter = m_selectedNodes.begin(); iter != m_selectedNodes.end(); ++iter)
                     {
                         const unsigned int nodeIndex = *iter;
-                        const Node3Cluster node = nodes[nodeIndex];
 
-                        for (auto nodeIter = node.Nodes.begin(); nodeIter != node.Nodes.end(); ++nodeIter)
-                        {
-                            if (SelectionControl::NodeHandleInPoint(viewProj, curCursorPos, 0.05f, transformMat, *nodeIter))
-                            {
-                                m_curAction = new MoveNodeHandleAction(nodeIter - node.Nodes.begin(), nodeIndex, model, curCursorPos, camRight, camUp);
-                                if (!m_workspace->PushAction(m_curAction))
-                                {
-                                    printf("Error moving node handle");
-
-                                    delete m_curAction;
-                                    m_curAction = nullptr;
-                                }
-
-                                break;
-                            }
-                        }
-
-                        if (m_curAction != nullptr)
+                        if (IsMovingCurveNodeHandle(nodes[nodeIndex], nodeIndex, model, viewProj, curCursorPos, transformMat, camUp, camRight))
                         {
                             break;
                         }
@@ -410,6 +415,13 @@ void Editor::Update(double a_delta, const glm::vec2& a_winPos, const glm::vec2& 
 
             action->Execute();
         }
+        else if (m_curAction != nullptr && m_curAction->GetActionType() == ActionType_MoveNode)
+        {
+            MoveNodeAction* action = (MoveNodeAction*)m_curAction;
+            action->SetCursorPos(curCursorPos);
+
+            action->Execute();
+        }
         else
         {
             // Dirty but cannot be stuffed making screen space gizmos
@@ -443,6 +455,9 @@ void Editor::Update(double a_delta, const glm::vec2& a_winPos, const glm::vec2& 
             Gizmos::DrawLine(blWP.xyz(), tlWP.xyz(), f, 0.0001f, glm::vec4(0.93f, 0.53f, 0.00f, 1.00f));
         }   
     }
+
+    camTransform->Translation() -= camForward * io.MouseWheel * 2.0f;
+
     if (m_mouseDown & 0b1 << 1)
     {
         glm::vec3 mov = glm::vec3(0);
@@ -473,6 +488,31 @@ void Editor::Update(double a_delta, const glm::vec2& a_winPos, const glm::vec2& 
         if (mouseMove.x != -FLT_MAX && mouseMove.y != -FLT_MAX)
         {
             camTransform->Quaternion() = glm::angleAxis(-camMov.x, glm::vec3(0.0f, 1.0f, 0.0f)) * glm::angleAxis(camMov.y, camRight) * camQuat;
+        }
+    }
+
+    if (m_selectedNodes.size() > 0 && m_editorMode == EditorMode_Edit)
+    {
+        const std::list<Object*> selectedObjects = m_workspace->GetSelectedObjects();
+
+        const Object* obj = *selectedObjects.begin();
+        if (obj != nullptr)
+        {
+            const CurveModel* model = obj->GetCurveModel();
+            const Node3Cluster* nodes = model->GetNodes();
+
+            glm::vec3 pos = glm::vec3(0);
+
+            for (auto iter = m_selectedNodes.begin(); iter != m_selectedNodes.end(); ++iter)
+            {
+                pos += nodes[*iter].Nodes[0].GetPosition();
+            }
+
+            pos /= m_selectedNodes.size();
+
+            Gizmos::DrawLine(pos, pos + glm::vec3(0.25f, 0, 0), viewInv[2].xyz(), 0.01f, glm::vec4(1, 0, 0, 1));
+            Gizmos::DrawLine(pos, pos + glm::vec3(0, 0.25f, 0), viewInv[2].xyz(), 0.01f, glm::vec4(0, 1, 0, 1));
+            Gizmos::DrawLine(pos, pos + glm::vec3(0, 0, 0.25f), viewInv[2].xyz(), 0.01f, glm::vec4(0, 0, 1, 1));
         }
     }
 

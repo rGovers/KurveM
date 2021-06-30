@@ -10,15 +10,17 @@ class Object;
 class ScaleObjectAction : public Action
 {
 private:
-    glm::vec3 m_oldScale;
-    glm::vec3 m_newScale;
+    glm::vec3*   m_oldScale;
+    glm::vec3    m_newScale;
 
-    Object*   m_object;
+    unsigned int m_objectCount;
+    Object**     m_objects;
 
 protected:
 
 public:
     ScaleObjectAction(const glm::vec3& a_newScale, Object* a_object);
+    ScaleObjectAction(const glm::vec3& a_newScale, Object** a_objects, unsigned int a_objectCount);
     ~ScaleObjectAction();
 
     virtual e_ActionType GetActionType();

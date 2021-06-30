@@ -12,6 +12,8 @@ CurveModel::CurveModel()
 
     m_displayModel = nullptr;
 
+    m_stepAdjust = false;
+
     m_steps = 10;
 }
 CurveModel::~CurveModel()
@@ -32,6 +34,21 @@ CurveModel::~CurveModel()
         delete m_displayModel;
         m_displayModel = nullptr;
     }
+}
+
+float GetNodeDist(const BezierCurveNode3& a_nodeA, const BezierCurveNode3& a_nodeB)
+{
+    const glm::vec3 posA = a_nodeA.GetPosition();
+    const glm::vec3 posB = a_nodeB.GetPosition();
+
+    const glm::vec3 handlePosA = a_nodeA.GetHandlePosition();
+    const glm::vec3 handlePosB = a_nodeB.GetHandlePosition();
+
+    const glm::vec3 aDiff = posA - handlePosA;
+    const glm::vec3 abDiff = handlePosA - handlePosB;
+    const glm::vec3 bDiff = posB - handlePosB;
+
+    return glm::length(aDiff) + glm::length(abDiff) + glm::length(bDiff);
 }
 
 void CurveModel::SetModelData(Node3Cluster* a_nodes, unsigned int a_nodeCount, CurveFace* a_faces, unsigned int a_faceCount)
@@ -65,6 +82,8 @@ void CurveModel::Triangulate()
     {
         std::vector<Vertex> dirtyVertices;
 
+        // All of this is just pulled out of nothing and has issues needs to be verified and fixed
+        // Probably need to poke someone good at maths
         for (int i = 0; i < m_faceCount; ++i)
         {
             const CurveFace face = m_faces[i];
@@ -82,13 +101,26 @@ void CurveModel::Triangulate()
 
                     const glm::vec3 tpV = nodes[FaceIndex_3Point_AB].GetPosition();
 
+                    // I am not good at maths so I could be wrong but I am sensing a coastline problem here therefore I am just doing
+                    // an approximation based on the points instead of the curve
+                    int step = m_steps;
+                    if (m_stepAdjust)
+                    {
+                        const float aDist = GetNodeDist(nodes[FaceIndex_3Point_AB], nodes[FaceIndex_3Point_BA]);
+                        const float bDist = GetNodeDist(nodes[FaceIndex_3Point_BC], nodes[FaceIndex_3Point_CB]);
+                        const float cDist = GetNodeDist(nodes[FaceIndex_3Point_CA], nodes[FaceIndex_3Point_AC]);
+
+                        const float m = glm::max(aDist, glm::max(bDist, cDist));
+                        step = (int)glm::ceil(m * m_steps * 0.5f);
+                    }
+
                     // Still not 100% and I suspect I went down the wrong path trying to triangulate it 
                     // Should be close enough for demo purposes however will need to fix down the line
-                    for (int i = 0; i < m_steps; ++i)
+                    for (int i = 0; i < step; ++i)
                     {
-                        const float iStep = (float)i / m_steps;
-                        const float nIStep = (float)(i + 1) / m_steps;
-                        const float bIStep = (float)(i + 2) / m_steps;
+                        const float iStep = (float)i / step;
+                        const float nIStep = (float)(i + 1) / step;
+                        const float bIStep = (float)(i + 2) / step;
 
                         const glm::vec3 tL = BezierCurveNode3::GetPointScaled(nodes[FaceIndex_3Point_AB], nodes[FaceIndex_3Point_BA], 2.0f, iStep);
                         const glm::vec3 tR = BezierCurveNode3::GetPointScaled(nodes[FaceIndex_3Point_AC], nodes[FaceIndex_3Point_CA], 2.0f, iStep);
@@ -133,7 +165,7 @@ void CurveModel::Triangulate()
                             dirtyVertices.emplace_back(Vertex{ { mLF, 1.0f }, normal, { 0.0f, 0.0f }});
                             dirtyVertices.emplace_back(Vertex{ { mRF, 1.0f }, normal, { 0.0f, 0.0f }});
 
-                            if (i < m_steps - 1)
+                            if (i < step - 1)
                             {
                                 const float aSL = (j + 1) / (float)(i + 2);
 
@@ -168,20 +200,36 @@ void CurveModel::Triangulate()
                         nodes[i] = m_nodes[face.Index[i]].Nodes[face.ClusterIndex[i]];
                     } 
 
-                    for (int i = 0; i < m_steps; ++i)
+                    int xStep = m_steps;
+                    int yStep = m_steps;
+                    if (m_stepAdjust)
                     {
-                        const float iStep = (float)i / m_steps;
-                        const float nIStep = (float)(i + 1) / m_steps;
+                        const float xADist = GetNodeDist(nodes[FaceIndex_4Point_AB], nodes[FaceIndex_4Point_BA]);
+                        const float xBDist = GetNodeDist(nodes[FaceIndex_4Point_CD], nodes[FaceIndex_4Point_DC]);
+                        const float yADist = GetNodeDist(nodes[FaceIndex_4Point_AC], nodes[FaceIndex_4Point_CA]);
+                        const float yBDist = GetNodeDist(nodes[FaceIndex_4Point_BD], nodes[FaceIndex_4Point_DB]);
+
+                        const float mX = glm::max(xADist, xBDist);
+                        const float mY = glm::max(yADist, yBDist);
+                        
+                        xStep = (int)glm::ceil(mX * m_steps * 0.5f);
+                        yStep = (int)glm::ceil(mY * m_steps * 0.5f);
+                    }
+
+                    for (int i = 0; i < xStep; ++i)
+                    {
+                        const float iStep = (float)i / xStep;
+                        const float nIStep = (float)(i + 1) / xStep;
 
                         const glm::vec3 pointABLeft = BezierCurveNode3::GetPointScaled(nodes[FaceIndex_4Point_AB], nodes[FaceIndex_4Point_BA], 2.0f, iStep);
                         const glm::vec3 pointABRight = BezierCurveNode3::GetPointScaled(nodes[FaceIndex_4Point_AB], nodes[FaceIndex_4Point_BA], 2.0f, nIStep);
                         const glm::vec3 pointCDLeft = BezierCurveNode3::GetPointScaled(nodes[FaceIndex_4Point_CD], nodes[FaceIndex_4Point_DC], 2.0f, iStep);
                         const glm::vec3 pointCDRight = BezierCurveNode3::GetPointScaled(nodes[FaceIndex_4Point_CD], nodes[FaceIndex_4Point_DC], 2.0f, nIStep);
 
-                        for (int j = 0; j < m_steps; ++j)
+                        for (int j = 0; j < yStep; ++j)
                         {
-                            const float jStep = (float)j / m_steps;
-                            const float nJStep = (float)(j + 1) / m_steps;
+                            const float jStep = (float)j / yStep;
+                            const float nJStep = (float)(j + 1) / yStep;
 
                             const glm::vec3 pointACLeft = BezierCurveNode3::GetPointScaled(nodes[FaceIndex_4Point_AC], nodes[FaceIndex_4Point_CA], 2.0f, jStep);
                             const glm::vec3 pointACRight = BezierCurveNode3::GetPointScaled(nodes[FaceIndex_4Point_AC], nodes[FaceIndex_4Point_CA], 2.0f, nJStep);
@@ -231,31 +279,70 @@ void CurveModel::Triangulate()
 
         unsigned int vertexIndex = 0;
 
-        for (unsigned int i = 0; i < indexCount; ++i)
+        if (m_stepAdjust)
         {
-            const Vertex vert = dirtyVertices[i];
+            const double cDist = 1.0f / m_steps * 0.26f;
+            const double cDSqr = cDist * cDist;
 
-            bool found = false;
-
-            for (unsigned int j = 0; j < vertexIndex; ++j)
+            for (unsigned int i = 0; i < indexCount; ++i)
             {
-                if (vertices[j].Position == vert.Position)
+                const Vertex vert = dirtyVertices[i];
+    
+                bool found = false;
+    
+                for (unsigned int j = 0; j < vertexIndex; ++j)
                 {
-                    found = true;
+                    const Vertex cVert = vertices[j];
 
-                    vertices[j].Normal += vert.Normal;
-                    indices[i] = j;
+                    const glm::vec3 diff = vert.Position - cVert.Position;
 
-                    break;
+                    if (glm::dot(diff, diff) < cDSqr)
+                    {
+                        found = true;
+    
+                        vertices[j].Normal += vert.Normal;
+                        indices[i] = j;
+    
+                        break;
+                    }
+                }
+    
+                if (!found)
+                {
+                    vertices[vertexIndex] = vert;
+                    indices[i] = vertexIndex++;
                 }
             }
-
-            if (!found)
+        }
+        else
+        {
+            for (unsigned int i = 0; i < indexCount; ++i)
             {
-                vertices[vertexIndex] = vert;
-                indices[i] = vertexIndex++;
+                const Vertex vert = dirtyVertices[i];
+
+                bool found = false;
+
+                for (unsigned int j = 0; j < vertexIndex; ++j)
+                {
+                    if (vertices[j].Position == vert.Position)
+                    {
+                        found = true;
+
+                        vertices[j].Normal += vert.Normal;
+                        indices[i] = j;
+
+                        break;
+                    }
+                }
+
+                if (!found)
+                {
+                    vertices[vertexIndex] = vert;
+                    indices[i] = vertexIndex++;
+                }
             }
         }
+        
 
         for (unsigned int i = 0; i < vertexIndex; ++i)
         {

@@ -60,6 +60,8 @@ class CurveModel
 private:
     int           m_steps;
 
+    bool          m_stepAdjust;
+
     unsigned int  m_nodeCount;
     Node3Cluster* m_nodes;
     unsigned int  m_faceCount;
@@ -103,6 +105,15 @@ public:
     inline Node3Cluster* GetNodes() const
     {
         return m_nodes;
+    }
+
+    inline void SetStepAdjust(bool a_value)
+    {
+        m_stepAdjust = a_value;
+    }
+    inline bool IsStepAdjusted() const
+    {
+        return m_stepAdjust;
     }
 
     void SetModelData(Node3Cluster* a_nodes, unsigned int a_nodeCount, CurveFace* a_faces, unsigned int a_faceCount);
