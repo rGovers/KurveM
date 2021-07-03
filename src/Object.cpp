@@ -122,6 +122,16 @@ void Object::SetParent(Object* a_parent)
     }
 }
 
+glm::mat4 Object::GetGlobalMatrix() const
+{
+    if (m_parent != nullptr)
+    {
+        return m_parent->GetGlobalMatrix() * m_transform->ToMatrix();
+    }
+
+    return m_transform->ToMatrix();
+}
+
 void Object::Draw(Camera* a_camera, const glm::vec2& a_winSize)
 {
     Model* model = m_displayModel;
@@ -145,7 +155,7 @@ void Object::Draw(Camera* a_camera, const glm::vec2& a_winSize)
         // const glm::mat4 viewProj = view * proj;
         const glm::mat4 viewProj = proj * view;
 
-        const glm::mat4 world = m_transform->ToMatrix();
+        const glm::mat4 world = GetGlobalMatrix();
 
         glUniformMatrix4fv(0, 1, false, (float*)&view);
         glUniformMatrix4fv(1, 1, false, (float*)&proj);

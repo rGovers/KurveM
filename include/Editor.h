@@ -48,6 +48,7 @@ private:
 
     Action*                  m_curAction;
 
+    bool IsMovingCurveNode(const glm::vec3& a_pos, const glm::vec3& a_axis, const glm::vec2& a_cursorPos, CurveModel* a_model, const glm::mat4& a_viewProj);
     bool IsMovingCurveNodeHandle(const Node3Cluster& a_node, unsigned int a_nodeIndex, CurveModel* a_model, const glm::mat4& a_viewProj, const glm::vec2& a_cursorPos, const glm::mat4& a_transform, const glm::vec3& a_up, const glm::vec3& a_right);
     void DrawObject(Object* a_object, const glm::vec2& a_winSize);
 

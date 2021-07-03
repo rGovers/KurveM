@@ -62,7 +62,6 @@ bool MoveNodeAction::Revert()
 {
     Node3Cluster* nodes = m_curveModel->GetNodes();
 
-    Node3Cluster* nodes = m_curveModel->GetNodes();
     for (unsigned int i = 0; i < m_nodeCount; ++i)
     {
         for (auto iter = nodes[m_nodeIndices[i]].Nodes.begin(); iter != nodes[m_nodeIndices[i]].Nodes.end(); ++iter)

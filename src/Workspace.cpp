@@ -36,6 +36,8 @@ Workspace::Workspace()
 
     m_propertiesMode = ObjectPropertiesTab_Object;
 
+    m_toolMode = ToolMode_Translate;
+
     m_editor = new Editor(this);
 }
 Workspace::~Workspace()
@@ -383,6 +385,17 @@ bool Workspace::ObjectHeirachyGUI(Object* a_object, bool* a_blockMenu)
             }
         }
 
+        if (ImGui::MenuItem("New Cube(Curve)"))
+            {
+                Action* action = new CreateObjectAction(this, a_object, CreateObjectType_CubeCurve);
+                if (!PushAction(action))
+                {
+                    printf("Error Creating Object \n");
+
+                    delete action;
+                }
+            }
+
         ImGui::Separator();
 
         if (ImGui::MenuItem("Delete Object"))
@@ -429,6 +442,28 @@ bool Workspace::ObjectHeirachyGUI(Object* a_object, bool* a_blockMenu)
 void Workspace::Resize(int a_width, int a_height)
 {
     m_reset = true;
+}
+
+void Workspace::ToolbarButton(const char* a_text, e_ToolMode a_toolMode)
+{
+    // Ghetto but it gives me toggle buttons
+    if (m_toolMode == a_toolMode)
+    {
+        ImGui::GetStyle().Colors[ImGuiCol_Button] = ImVec4(0.61f, 0.35f, 0.00f, 1.00f);
+    }
+    else
+    {
+        ImGui::GetStyle().Colors[ImGuiCol_Button] = ImVec4(0.93f, 0.53f, 0.00f, 1.00f);
+    }
+
+    if (ImGui::Button(a_text, { 32, 32 }))
+    {
+        m_toolMode = a_toolMode;
+    }
+
+    ImGui::NextColumn();
+
+    ImGui::GetStyle().Colors[ImGuiCol_Button] = ImVec4(0.93f, 0.53f, 0.00f, 1.00f);
 }
 
 void Workspace::Update(double a_delta)
@@ -589,6 +624,7 @@ void Workspace::Update(double a_delta)
             ImGui::EndCombo();
         }
 
+        ImGui::BeginGroup();
         if (ImGui::Button("Front Faces"))
         {
             m_editor->SetEditorFaceCullingMode(EditorFaceCullingMode_Back);
@@ -608,25 +644,28 @@ void Workspace::Update(double a_delta)
         {
             m_editor->SetEditorFaceCullingMode(EditorFaceCullingMode_All);
         }
+        ImGui::EndGroup();
     }
     ImGui::End();
 
     if (ImGui::Begin("Toolbar"))
     {
+        const ImVec2 vMin = ImGui::GetWindowContentRegionMin();
+		const ImVec2 vMax = ImGui::GetWindowContentRegionMax();
+        const glm::vec2 size = { vMax.x - vMin.x, vMax.y - vMin.y };
+
+        const int collumns = glm::max(1, (int)glm::floor(size.x / 36.0f));
+
         ImGui::BeginGroup();
-        if (ImGui::Button("Move"))
-        {
 
-        }
-        ImGui::SameLine();
-        if (ImGui::Button("Rotate"))
-        {
+        ImGui::Columns(collumns, nullptr, false);
+        
+        ToolbarButton("Translate", ToolMode_Translate);
+        ToolbarButton("Rotate", ToolMode_Rotate);
+        ToolbarButton("Scale", ToolMode_Scale);
 
-        }
-        if (ImGui::Button("Scale"))
-        {
-
-        }
+        ImGui::Columns();
+        
         ImGui::EndGroup();
     }
     ImGui::End();
@@ -675,6 +714,7 @@ void Workspace::Update(double a_delta)
                     delete action;
                 }
             }
+
             if (ImGui::MenuItem("New Cube(Curve)"))
             {
                 Action* action = new CreateObjectAction(this, nullptr, CreateObjectType_CubeCurve);
@@ -697,34 +737,44 @@ void Workspace::Update(double a_delta)
 
         if (size > 0)
         {
-            if (m_selectedObjects.size() == 1)
+            Object* obj = *m_selectedObjects.begin();
+            Transform* transform = obj->GetTransform();
+
+            ImGui::BeginGroup();
+
+            if (ImGui::Button("Object"))
             {
-                Object* obj = *m_selectedObjects.begin();
-                Transform* transform = obj->GetTransform();
+                m_propertiesMode = ObjectPropertiesTab_Object;
+            }
 
-                ImGui::BeginGroup();
+            if (ImGui::Button("Curve"))
+            {
+                m_propertiesMode = ObjectPropertiesTab_Curve;
+            }
 
-                if (ImGui::Button("Object"))
-                {
-                    m_propertiesMode = ObjectPropertiesTab_Object;
-                }
-                if (ImGui::Button("Curve"))
-                {
-                    m_propertiesMode = ObjectPropertiesTab_Curve;
-                }
+            ImGui::EndGroup();
 
-                ImGui::EndGroup();
+            ImGui::SameLine();
 
-                ImGui::SameLine();
+            ImGui::BeginGroup();
 
-                ImGui::BeginGroup();
+            const unsigned int objectCount = m_selectedObjects.size();
 
-                switch (m_propertiesMode)
-                {
-                case ObjectPropertiesTab_Object:
+            Object** objs = new Object*[objectCount];
+
+            unsigned int index = 0;
+            for (auto iter = m_selectedObjects.begin(); iter != m_selectedObjects.end(); ++iter)
+            {
+                objs[index++] = *iter;
+            }
+
+            switch (m_propertiesMode)
+            {
+            case ObjectPropertiesTab_Object:
+            {
+                if (m_selectedObjects.size() == 1)
                 {
                     char* buff = new char[1024];
-
                     const char* name = obj->GetName();
 
                     if (name == nullptr)
@@ -739,7 +789,7 @@ void Workspace::Update(double a_delta)
                         buff[i] = name[i];
                     }
 
-                    if (ImGui::InputText("Name", buff, 1000))
+                        if (ImGui::InputText("Name", buff, 1000))
                     {
                         if (m_curAction != nullptr && m_curAction->GetActionType() == ActionType_RenameObject)
                         {
@@ -751,6 +801,7 @@ void Workspace::Update(double a_delta)
                         else
                         {
                             Action* action = new RenameObjectAction(name, buff, obj);
+
                             if (!PushAction(action))
                             {
                                 printf("Error Renaming Object \n");
@@ -763,183 +814,88 @@ void Workspace::Update(double a_delta)
                             }
                         }
                     }
-
-                    glm::vec3 pos = transform->Translation();
-                    if (ImGui::DragFloat3("Position", (float*)&pos, 0.1f))
-                    {
-                        if (m_curAction != nullptr && m_curAction->GetActionType() == ActionType_TranslateObject)
-                        {
-                            TranslateObjectAction* action = (TranslateObjectAction*)m_curAction;
-
-                            action->SetTranslation(pos);
-                            action->Execute();
-                        }
-                        else
-                        {
-                            Action* action = new TranslateObjectAction(pos, obj);
-                            if (!PushAction(action))
-                            {
-                                printf("Error Renaming Object \n");
-
-                                delete action;
-                            }  
-                            else
-                            {
-                                m_curAction = action;
-                            }
-                        }
-                    }
-
-                    glm::vec3 scale = transform->Scale();
-                    if (ImGui::DragFloat3("Scale", (float*)&scale, 0.1f))
-                    {
-                        if (m_curAction != nullptr && m_curAction->GetActionType() == ActionType_ScaleObject)
-                        {
-                            ScaleObjectAction* action = (ScaleObjectAction*)m_curAction;
-
-                            action->SetScale(scale);
-                            action->Execute();
-                        }
-                        else
-                        {
-                            Action* action = new ScaleObjectAction(scale, obj);
-                            if (!PushAction(action))
-                            {
-                                printf("Error Renaming Object \n");
-
-                                delete action;
-                            }  
-                            else
-                            {
-                                m_curAction = action;
-                            }
-                        }
-                    }
-
-                    break;
                 }
-                case ObjectPropertiesTab_Curve:
+                
+
+                glm::vec3 pos = transform->Translation();
+                if (ImGui::DragFloat3("Position", (float*)&pos, 0.1f))
                 {
-                    CurveModel* model = obj->GetCurveModel();
-                    if (model != nullptr)
+                    if (m_curAction != nullptr && m_curAction->GetActionType() == ActionType_TranslateObject)
                     {
-                        int triSteps = model->GetSteps();
-                        if (ImGui::InputInt("Curve Resolution", &triSteps))
-                        {
-                            model->SetSteps(glm::max(triSteps, 1));
-                            model->Triangulate();
-                        }
+                        TranslateObjectAction* action = (TranslateObjectAction*)m_curAction;
 
-                        bool stepAdjust = model->IsStepAdjusted();
-                        if (ImGui::Checkbox("Smart Step", &stepAdjust))
+                        action->SetTranslation(pos);
+                        action->Execute();
+                    }
+                    else
+                    {
+                        Action* action = new TranslateObjectAction(pos, objs, objectCount);
+                        if (!PushAction(action))
                         {
-                            model->SetStepAdjust(stepAdjust);
-                            model->Triangulate();
+                            printf("Error Renaming Object \n");
+
+                            delete action;
+                        }  
+                        else
+                        {
+                            m_curAction = action;
                         }
                     }
-
-                    break;
-                }
                 }
 
-                ImGui::EndGroup();
+                glm::vec3 scale = transform->Scale();
+                if (ImGui::DragFloat3("Scale", (float*)&scale, 0.1f))
+                {
+                    if (m_curAction != nullptr && m_curAction->GetActionType() == ActionType_ScaleObject)
+                    {
+                        ScaleObjectAction* action = (ScaleObjectAction*)m_curAction;
+
+                        action->SetScale(scale);
+                        action->Execute();
+                    }
+                    else
+                    {
+                        Action* action = new ScaleObjectAction(scale, objs, objectCount);
+                        if (!PushAction(action))
+                        {
+                            printf("Error Renaming Object \n");
+
+                            delete action;
+                        }  
+                        else
+                        {
+                            m_curAction = action;
+                        }
+                    }
+                }
+
+                break;
             }
-            else
+            case ObjectPropertiesTab_Curve:
             {
-                ImGui::BeginGroup();
-
-                if (ImGui::Button("Object"))
+                CurveModel* model = obj->GetCurveModel();
+                if (model != nullptr)
                 {
-                    m_propertiesMode = ObjectPropertiesTab_Object;
-                }
-                if (ImGui::Button("Curve"))
-                {
-                    m_propertiesMode = ObjectPropertiesTab_Curve;
-                }
-
-                ImGui::EndGroup();
-
-                ImGui::SameLine();
-
-                ImGui::BeginGroup();
-
-                switch (m_propertiesMode)
-                {
-                case ObjectPropertiesTab_Object:
-                {
-                    Object* fObj = *m_selectedObjects.begin();
-                    Transform* transform = fObj->GetTransform();
-
-                    const unsigned int objectCount = m_selectedObjects.size();
-
-                    Object** objs = new Object*[objectCount];
-
-                    unsigned int index = 0;
-                    for (auto iter = m_selectedObjects.begin(); iter != m_selectedObjects.end(); ++iter)
+                    int triSteps = model->GetSteps();
+                    if (ImGui::InputInt("Curve Resolution", &triSteps))
                     {
-                        objs[index++] = *iter;
+                        model->SetSteps(glm::max(triSteps, 1));
+                        model->Triangulate();
                     }
 
-                    glm::vec3 pos = transform->Translation();
-                    if (ImGui::DragFloat3("Position", (float*)&pos, 0.1f))
+                    bool stepAdjust = model->IsStepAdjusted();
+                    if (ImGui::Checkbox("Smart Step", &stepAdjust))
                     {
-                        if (m_curAction != nullptr && m_curAction->GetActionType() == ActionType_TranslateObject)
-                        {
-                            TranslateObjectAction* action = (TranslateObjectAction*)m_curAction;
-
-                            action->SetTranslation(pos);
-                            action->Execute();
-                        }
-                        else
-                        {
-                            Action* action = new TranslateObjectAction(pos, objs, objectCount);
-                            if (!PushAction(action))
-                            {
-                                printf("Error Renaming Object \n");
-
-                                delete action;
-                            }  
-                            else
-                            {
-                                m_curAction = action;
-                            }
-                        }
+                        model->SetStepAdjust(stepAdjust);
+                        model->Triangulate();
                     }
-
-                    glm::vec3 scale = transform->Scale();
-                    if (ImGui::DragFloat3("Scale", (float*)&scale, 0.1f))
-                    {
-                        if (m_curAction != nullptr && m_curAction->GetActionType() == ActionType_ScaleObject)
-                        {
-                            ScaleObjectAction* action = (ScaleObjectAction*)m_curAction;
-
-                            action->SetScale(scale);
-                            action->Execute();
-                        }
-                        else
-                        {
-                            Action* action = new ScaleObjectAction(scale, objs, objectCount);
-                            if (!PushAction(action))
-                            {
-                                printf("Error Renaming Object \n");
-
-                                delete action;
-                            }  
-                            else
-                            {
-                                m_curAction = action;
-                            }
-                        }
-                    }
-
-                    delete[] objs;
-
-                    break;
-                }
                 }
 
-                ImGui::EndGroup();
+                break;
             }
+            }
+
+            ImGui::EndGroup();
         }
     }
     ImGui::End();

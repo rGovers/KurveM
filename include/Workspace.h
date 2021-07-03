@@ -8,6 +8,14 @@ class Action;
 class Editor;
 class Object;
 
+enum e_ToolMode
+{
+    ToolMode_Translate,
+    ToolMode_Rotate,
+    ToolMode_Scale,
+    ToolMode_End
+};
+
 enum e_ObjectPropertiesTab
 {
     ObjectPropertiesTab_Object,
@@ -31,6 +39,8 @@ private:
 
     e_ObjectPropertiesTab        m_propertiesMode;
 
+    e_ToolMode                   m_toolMode;
+
     std::list<Action*>           m_actionStack;
     std::list<Action*>::iterator m_actionStackIndex;
     std::list<Object*>           m_objectList;
@@ -50,6 +60,7 @@ private:
 
     void ClearBuffers();
 
+    void ToolbarButton(const char* a_text, e_ToolMode a_toolMode);
     bool ObjectHeirachyGUI(Object* a_object, bool* a_blockMenu);
 
 protected:

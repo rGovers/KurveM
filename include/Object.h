@@ -72,5 +72,7 @@ public:
         m_curveModel = a_curveModel;
     }
 
+    glm::mat4 GetGlobalMatrix() const;
+
     void Draw(Camera* a_camera, const glm::vec2& a_winSize);
 };
