@@ -3,6 +3,7 @@
 #include <vector>
 
 #include "CurveModel.h"
+#include "LongTasks/TriangulateCurveLongTask.h"
 #include "Object.h"
 #include "PrimitiveGenerator.h"
 #include "Workspace.h"
@@ -75,7 +76,8 @@ bool CreateObjectAction::Execute()
         CurveModel* model = new CurveModel();
 
         model->SetModelData(nodePtr, nodeCount, facePtr, faceCount);
-        model->Triangulate();
+
+        m_workspace->PushLongTask(new TriangulateCurveLongTask(model));
 
         m_object->SetCurveModel(model);
     }

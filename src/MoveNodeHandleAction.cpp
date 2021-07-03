@@ -3,9 +3,13 @@
 #include <vector>
 
 #include "CurveModel.h"
+#include "LongTasks/TriangulateCurveLongTask.h"
+#include "Workspace.h"
 
-MoveNodeHandleAction::MoveNodeHandleAction(unsigned int a_nodeIndex, unsigned int a_clusterIndex, CurveModel* a_curveModel, const glm::vec2& a_startCursorPos, const glm::vec3& a_xAxis, const glm::vec3& a_yAxis)
+MoveNodeHandleAction::MoveNodeHandleAction(Workspace* a_workspace, unsigned int a_nodeIndex, unsigned int a_clusterIndex, CurveModel* a_curveModel, const glm::vec2& a_startCursorPos, const glm::vec3& a_xAxis, const glm::vec3& a_yAxis)
 {
+    m_workspace = a_workspace;
+
     m_nodeIndex = a_nodeIndex;
     m_clusterIndex = a_clusterIndex;
 
@@ -41,7 +45,7 @@ bool MoveNodeHandleAction::Execute()
 
     nodes[m_clusterIndex].Nodes[m_nodeIndex].SetHandlePosition(m_startPos + (m_yAxis * diff.y) + (m_xAxis * diff.x));
 
-    m_curveModel->Triangulate();
+    m_workspace->PushLongTask(new TriangulateCurveLongTask(m_curveModel));
 
     return true;
 }
@@ -51,7 +55,7 @@ bool MoveNodeHandleAction::Revert()
 
     nodes[m_clusterIndex].Nodes[m_nodeIndex].SetHandlePosition(m_startPos);
 
-    m_curveModel->Triangulate();
+    m_workspace->PushLongTask(new TriangulateCurveLongTask(m_curveModel));
     
     return true;
 }

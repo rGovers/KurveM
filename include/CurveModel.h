@@ -4,6 +4,8 @@
 
 #include <vector>
 
+struct Vertex;
+
 class Model;
 
 enum e_FaceMode
@@ -118,4 +120,7 @@ public:
 
     void SetModelData(Node3Cluster* a_nodes, unsigned int a_nodeCount, CurveFace* a_faces, unsigned int a_faceCount);
     void Triangulate();
+
+    void PreTriangulate(unsigned int** a_indices, unsigned int* a_indexCount, Vertex** a_vertices, unsigned int* a_vertexCount) const;
+    void PostTriangulate(unsigned int* a_indices, unsigned int a_indexCount, Vertex* a_vertices, unsigned int a_vertexCount);
 };

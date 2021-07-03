@@ -3,9 +3,13 @@
 #include <vector>
 
 #include "CurveModel.h"
+#include "LongTasks/TriangulateCurveLongTask.h"
+#include "Workspace.h"
 
-MoveNodeAction::MoveNodeAction(unsigned int* a_nodeIndices, unsigned int a_nodeCount, CurveModel* a_curveModel, const glm::vec2& a_startCursorPos, const glm::vec3& a_xAxis, const glm::vec3& a_yAxis)
+MoveNodeAction::MoveNodeAction(Workspace* a_workspace,unsigned int* a_nodeIndices, unsigned int a_nodeCount, CurveModel* a_curveModel, const glm::vec2& a_startCursorPos, const glm::vec3& a_xAxis, const glm::vec3& a_yAxis)
 {
+    m_workspace = a_workspace;
+
     m_nodeCount = a_nodeCount;
 
     m_nodeIndices = new unsigned int[m_nodeCount];
@@ -53,8 +57,7 @@ bool MoveNodeAction::Execute()
         }
     }
     
-
-    m_curveModel->Triangulate();
+    m_workspace->PushLongTask(new TriangulateCurveLongTask(m_curveModel));
 
     return true;
 }
@@ -70,7 +73,7 @@ bool MoveNodeAction::Revert()
         }
     }
 
-    m_curveModel->Triangulate();
+    m_workspace->PushLongTask(new TriangulateCurveLongTask(m_curveModel));
     
     return true;
 }

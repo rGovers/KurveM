@@ -87,7 +87,7 @@ bool Editor::IsMovingCurveNode(const glm::vec3& a_pos, const glm::vec3& a_axis, 
             indices[index++] = *iter;
         }
 
-        m_curAction = new MoveNodeAction(indices, nodeCount, a_model, a_cursorPos, a_axis, a_axis);
+        m_curAction = new MoveNodeAction(m_workspace, indices, nodeCount, a_model, a_cursorPos, a_axis, a_axis);
         if (!m_workspace->PushAction(m_curAction))
         {
             printf("Error moving node");
@@ -109,7 +109,7 @@ bool Editor::IsMovingCurveNodeHandle(const Node3Cluster& a_node, unsigned int a_
     {
         if (SelectionControl::NodeHandleInPoint(a_viewProj, a_cursorPos, 0.05f, a_transform, *nodeIter))
         {
-            m_curAction = new MoveNodeHandleAction(nodeIter - a_node.Nodes.begin(), a_nodeIndex, a_model, a_cursorPos, a_right, a_up);
+            m_curAction = new MoveNodeHandleAction(m_workspace, nodeIter - a_node.Nodes.begin(), a_nodeIndex, a_model, a_cursorPos, a_right, a_up);
             if (!m_workspace->PushAction(m_curAction))
             {
                 printf("Error moving node handle");

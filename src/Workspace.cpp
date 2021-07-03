@@ -16,12 +16,79 @@
 #include "Editor.h"
 #include "Gizmos.h"
 #include "imgui_internal.h"
+#include "LongTasks/LongTask.h"
+#include "LongTasks/TriangulateCurveLongTask.h"
 #include "Object.h"
 #include "RenderTexture.h"
 #include "Texture.h"
 #include "Transform.h"
 
 const char* EditorMode_String[] = { "Object Mode", "Edit Mode" };
+
+// https://github.com/ocornut/imgui/issues/1901
+bool Spinner(const char* label, float radius, int thickness, const ImU32& color) {
+        ImGuiWindow* window = ImGui::GetCurrentWindow();
+        if (window->SkipItems)
+            return false;
+        
+        ImGuiContext& g = *GImGui;
+        const ImGuiStyle& style = g.Style;
+        const ImGuiID id = window->GetID(label);
+        
+        ImVec2 pos = window->DC.CursorPos;
+        ImVec2 size((radius )*2, (radius + style.FramePadding.y)*2);
+        
+        const ImRect bb(pos, ImVec2(pos.x + size.x, pos.y + size.y));
+        ImGui::ItemSize(bb, style.FramePadding.y);
+        if (!ImGui::ItemAdd(bb, id))
+            return false;
+        
+        // Render
+        window->DrawList->PathClear();
+        
+        int num_segments = 30;
+        int start = abs(ImSin(g.Time*1.8f)*(num_segments-5));
+        
+        const float a_min = IM_PI*2.0f * ((float)start) / (float)num_segments;
+        const float a_max = IM_PI*2.0f * ((float)num_segments-3) / (float)num_segments;
+
+        const ImVec2 centre = ImVec2(pos.x+radius, pos.y+radius+style.FramePadding.y);
+        
+        for (int i = 0; i < num_segments; i++) {
+            const float a = a_min + ((float)i / (float)num_segments) * (a_max - a_min);
+            window->DrawList->PathLineTo(ImVec2(centre.x + ImCos(a+g.Time*8) * radius,
+                                                centre.y + ImSin(a+g.Time*8) * radius));
+        }
+
+        window->DrawList->PathStroke(color, false, thickness);
+    }
+
+void RunTasks(Workspace* a_workspace)
+{
+    while (!a_workspace->IsShutingDown())
+    {
+        LongTask* curTask = a_workspace->GetCurrentTask();
+
+        if (curTask != nullptr && a_workspace->GetPostTask() == nullptr)
+        {
+            curTask->Execute();
+
+            a_workspace->PushCurrentTask();
+        }
+    }
+
+    a_workspace->PushJoinState();
+}
+
+void Workspace::PushJoinState()
+{
+    m_join = true;
+}
+void Workspace::PushCurrentTask()
+{
+    m_postTask = m_currentTask;
+    m_currentTask = nullptr;
+}
 
 Workspace::Workspace()
 {   
@@ -38,10 +105,37 @@ Workspace::Workspace()
 
     m_toolMode = ToolMode_Translate;
 
+    m_join = false;
+    m_shutdown = false;
+
+    m_currentTask = nullptr;
+    m_postTask = nullptr;
+    
+    m_taskThread = std::thread(RunTasks, this);
+
     m_editor = new Editor(this);
 }
 Workspace::~Workspace()
 {
+    m_shutdown = true;
+
+    while (!m_join)
+    {
+        std::this_thread::yield();   
+    }
+    
+    m_taskThread.join();
+
+    if (m_postTask != nullptr)
+    {
+        delete m_postTask;
+    }
+
+    for (auto iter = m_taskQueue.begin(); iter != m_taskQueue.end(); ++iter)
+    {
+        delete *iter;
+    }
+
     Gizmos::Destroy();
     Datastore::Destroy();
 
@@ -192,6 +286,14 @@ bool Workspace::PushAction(Action* a_action)
     }
 
     return true;
+}
+
+void Workspace::PushLongTask(LongTask* a_longTask)
+{
+    if (a_longTask->PushAction(this))
+    {
+        m_taskQueue.emplace_back(a_longTask);
+    }
 }
 
 void Workspace::AddObject(Object* a_object)
@@ -470,6 +572,26 @@ void Workspace::Update(double a_delta)
 {
     Application* app = Application::GetInstance();
 
+    if (m_currentTask == nullptr)
+    {
+        if (m_postTask != nullptr)
+        {
+            m_postTask->PostExecute();
+            m_postTask = nullptr;
+
+            delete m_postTask;
+        }
+
+        if (m_taskQueue.size() > 0)
+        {
+            LongTask* task = *m_taskQueue.begin();
+            m_taskQueue.pop_front();
+            
+            m_currentTaskName = task->GetDisplayName();
+            m_currentTask = task;
+        }
+    }
+
     const int windowXPos = app->GetXPos();
     const int windowYPos = app->GetYPos();
 
@@ -550,6 +672,13 @@ void Workspace::Update(double a_delta)
             }
 
             ImGui::EndMenu();
+        }
+
+        if (m_currentTask != nullptr)
+        {
+            Spinner("##spinner", 4, 1, ImGui::GetColorU32(ImGuiCol_Button));
+            ImGui::SameLine();
+            ImGui::Text(m_currentTaskName);
         }
 
         ImGui::EndMainMenuBar();
@@ -654,18 +783,26 @@ void Workspace::Update(double a_delta)
 		const ImVec2 vMax = ImGui::GetWindowContentRegionMax();
         const glm::vec2 size = { vMax.x - vMin.x, vMax.y - vMin.y };
 
-        const int collumns = glm::max(1, (int)glm::floor(size.x / 36.0f));
+        const int columns = glm::max(1, (int)glm::floor(size.x / 36.0f));
 
         ImGui::BeginGroup();
-
-        ImGui::Columns(collumns, nullptr, false);
+        ImGui::Columns(columns, nullptr, false);
         
         ToolbarButton("Translate", ToolMode_Translate);
         ToolbarButton("Rotate", ToolMode_Rotate);
         ToolbarButton("Scale", ToolMode_Scale);
 
         ImGui::Columns();
-        
+        ImGui::EndGroup();
+
+        ImGui::Separator();
+
+        ImGui::BeginGroup();
+        ImGui::Columns(columns, nullptr, false);
+
+        ToolbarButton("Extrude", ToolMode_Extrude);
+
+        ImGui::Columns();
         ImGui::EndGroup();
     }
     ImGui::End();
@@ -880,14 +1017,14 @@ void Workspace::Update(double a_delta)
                     if (ImGui::InputInt("Curve Resolution", &triSteps))
                     {
                         model->SetSteps(glm::max(triSteps, 1));
-                        model->Triangulate();
+                        PushLongTask(new TriangulateCurveLongTask(model));
                     }
 
                     bool stepAdjust = model->IsStepAdjusted();
                     if (ImGui::Checkbox("Smart Step", &stepAdjust))
                     {
                         model->SetStepAdjust(stepAdjust);
-                        model->Triangulate();
+                        PushLongTask(new TriangulateCurveLongTask(model));
                     }
                 }
 

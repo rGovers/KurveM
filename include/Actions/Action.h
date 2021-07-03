@@ -5,6 +5,7 @@ enum e_ActionType
     ActionType_Null = -1,
     ActionType_CreateObject,
     ActionType_DeleteObject,
+    ActionType_ExtrudeNode,
     ActionType_MoveNode,
     ActionType_MoveNodeHandle,
     ActionType_RenameObject,

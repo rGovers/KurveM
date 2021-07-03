@@ -6,10 +6,13 @@
 #include "Actions/Action.h"
 
 class CurveModel;
+class Workspace;
 
 class MoveNodeAction : public Action
 {
 private:
+    Workspace*    m_workspace;
+
     CurveModel*   m_curveModel;
 
     unsigned int  m_nodeCount;
@@ -25,7 +28,7 @@ private:
 protected:
 
 public:
-    MoveNodeAction(unsigned int* a_nodeIndices, unsigned int a_nodeCount, CurveModel* a_curveModel, const glm::vec2& a_startCursorPos, const glm::vec3& a_xAxis, const glm::vec3& a_yAxis);
+    MoveNodeAction(Workspace* a_workspace, unsigned int* a_nodeIndices, unsigned int a_nodeCount, CurveModel* a_curveModel, const glm::vec2& a_startCursorPos, const glm::vec3& a_xAxis, const glm::vec3& a_yAxis);
     ~MoveNodeAction();
 
     void SetCursorPos(const glm::vec2& a_cursorPos)

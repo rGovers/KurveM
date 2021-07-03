@@ -72,11 +72,21 @@ void CurveModel::SetModelData(Node3Cluster* a_nodes, unsigned int a_nodeCount, C
 }
 void CurveModel::Triangulate()
 {
-    if (m_displayModel != nullptr)
-    {
-        delete m_displayModel;
-        m_displayModel = nullptr;
-    }
+    unsigned int vertexCount;
+    unsigned int indexCount;
+    Vertex* vertices;
+    unsigned int* indices;
+
+    PreTriangulate(&indices, &indexCount, &vertices, &vertexCount);
+    PostTriangulate(indices, indexCount, vertices, vertexCount);
+}
+
+void CurveModel::PreTriangulate(unsigned int** a_indices, unsigned int* a_indexCount, Vertex** a_vertices, unsigned int* a_vertexCount) const
+{
+    *a_vertices = nullptr;
+    *a_indices = nullptr;
+    *a_indexCount = 0;
+    *a_vertexCount = 0;
 
     if (m_faceCount > 0)
     {
@@ -271,20 +281,20 @@ void CurveModel::Triangulate()
             }
         }
 
-        const unsigned int indexCount = dirtyVertices.size();
+        *a_indexCount = dirtyVertices.size();
 
         // Extremely unlikely that there is going to be that many vertices but means I do not have to allocate more if I make it that big
-        Vertex* vertices = new Vertex[indexCount];
-        unsigned int* indices = new unsigned int[indexCount];
+        *a_vertices = new Vertex[*a_indexCount];
+        *a_indices = new unsigned int[*a_indexCount];
 
         unsigned int vertexIndex = 0;
 
         if (m_stepAdjust)
         {
-            const double cDist = 1.0f / m_steps * 0.26f;
+            const double cDist = 1.0f / m_steps * 0.75f;
             const double cDSqr = cDist * cDist;
 
-            for (unsigned int i = 0; i < indexCount; ++i)
+            for (unsigned int i = 0; i < *a_indexCount; ++i)
             {
                 const Vertex vert = dirtyVertices[i];
     
@@ -292,16 +302,16 @@ void CurveModel::Triangulate()
     
                 for (unsigned int j = 0; j < vertexIndex; ++j)
                 {
-                    const Vertex cVert = vertices[j];
+                    const Vertex cVert = (*a_vertices)[j];
 
                     const glm::vec3 diff = vert.Position - cVert.Position;
 
                     if (glm::dot(diff, diff) < cDSqr)
                     {
                         found = true;
-    
-                        vertices[j].Normal += vert.Normal;
-                        indices[i] = j;
+                        
+                        (*a_vertices)[j].Normal += vert.Normal;
+                        (*a_indices)[i] = j;
     
                         break;
                     }
@@ -309,14 +319,14 @@ void CurveModel::Triangulate()
     
                 if (!found)
                 {
-                    vertices[vertexIndex] = vert;
-                    indices[i] = vertexIndex++;
+                    (*a_vertices)[vertexIndex] = vert;
+                    (*a_indices)[i] = vertexIndex++;
                 }
             }
         }
         else
         {
-            for (unsigned int i = 0; i < indexCount; ++i)
+            for (unsigned int i = 0; i < *a_indexCount; ++i)
             {
                 const Vertex vert = dirtyVertices[i];
 
@@ -324,12 +334,12 @@ void CurveModel::Triangulate()
 
                 for (unsigned int j = 0; j < vertexIndex; ++j)
                 {
-                    if (vertices[j].Position == vert.Position)
+                    if ((*a_vertices)[j].Position == vert.Position)
                     {
                         found = true;
 
-                        vertices[j].Normal += vert.Normal;
-                        indices[i] = j;
+                        (*a_vertices)[j].Normal += vert.Normal;
+                        (*a_indices)[i] = j;
 
                         break;
                     }
@@ -337,21 +347,34 @@ void CurveModel::Triangulate()
 
                 if (!found)
                 {
-                    vertices[vertexIndex] = vert;
-                    indices[i] = vertexIndex++;
+                    (*a_vertices)[vertexIndex] = vert;
+                    (*a_indices)[i] = vertexIndex++;
                 }
             }
         }
         
+        *a_vertexCount = vertexIndex;
 
-        for (unsigned int i = 0; i < vertexIndex; ++i)
+        for (unsigned int i = 0; i < *a_vertexCount; ++i)
         {
-            vertices[i].Normal = glm::normalize(vertices[i].Normal);
+            (*a_vertices)[i].Normal = glm::normalize((*a_vertices)[i].Normal);
         }
-
-        m_displayModel = new Model(vertices, indices, vertexIndex, indexCount);
-
-        delete[] vertices;
-        delete[] indices;
     }
+}
+
+void CurveModel::PostTriangulate(unsigned int* a_indices, unsigned int a_indexCount, Vertex* a_vertices, unsigned int a_vertexCount)
+{
+    if (m_displayModel != nullptr)
+    {
+        delete m_displayModel;
+        m_displayModel = nullptr;
+    }
+
+    if (a_vertexCount != 0 && a_indexCount != 0)
+    {
+        m_displayModel = new Model(a_vertices, a_indices, a_vertexCount, a_indexCount);
+    }
+
+    delete[] a_vertices;
+    delete[] a_indices;
 }

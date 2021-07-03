@@ -1,11 +1,13 @@
 #pragma once
 
 #include <list>
+#include <thread>
 
 #include "imgui.h"
 
 class Action;
 class Editor;
+class LongTask;
 class Object;
 
 enum e_ToolMode
@@ -13,6 +15,7 @@ enum e_ToolMode
     ToolMode_Translate,
     ToolMode_Rotate,
     ToolMode_Scale,
+    ToolMode_Extrude,
     ToolMode_End
 };
 
@@ -40,6 +43,18 @@ private:
     e_ObjectPropertiesTab        m_propertiesMode;
 
     e_ToolMode                   m_toolMode;
+
+    // I am aware the queue exists I just find it easier to treat a list as a queue
+    std::list<LongTask*>         m_taskQueue;
+    LongTask*                    m_postTask;
+    const char*                  m_currentTaskName;
+    LongTask*                    m_currentTask;
+
+    // This is not proper multithreading but serves the purpose of pushing tasks into the background 
+    // and keeping the main thread responsive
+    bool                         m_shutdown;
+    bool                         m_join;
+    std::thread                  m_taskThread;
 
     std::list<Action*>           m_actionStack;
     std::list<Action*>::iterator m_actionStackIndex;
@@ -77,6 +92,15 @@ public:
     bool Undo();
     bool Redo();
 
+    bool IsShutingDown() const
+    {
+        return m_shutdown;
+    }
+
+    inline Object* GetSelectedObject() const
+    {
+        return *m_selectedObjects.begin();
+    }
     inline std::list<Object*> GetSelectedObjects() const
     {
         return m_selectedObjects;
@@ -86,7 +110,31 @@ public:
         return m_objectList;
     }
 
+    inline e_ToolMode GetToolMode() const
+    {
+        return m_toolMode;
+    }
+
+    inline LongTask* GetCurrentTask() const
+    {
+        return m_currentTask;
+    }
+    inline LongTask* GetPostTask() const
+    {
+        return m_postTask;
+    }
+
+    void PushCurrentTask();
+    void PushJoinState();
+
+    inline std::list<LongTask*> GetTaskQueue()
+    {
+        return m_taskQueue;
+    }
+
     bool PushAction(Action* a_action);
+
+    void PushLongTask(LongTask* a_longTask);
 
     void AddObject(Object* a_object);
     void RemoveObject(Object* a_object);
@@ -100,5 +148,4 @@ public:
     void Resize(int a_width, int a_height);
 
     void Update(double a_delta);
-
 };
