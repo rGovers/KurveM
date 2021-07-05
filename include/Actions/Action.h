@@ -1,11 +1,12 @@
 #pragma once
 
-enum e_ActionType
+enum e_ActionType 
 {
     ActionType_Null = -1,
     ActionType_CreateObject,
     ActionType_DeleteObject,
     ActionType_ExtrudeNode,
+    ActionType_InsertFace,
     ActionType_MoveNode,
     ActionType_MoveNodeHandle,
     ActionType_RenameObject,

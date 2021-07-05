@@ -15,7 +15,11 @@ Application::Application(int a_width, int a_height, const char* a_title)
     m_width = a_width;
     m_height = a_height;
 
-    assert(glfwInit());
+    if (!glfwInit())
+    {
+        assert(0);
+    }
+
     glfwSetErrorCallback(ErrorCallback);
     
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
@@ -32,7 +36,10 @@ Application::Application(int a_width, int a_height, const char* a_title)
     glfwMakeContextCurrent(m_window);
     // glfwMaximizeWindow(m_window);
 
-    assert(gladLoadGLLoader((GLADloadproc)glfwGetProcAddress));
+    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+    {
+        assert(0);
+    }
 
     glfwSwapInterval(1);
 

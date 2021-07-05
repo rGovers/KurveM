@@ -95,6 +95,10 @@ public:
     {
         return m_faceCount;
     }
+    inline CurveFace GetFace(unsigned int a_index) const
+    {
+        return m_faces[a_index];
+    }
     inline CurveFace* GetFaces() const
     {
         return m_faces;
@@ -103,6 +107,10 @@ public:
     inline unsigned int GetNodeCount() const
     {
         return m_nodeCount;
+    }
+    inline Node3Cluster GetNode(unsigned int a_index) const
+    {
+        return m_nodes[a_index];
     }
     inline Node3Cluster* GetNodes() const
     {
@@ -117,6 +125,18 @@ public:
     {
         return m_stepAdjust;
     }
+
+    void EmplaceFace(const CurveFace& a_face);
+    void EmplaceFaces(const CurveFace* a_faces, unsigned int a_count);
+
+    void EmplaceNode(const Node3Cluster& a_node);
+    void EmplaceNodes(const Node3Cluster* a_nodes, unsigned int a_count);
+
+    void DestroyFace(unsigned int a_index);
+    void DestroyFaces(unsigned int a_start, unsigned int a_end);
+
+    void DestroyNode(unsigned int a_index);
+    void DestroyNodes(unsigned int a_start, unsigned int a_end);
 
     void SetModelData(Node3Cluster* a_nodes, unsigned int a_nodeCount, CurveFace* a_faces, unsigned int a_faceCount);
     void Triangulate();

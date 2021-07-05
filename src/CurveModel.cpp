@@ -51,6 +51,136 @@ float GetNodeDist(const BezierCurveNode3& a_nodeA, const BezierCurveNode3& a_nod
     return glm::length(aDiff) + glm::length(abDiff) + glm::length(bDiff);
 }
 
+void CurveModel::EmplaceFace(const CurveFace& a_face)
+{
+    EmplaceFaces(&a_face, 1);
+}
+void CurveModel::EmplaceFaces(const CurveFace* a_faces, unsigned int a_count)
+{
+    const unsigned int size = m_faceCount + a_count;
+
+    CurveFace* newFaces = new CurveFace[size];
+
+    if (m_faces != nullptr)
+    {
+        for (unsigned int i = 0; i < m_faceCount; ++i)
+        {
+            newFaces[i] = m_faces[i];
+        }
+    }
+
+    for (unsigned int i = 0; i < a_count; ++i)
+    {
+        newFaces[i + m_faceCount] = a_faces[i];
+    }
+
+    if (m_faces != nullptr)
+    {
+        delete[] m_faces;
+        m_faces = nullptr;
+    }
+
+    m_faces = newFaces;
+    m_faceCount = size;
+}
+
+void CurveModel::EmplaceNode(const Node3Cluster& a_node)
+{
+    EmplaceNodes(&a_node, 1);
+}
+void CurveModel::EmplaceNodes(const Node3Cluster* a_nodes, unsigned int a_count)
+{
+    const unsigned int size = m_nodeCount + a_count;
+
+    Node3Cluster* newNodes = new Node3Cluster[size];
+
+    if (m_nodes != nullptr)
+    {
+        for (unsigned int i = 0; i < m_nodeCount; ++i)
+        {
+            newNodes[i] = m_nodes[i];
+        }
+    }
+
+    for (unsigned int i = 0; i < a_count; ++i)
+    {
+        newNodes[i + m_nodeCount] = a_nodes[i];
+    }
+
+    if (m_nodes != nullptr)
+    {
+        delete[] m_nodes;
+        m_nodes = nullptr;
+    }
+
+    m_nodes = newNodes;
+    m_nodeCount = size;
+}
+
+void CurveModel::DestroyFace(unsigned int a_index)
+{
+    DestroyFaces(a_index, a_index + 1);
+}
+void CurveModel::DestroyFaces(unsigned int a_start, unsigned int a_end)
+{
+    const unsigned int count = a_end - a_start;
+    const unsigned int size = m_faceCount - count;
+    const unsigned int endCount = m_faceCount - a_end;
+
+    CurveFace* newFaces = new CurveFace[size];
+
+    if (m_faces != nullptr)
+    {
+        for (unsigned int i = 0; i < a_start; ++i)
+        {
+            newFaces[i] = m_faces[i];
+        }
+
+        for (unsigned int i = 0; i < endCount; ++i)
+        {
+            newFaces[i + a_start] = m_faces[i + a_end];
+        }
+
+        delete[] m_faces;
+        m_faces = nullptr;
+    }
+
+    m_faces = newFaces;
+    m_faceCount = size;
+}
+
+void CurveModel::DestroyNode(unsigned int a_index)
+{
+    DestroyNodes(a_index, a_index + 1);
+}
+void CurveModel::DestroyNodes(unsigned int a_start, unsigned int a_end)
+{
+    const unsigned int count = a_end - a_start;
+    const unsigned int size = m_nodeCount - count;
+    const unsigned int endCount = m_nodeCount - a_end;
+
+    Node3Cluster* newNodes = new Node3Cluster[size];
+
+    if (m_nodes != nullptr)
+    {
+        for (unsigned int i = 0; i < a_start; ++i)
+        {
+            newNodes[i] = m_nodes[i];
+        }
+
+        for (unsigned int i = 0; i < endCount; ++i)
+        {
+            newNodes[i + a_start] = m_nodes[i + a_end];
+        }
+
+        delete[] m_nodes;
+        m_nodes = nullptr;
+    }
+
+    m_nodes = newNodes;
+    m_nodeCount = size;
+}
+
 void CurveModel::SetModelData(Node3Cluster* a_nodes, unsigned int a_nodeCount, CurveFace* a_faces, unsigned int a_faceCount)
 {
     if (m_nodes != nullptr)

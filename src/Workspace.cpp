@@ -13,8 +13,8 @@
 #include "Application.h"
 #include "CurveModel.h"
 #include "Datastore.h"
-#include "Editor.h"
 #include "Gizmos.h"
+#include "ImGuiExt.h"
 #include "imgui_internal.h"
 #include "LongTasks/LongTask.h"
 #include "LongTasks/TriangulateCurveLongTask.h"
@@ -24,44 +24,6 @@
 #include "Transform.h"
 
 const char* EditorMode_String[] = { "Object Mode", "Edit Mode" };
-
-// https://github.com/ocornut/imgui/issues/1901
-bool Spinner(const char* label, float radius, int thickness, const ImU32& color) {
-        ImGuiWindow* window = ImGui::GetCurrentWindow();
-        if (window->SkipItems)
-            return false;
-        
-        ImGuiContext& g = *GImGui;
-        const ImGuiStyle& style = g.Style;
-        const ImGuiID id = window->GetID(label);
-        
-        ImVec2 pos = window->DC.CursorPos;
-        ImVec2 size((radius )*2, (radius + style.FramePadding.y)*2);
-        
-        const ImRect bb(pos, ImVec2(pos.x + size.x, pos.y + size.y));
-        ImGui::ItemSize(bb, style.FramePadding.y);
-        if (!ImGui::ItemAdd(bb, id))
-            return false;
-        
-        // Render
-        window->DrawList->PathClear();
-        
-        int num_segments = 30;
-        int start = abs(ImSin(g.Time*1.8f)*(num_segments-5));
-        
-        const float a_min = IM_PI*2.0f * ((float)start) / (float)num_segments;
-        const float a_max = IM_PI*2.0f * ((float)num_segments-3) / (float)num_segments;
-
-        const ImVec2 centre = ImVec2(pos.x+radius, pos.y+radius+style.FramePadding.y);
-        
-        for (int i = 0; i < num_segments; i++) {
-            const float a = a_min + ((float)i / (float)num_segments) * (a_max - a_min);
-            window->DrawList->PathLineTo(ImVec2(centre.x + ImCos(a+g.Time*8) * radius,
-                                                centre.y + ImSin(a+g.Time*8) * radius));
-        }
-
-        window->DrawList->PathStroke(color, false, thickness);
-    }
 
 void RunTasks(Workspace* a_workspace)
 {
@@ -324,6 +286,8 @@ void Workspace::RemoveObject(Object* a_object)
 void Workspace::ClearSelectedObjects()
 {
     m_selectedObjects.clear();
+
+    m_editor->ClearSelectedNodes();
 }
 void Workspace::AddSelectedObject(Object* a_object)
 {
@@ -336,6 +300,8 @@ void Workspace::AddSelectedObject(Object* a_object)
     }
 
     m_selectedObjects.emplace_back(a_object);
+
+    m_editor->ClearSelectedNodes();
 }
 void Workspace::RemoveSelectedObject(Object* a_object)
 {
@@ -348,6 +314,8 @@ void Workspace::RemoveSelectedObject(Object* a_object)
             return;
         }
     }
+
+    m_editor->ClearSelectedNodes();
 }
 
 void Workspace::DefaultWindowConfig()
@@ -365,8 +333,8 @@ void Workspace::DefaultWindowConfig()
     ImGui::DockBuilderRemoveNode(id);
     ImGui::DockBuilderAddNode(id, ImGuiDockNodeFlags_CentralNode);
 
-    ImGui::DockBuilderSetNodePos(id, { windowXPos, windowYPos + m_barSize });
-    ImGui::DockBuilderSetNodeSize(id, { windowWidth, windowHeight - m_barSize});
+    ImGui::DockBuilderSetNodePos(id, { (float)windowXPos, (float)windowYPos + m_barSize });
+    ImGui::DockBuilderSetNodeSize(id, { (float)windowWidth, (float)windowHeight - m_barSize});
 
     const float topSideScale = 0.125f;
     const float leftSideScale = 0.1f;
@@ -389,6 +357,24 @@ void Workspace::DefaultWindowConfig()
     ImGui::DockBuilderDockWindow("Toolbar", dockLeft);
 
     ImGui::DockBuilderFinish(id);
+}
+
+void Workspace::EditorFaceButton(const char* a_text, e_EditorFaceCullingMode a_face)
+{
+    if (ImGuiExt::ToggleButton(a_text, m_editor->GetEditorFaceCullingMode() == a_face, { 32, 32 }))
+    {
+        m_editor->SetEditorFaceCullingMode(a_face);
+    }
+}
+
+void Workspace::ToolbarButton(const char* a_text, e_ToolMode a_toolMode)
+{
+    if (ImGuiExt::ToggleButton(a_text, m_toolMode == a_toolMode, { 32, 32 }))
+    {
+        m_toolMode = a_toolMode;
+    }
+
+    ImGui::NextColumn();
 }
 
 bool Workspace::ObjectHeirachyGUI(Object* a_object, bool* a_blockMenu)
@@ -546,28 +532,6 @@ void Workspace::Resize(int a_width, int a_height)
     m_reset = true;
 }
 
-void Workspace::ToolbarButton(const char* a_text, e_ToolMode a_toolMode)
-{
-    // Ghetto but it gives me toggle buttons
-    if (m_toolMode == a_toolMode)
-    {
-        ImGui::GetStyle().Colors[ImGuiCol_Button] = ImVec4(0.61f, 0.35f, 0.00f, 1.00f);
-    }
-    else
-    {
-        ImGui::GetStyle().Colors[ImGuiCol_Button] = ImVec4(0.93f, 0.53f, 0.00f, 1.00f);
-    }
-
-    if (ImGui::Button(a_text, { 32, 32 }))
-    {
-        m_toolMode = a_toolMode;
-    }
-
-    ImGui::NextColumn();
-
-    ImGui::GetStyle().Colors[ImGuiCol_Button] = ImVec4(0.93f, 0.53f, 0.00f, 1.00f);
-}
-
 void Workspace::Update(double a_delta)
 {
     Application* app = Application::GetInstance();
@@ -676,61 +640,21 @@ void Workspace::Update(double a_delta)
 
         if (m_currentTask != nullptr)
         {
-            Spinner("##spinner", 4, 1, ImGui::GetColorU32(ImGuiCol_Button));
+            ImGuiExt::Spinner("##spinner", 4, 1, ImGui::GetColorU32(ImGuiCol_Button));
+
             ImGui::SameLine();
+            
             ImGui::Text(m_currentTaskName);
         }
 
         ImGui::EndMainMenuBar();
     }
 
-    if (ImGui::Begin("Editor"))
-    {
-        const ImVec2 pos = ImGui::GetWindowPos();
-        const ImVec2 vMin = ImGui::GetWindowContentRegionMin();
-		const ImVec2 vMax = ImGui::GetWindowContentRegionMax();
-        const ImVec2 size = { vMax.x - vMin.x, vMax.y - vMin.y };
-
-        m_editor->Update(a_delta, { pos.x + vMin.x, pos.y + vMin.y }, { size.x, size.y });
-
-        const RenderTexture* renderTexture = m_editor->GetRenderTexture();
-        const Texture* texture = renderTexture->GetTexture();
-
-        ImGui::Image((ImTextureID)texture->GetHandle(), size);
-
-        if (ImGui::BeginPopupContextWindow())
-        {
-            if (ImGui::MenuItem("New Sphere(Curve)"))
-            {
-                Action* action = new CreateObjectAction(this, nullptr, CreateObjectType_SphereCurve);
-                if (!PushAction(action))
-                {
-                    printf("Error Creating Object \n");
-    
-                    delete action;
-                }
-            }
-            if (ImGui::MenuItem("New Cube(Curve)"))
-            {
-                Action* action = new CreateObjectAction(this, nullptr, CreateObjectType_CubeCurve);
-                if (!PushAction(action))
-                {
-                    printf("Error Creating Object \n");
-
-                    delete action;
-                }
-            }
-
-            ImGui::EndPopup();
-        }
-    }
-    ImGui::End();
-
     if (ImGui::Begin("Options"))
     {
         const e_EditorMode currentIndex = m_editor->GetEditorMode();
 
-        ImGui::PushItemWidth(240);
+        ImGui::PushItemWidth(128);
         if (ImGui::BeginCombo("##combo", EditorMode_String[m_editor->GetEditorMode()]))
         {
             for (int i = 0; i < EditorMode_End; ++i)
@@ -754,25 +678,15 @@ void Workspace::Update(double a_delta)
         }
 
         ImGui::BeginGroup();
-        if (ImGui::Button("Front Faces"))
-        {
-            m_editor->SetEditorFaceCullingMode(EditorFaceCullingMode_Back);
-        }
+
+        EditorFaceButton("Front Faces", EditorFaceCullingMode_Back);
         ImGui::SameLine();
-        if (ImGui::Button("Back Faces"))
-        {
-            m_editor->SetEditorFaceCullingMode(EditorFaceCullingMode_Front);
-        }
+        EditorFaceButton("Back Faces", EditorFaceCullingMode_Front);
         ImGui::SameLine();
-        if (ImGui::Button("Both Faces"))
-        {
-            m_editor->SetEditorFaceCullingMode(EditorFaceCullingMode_None);
-        }
+        EditorFaceButton("Both Faces", EditorFaceCullingMode_None);
         ImGui::SameLine();
-        if (ImGui::Button("No Faces"))
-        {
-            m_editor->SetEditorFaceCullingMode(EditorFaceCullingMode_All);
-        }
+        EditorFaceButton("No Faces", EditorFaceCullingMode_All);
+
         ImGui::EndGroup();
     }
     ImGui::End();
@@ -1037,6 +951,48 @@ void Workspace::Update(double a_delta)
     }
     ImGui::End();
 
+    if (ImGui::Begin("Editor"))
+    {
+        const ImVec2 pos = ImGui::GetWindowPos();
+        const ImVec2 vMin = ImGui::GetWindowContentRegionMin();
+		const ImVec2 vMax = ImGui::GetWindowContentRegionMax();
+        const ImVec2 size = { vMax.x - vMin.x, vMax.y - vMin.y };
+
+        m_editor->Update(a_delta, { pos.x + vMin.x, pos.y + vMin.y }, { size.x, size.y });
+
+        const RenderTexture* renderTexture = m_editor->GetRenderTexture();
+        const Texture* texture = renderTexture->GetTexture();
+
+        ImGui::Image((ImTextureID)texture->GetHandle(), size);
+
+        if (ImGui::BeginPopupContextWindow())
+        {
+            if (ImGui::MenuItem("New Sphere(Curve)"))
+            {
+                Action* action = new CreateObjectAction(this, nullptr, CreateObjectType_SphereCurve);
+                if (!PushAction(action))
+                {
+                    printf("Error Creating Object \n");
+    
+                    delete action;
+                }
+            }
+            if (ImGui::MenuItem("New Cube(Curve)"))
+            {
+                Action* action = new CreateObjectAction(this, nullptr, CreateObjectType_CubeCurve);
+                if (!PushAction(action))
+                {
+                    printf("Error Creating Object \n");
+
+                    delete action;
+                }
+            }
+
+            ImGui::EndPopup();
+        }
+    }
+    ImGui::End();
+
     if (m_init)
     {
         m_init = false;
@@ -1049,7 +1005,7 @@ void Workspace::Update(double a_delta)
 
         const ImGuiID id = ImGui::GetID("Dock Main");
 
-        ImGui::DockBuilderSetNodePos(id, { windowXPos, windowYPos + m_barSize });
-        ImGui::DockBuilderSetNodeSize(id, { windowWidth, windowHeight - m_barSize});
+        ImGui::DockBuilderSetNodePos(id, { (float)windowXPos, (float)windowYPos + m_barSize });
+        ImGui::DockBuilderSetNodeSize(id, { (float)windowWidth, (float)windowHeight - m_barSize});
     }
 }

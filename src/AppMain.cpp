@@ -112,8 +112,11 @@ AppMain::AppMain() :
     io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
     io.ConfigWindowsMoveFromTitleBarOnly = true;
 
+    // Get errors on windows using OpenGL in release mode
+#if DEBUG
     glEnable(GL_DEBUG_OUTPUT);
     glDebugMessageCallback(MessageCallback, 0);
+#endif
 
     ImGui::StyleColorsDark();
     GUIStyle();

@@ -3,10 +3,10 @@
 #include <list>
 #include <thread>
 
+#include "Editor.h"
 #include "imgui.h"
 
 class Action;
-class Editor;
 class LongTask;
 class Object;
 
@@ -75,6 +75,7 @@ private:
 
     void ClearBuffers();
 
+    void EditorFaceButton(const char* a_text, e_EditorFaceCullingMode a_face);
     void ToolbarButton(const char* a_text, e_ToolMode a_toolMode);
     bool ObjectHeirachyGUI(Object* a_object, bool* a_blockMenu);
 
