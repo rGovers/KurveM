@@ -18,6 +18,7 @@
 #include "imgui_internal.h"
 #include "LongTasks/LongTask.h"
 #include "LongTasks/TriangulateCurveLongTask.h"
+#include "Modals/Modal.h"
 #include "Object.h"
 #include "RenderTexture.h"
 #include "Texture.h"
@@ -111,19 +112,25 @@ void Workspace::ClearBuffers()
     }
     m_objectList.clear();
 
-    for (auto iter = m_actionStack.begin(); iter != m_actionStack.end(); ++iter)
+    for (auto iter = m_actionQueue.begin(); iter != m_actionQueue.end(); ++iter)
     {
         delete *iter;
     }  
-    m_actionStack.clear();
+    m_actionQueue.clear();
 
-    m_actionStackIndex = m_actionStack.end();
+    m_actionQueueIndex = m_actionQueue.end();
 
     if (m_postTask != nullptr)
     {
         delete m_postTask;
         m_postTask = nullptr;
     }
+
+    for (auto iter = m_modalStack.begin(); iter != m_modalStack.end(); ++iter)
+    {
+        delete *iter;
+    }
+    m_modalStack.clear();
 
     for (auto iter = m_taskQueue.begin(); iter != m_taskQueue.end(); ++iter)
     {
@@ -191,15 +198,15 @@ void Workspace::SaveAs(const char* a_dir)
 
 bool Workspace::Undo()
 {
-    auto iter = m_actionStackIndex;
+    auto iter = m_actionQueueIndex;
 
-    if (iter != m_actionStack.begin())
+    if (iter != m_actionQueue.begin())
     {
         Action* action = *--iter;
 
         if (action->Revert())
         {
-            m_actionStackIndex = iter;
+            m_actionQueueIndex = iter;
 
             return true;
         }
@@ -209,21 +216,26 @@ bool Workspace::Undo()
 }
 bool Workspace::Redo()
 {
-    auto iter = m_actionStackIndex;
+    auto iter = m_actionQueueIndex;
 
-    if (++iter != m_actionStack.end())
+    if (++iter != m_actionQueue.end())
     {
         Action* action = *iter;
 
         if (action->Redo())
         {
-            m_actionStackIndex = iter;
+            m_actionQueueIndex = iter;
 
             return true;
         }
     }
 
     return false;
+}
+
+void Workspace::PushModal(Modal* a_modal)
+{
+    m_modalStack.emplace_back(a_modal);
 }
 
 bool Workspace::PushAction(Action* a_action)
@@ -233,40 +245,40 @@ bool Workspace::PushAction(Action* a_action)
         return false;
     }
 
-    if (m_actionStackIndex == m_actionStack.end())
+    if (m_actionQueueIndex == m_actionQueue.end())
     {
-        m_actionStack.emplace_back(a_action);
+        m_actionQueue.emplace_back(a_action);
 
-        m_actionStackIndex = m_actionStack.end();
+        m_actionQueueIndex = m_actionQueue.end();
 
         return true;
     }
 
     while (true)
     {
-        auto iter = m_actionStackIndex;
+        auto iter = m_actionQueueIndex;
 
-        if (++iter == m_actionStack.end())
+        if (++iter == m_actionQueue.end())
         {
             break;
         }
 
         delete *iter;
 
-        m_actionStack.erase(iter);
+        m_actionQueue.erase(iter);
     }
 
-    m_actionStack.emplace_back(a_action);
+    m_actionQueue.emplace_back(a_action);
 
-    m_actionStackIndex = m_actionStack.end();
+    m_actionQueueIndex = m_actionQueue.end();
 
-    while (m_actionStack.size() > 1000)
+    while (m_actionQueue.size() > 1000)
     {
-        auto iter = m_actionStack.begin();
+        auto iter = m_actionQueue.begin();
 
         delete *iter;
 
-        m_actionStack.erase(iter);
+        m_actionQueue.erase(iter);
     }
 
     return true;
@@ -1014,6 +1026,18 @@ void Workspace::Update(double a_delta)
         }
     }
     ImGui::End();
+
+    if (m_modalStack.size() > 0)
+    {
+        Modal* modal = *--m_modalStack.end();
+
+        if (!modal->Open())
+        {
+            delete modal;
+
+            m_modalStack.pop_back();
+        }
+    }
 
     if (m_init)
     {

@@ -293,7 +293,13 @@ void PrimitiveGenerator::CreateCurveSphere(Node3Cluster** a_nodePtr, unsigned in
 
     for (unsigned int i = 0; i < *a_faceCount; ++i)
     {
-        (*a_facePtr)[i] = faces[i];
+        const CurveFace face = faces[i];
+
+        (*a_facePtr)[i] = face;
+        for (int j = 0; j < 6; ++j)
+        {
+            ++(*a_nodePtr)[face.Index[j]].Nodes[face.ClusterIndex[j]].FaceCount;
+        }
     }
 }
 void PrimitiveGenerator::CreateCurveCube(Node3Cluster** a_nodePtr, unsigned int* a_nodeCount, CurveFace** a_facePtr, unsigned int* a_faceCount)
@@ -503,6 +509,12 @@ void PrimitiveGenerator::CreateCurveCube(Node3Cluster** a_nodePtr, unsigned int*
 
     for (unsigned int i = 0; i < *a_faceCount; ++i)
     {
-        (*a_facePtr)[i] = faces[i];
+        const CurveFace face = faces[i];
+
+        (*a_facePtr)[i] = face;
+        for (int j = 0; j < 8; ++j)
+        {
+            ++(*a_nodePtr)[face.Index[j]].Nodes[face.ClusterIndex[j]].FaceCount;
+        }
     }
 }

@@ -162,7 +162,30 @@ void CurveModel::EmplaceFaces(const CurveFace* a_faces, unsigned int a_count)
 
     for (unsigned int i = 0; i < a_count; ++i)
     {
+        const CurveFace face = a_faces[i];
+
         newFaces[i + m_faceCount] = a_faces[i];
+        switch (face.FaceMode)
+        {
+        case FaceMode_3Point:
+        {
+            for (unsigned int j = 0; j < 6; ++j)
+            {
+                ++m_nodes[face.Index[j]].Nodes[face.ClusterIndex[j]].FaceCount;
+            }
+
+            break;
+        }
+        case FaceMode_4Point:
+        {
+            for (unsigned int j = 0; j < 8; ++j)
+            {
+                ++m_nodes[face.Index[j]].Nodes[face.ClusterIndex[j]].FaceCount;
+            }
+
+            break;
+        }
+        }
     }
 
     if (m_faces != nullptr)
@@ -175,6 +198,37 @@ void CurveModel::EmplaceFaces(const CurveFace* a_faces, unsigned int a_count)
     m_faceCount = size;
 }
 
+void CurveModel::EmplaceNode(unsigned int a_index, const Node3Cluster& a_node)
+{
+    const unsigned int size = m_nodeCount + 1;
+
+    Node3Cluster* newNodes = new Node3Cluster[size];
+
+    if (m_nodes != nullptr)
+    {
+        for (unsigned int i = 0; i < a_index; ++i)
+        {
+            newNodes[i] = m_nodes[i];
+        }
+    }
+    
+    newNodes[a_index] = a_node;
+
+    if (m_nodes != nullptr)
+    {
+        const unsigned int nextIndex = a_index + 1;
+
+        for (unsigned int i = 0; i < size - nextIndex; ++i)
+        {
+            newNodes[nextIndex + i] = m_nodes[a_index + i];
+        }
+
+        delete[] m_nodes;
+    }
+
+    m_nodes = newNodes;
+    m_nodeCount = size;
+}
 void CurveModel::EmplaceNode(const Node3Cluster& a_node)
 {
     EmplaceNodes(&a_node, 1);
@@ -230,6 +284,35 @@ void CurveModel::DestroyFaces(unsigned int a_start, unsigned int a_end)
         for (unsigned int i = 0; i < endCount; ++i)
         {
             newFaces[i + a_start] = m_faces[i + a_end];
+        }
+
+        for (unsigned int i = a_start; i < a_end; ++i)
+        {
+            const CurveFace face = m_faces[i];
+
+            switch (face.FaceMode)
+            {
+            case FaceMode_3Point:
+            {
+                for (int j = 0; j < 6; ++j)
+                {
+                    --m_nodes[face.Index[j]].Nodes[face.Index[j]].FaceCount;
+                }
+
+                break;
+            }
+            case FaceMode_4Point:
+            {
+                for (int j = 0; j < 8; ++j)
+                {
+                    --m_nodes[face.Index[j]].Nodes[face.Index[j]].FaceCount;
+                }
+
+                break;
+            }
+            }
+
+            
         }
 
         delete[] m_faces;
@@ -291,6 +374,14 @@ void CurveModel::SetModelData(Node3Cluster* a_nodes, unsigned int a_nodeCount, C
     m_nodeCount = a_nodeCount;
     m_faceCount = a_faceCount;
 }
+void CurveModel::PassModelData(Node3Cluster* a_nodes, unsigned int a_nodeCount, CurveFace* a_faces, unsigned int a_faceCount)
+{
+    m_nodes = a_nodes;
+    m_faces = a_faces;
+
+    m_nodeCount = a_nodeCount;
+    m_faceCount = a_faceCount;
+}
 void CurveModel::Triangulate()
 {
     unsigned int vertexCount;
@@ -327,7 +418,7 @@ void CurveModel::PreTriangulate(unsigned int** a_indices, unsigned int* a_indexC
 
                     for (int i = 0; i < 6; ++i)
                     {
-                        nodes[i] = m_nodes[face.Index[i]].Nodes[face.ClusterIndex[i]];
+                        nodes[i] = m_nodes[face.Index[i]].Nodes[face.ClusterIndex[i]].Node;
                     } 
 
                     const glm::vec3 tpV = nodes[FaceIndex_3Point_AB].GetPosition();
@@ -428,7 +519,7 @@ void CurveModel::PreTriangulate(unsigned int** a_indices, unsigned int* a_indexC
 
                     for (int i = 0; i < 8; ++i)
                     {
-                        nodes[i] = m_nodes[face.Index[i]].Nodes[face.ClusterIndex[i]];
+                        nodes[i] = m_nodes[face.Index[i]].Nodes[face.ClusterIndex[i]].Node;
                     } 
 
                     int xStep = m_steps;

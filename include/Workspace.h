@@ -8,6 +8,7 @@
 
 class Action;
 class LongTask;
+class Modal;
 class Object;
 
 enum e_ToolMode
@@ -58,9 +59,12 @@ private:
     bool                         m_clear;
     std::thread                  m_taskThread;
 
-    std::list<Action*>           m_actionStack;
-    std::list<Action*>::iterator m_actionStackIndex;
+    std::list<Action*>           m_actionQueue;
+    std::list<Action*>::iterator m_actionQueueIndex;
+    
     std::list<Object*>           m_objectList;
+
+    std::list<Modal*>            m_modalStack;
 
     std::list<Object*>           m_selectedObjects;
 
@@ -68,11 +72,11 @@ private:
 
     inline bool UndoEnabled() const
     {
-        return m_actionStack.size() > 0 && m_actionStackIndex != m_actionStack.begin();
+        return m_actionQueue.size() > 0 && m_actionQueueIndex != m_actionQueue.begin();
     }
     inline bool RedoEnabled() const
     {
-        return m_actionStack.size() > 0 && m_actionStackIndex != m_actionStack.end();
+        return m_actionQueue.size() > 0 && m_actionQueueIndex != m_actionQueue.end();
     }
 
     void ClearBuffers();
@@ -145,6 +149,8 @@ public:
     {
         return m_taskQueue;
     }
+
+    void PushModal(Modal* a_modal);
 
     bool PushAction(Action* a_action);
 

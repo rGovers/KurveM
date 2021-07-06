@@ -4,6 +4,7 @@ enum e_ActionType
 {
     ActionType_Null = -1,
     ActionType_CreateObject,
+    ActionType_DeleteNode,
     ActionType_DeleteObject,
     ActionType_ExtrudeNode,
     ActionType_FlipFace,

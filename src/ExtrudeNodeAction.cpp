@@ -62,7 +62,7 @@ bool ExtrudeNodeAction::Execute()
 
         for (unsigned int i = 0; i < m_nodeCount; ++i)
         {
-            nodes[i] = Node3Cluster(m_curveModel->GetNode(m_nodeIndices[i]).Nodes[0]);
+            nodes[i] = Node3Cluster(m_curveModel->GetNode(m_nodeIndices[i]).Nodes[0].Node);
 
             m_editor->AddNodeToSelection(i + m_startNodeIndex);
         }
@@ -80,10 +80,10 @@ bool ExtrudeNodeAction::Execute()
 
         for (unsigned int j = 0; j < size; ++j)
         {
-            const glm::vec3 startPos = startNode.Nodes[0].GetPosition();
+            const glm::vec3 startPos = startNode.Nodes[0].Node.GetPosition();
 
-            nodes[i + m_startNodeIndex].Nodes[j].SetPosition(startPos + (m_yAxis * diff.y) + (m_xAxis * diff.x));
-            nodes[i + m_startNodeIndex].Nodes[j].SetHandlePosition(glm::vec3(std::numeric_limits<float>().infinity()));
+            nodes[i + m_startNodeIndex].Nodes[j].Node.SetPosition(startPos + (m_yAxis * diff.y) + (m_xAxis * diff.x));
+            nodes[i + m_startNodeIndex].Nodes[j].Node.SetHandlePosition(glm::vec3(std::numeric_limits<float>().infinity()));
         }
     }
 

@@ -21,7 +21,7 @@ MoveNodeHandleAction::MoveNodeHandleAction(Workspace* a_workspace, unsigned int 
     m_yAxis = a_yAxis;
 
     const Node3Cluster* nodes = m_curveModel->GetNodes();
-    m_startPos = nodes[m_clusterIndex].Nodes[m_nodeIndex].GetHandlePosition();
+    m_startPos = nodes[m_clusterIndex].Nodes[m_nodeIndex].Node.GetHandlePosition();
 }
 MoveNodeHandleAction::~MoveNodeHandleAction()
 {
@@ -43,7 +43,7 @@ bool MoveNodeHandleAction::Execute()
 
     Node3Cluster* nodes = m_curveModel->GetNodes();
 
-    nodes[m_clusterIndex].Nodes[m_nodeIndex].SetHandlePosition(m_startPos + (m_yAxis * diff.y) + (m_xAxis * diff.x));
+    nodes[m_clusterIndex].Nodes[m_nodeIndex].Node.SetHandlePosition(m_startPos + (m_yAxis * diff.y) + (m_xAxis * diff.x));
 
     m_workspace->PushLongTask(new TriangulateCurveLongTask(m_curveModel));
 
@@ -53,7 +53,7 @@ bool MoveNodeHandleAction::Revert()
 {
     Node3Cluster* nodes = m_curveModel->GetNodes();
 
-    nodes[m_clusterIndex].Nodes[m_nodeIndex].SetHandlePosition(m_startPos);
+    nodes[m_clusterIndex].Nodes[m_nodeIndex].Node.SetHandlePosition(m_startPos);
 
     m_workspace->PushLongTask(new TriangulateCurveLongTask(m_curveModel));
     

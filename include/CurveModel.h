@@ -34,9 +34,27 @@ enum e_FaceIndex
     FaceIndex_4Point_DC = 7
 };
 
+struct NodeGroup
+{
+    unsigned int FaceCount;
+    BezierCurveNode3 Node;
+
+    NodeGroup() {}
+    NodeGroup(const NodeGroup& a_other)
+    {
+        FaceCount = a_other.FaceCount;
+        Node = a_other.Node;
+    }
+    NodeGroup(const BezierCurveNode3& a_node)
+    {
+        Node = a_node;
+        FaceCount = 0;
+    }
+};
+
 struct Node3Cluster
 {
-    std::vector<BezierCurveNode3> Nodes;
+    std::vector<NodeGroup> Nodes;
 
     Node3Cluster() {}
     Node3Cluster(const Node3Cluster& a_other) 
@@ -44,6 +62,14 @@ struct Node3Cluster
         Nodes = a_other.Nodes;
     }
     Node3Cluster(const BezierCurveNode3& a_node)
+    {
+        NodeGroup group; 
+        group.Node = a_node;
+        group.FaceCount = 0;
+
+        Nodes.emplace_back(group);
+    }
+    Node3Cluster(const NodeGroup& a_node)
     {
         Nodes.emplace_back(a_node);
     }
@@ -135,6 +161,7 @@ public:
     void EmplaceFace(const CurveFace& a_face);
     void EmplaceFaces(const CurveFace* a_faces, unsigned int a_count);
 
+    void EmplaceNode(unsigned int a_index, const Node3Cluster& a_node);
     void EmplaceNode(const Node3Cluster& a_node);
     void EmplaceNodes(const Node3Cluster* a_nodes, unsigned int a_count);
 
@@ -145,6 +172,7 @@ public:
     void DestroyNodes(unsigned int a_start, unsigned int a_end);
 
     void SetModelData(Node3Cluster* a_nodes, unsigned int a_nodeCount, CurveFace* a_faces, unsigned int a_faceCount);
+    void PassModelData(Node3Cluster* a_nodes, unsigned int a_nodeCount, CurveFace* a_faces, unsigned int a_faceCount);
     void Triangulate();
 
     void PreTriangulate(unsigned int** a_indices, unsigned int* a_indexCount, Vertex** a_vertices, unsigned int* a_vertexCount) const;

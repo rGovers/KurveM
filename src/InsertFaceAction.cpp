@@ -6,9 +6,9 @@
 
 void Wind3Points(Node3Cluster* a_nodes, unsigned int& a_a, unsigned int& a_b, unsigned int& a_c)
 {
-    const glm::vec2 posA = a_nodes[a_a].Nodes[0].GetPosition();
-    const glm::vec2 posB = a_nodes[a_b].Nodes[0].GetPosition();
-    const glm::vec2 posC = a_nodes[a_c].Nodes[0].GetPosition();
+    const glm::vec2 posA = a_nodes[a_a].Nodes[0].Node.GetPosition();
+    const glm::vec2 posB = a_nodes[a_b].Nodes[0].Node.GetPosition();
+    const glm::vec2 posC = a_nodes[a_c].Nodes[0].Node.GetPosition();
 
     const glm::vec2 mid = (posA + posB + posC) * 0.33f;
 
@@ -48,10 +48,10 @@ void Wind3Points(Node3Cluster* a_nodes, unsigned int& a_a, unsigned int& a_b, un
 
 void Wind4Points(Node3Cluster* a_nodes, unsigned int& a_a, unsigned int& a_b, unsigned int& a_c, unsigned int& a_d)
 {
-    const glm::vec2 posA = a_nodes[a_a].Nodes[0].GetPosition();
-    const glm::vec2 posB = a_nodes[a_b].Nodes[0].GetPosition();
-    const glm::vec2 posC = a_nodes[a_c].Nodes[0].GetPosition();
-    const glm::vec2 posD = a_nodes[a_d].Nodes[0].GetPosition();
+    const glm::vec2 posA = a_nodes[a_a].Nodes[0].Node.GetPosition();
+    const glm::vec2 posB = a_nodes[a_b].Nodes[0].Node.GetPosition();
+    const glm::vec2 posC = a_nodes[a_c].Nodes[0].Node.GetPosition();
+    const glm::vec2 posD = a_nodes[a_d].Nodes[0].Node.GetPosition();
 
     const glm::vec2 mid = (posA + posB + posC + posD) * 0.25f;
 
@@ -126,34 +126,45 @@ unsigned int PushNode(Node3Cluster* a_cluster)
 
     for (unsigned int i = 0; i < size; ++i)
     {
-        if (a_cluster->Nodes[i].GetHandlePosition().x == std::numeric_limits<float>().infinity())
+        if (a_cluster->Nodes[i].Node.GetHandlePosition().x == std::numeric_limits<float>().infinity())
         {
-            a_cluster->Nodes[i].SetHandlePosition(a_cluster->Nodes[i].GetPosition());
+            a_cluster->Nodes[i].Node.SetHandlePosition(a_cluster->Nodes[i].Node.GetPosition());
 
             return i;
         }
     }
 
-    const glm::vec3 pos = a_cluster->Nodes[0].GetPosition();
+    const glm::vec3 pos = a_cluster->Nodes[0].Node.GetPosition();
 
     BezierCurveNode3 node;
     node.SetPosition(pos);
     node.SetHandlePosition(pos);
 
-    a_cluster->Nodes.emplace_back(node);
+    NodeGroup nodeG;
+    nodeG.Node = node;
+    nodeG.FaceCount = 1;
+
+    a_cluster->Nodes.emplace_back(nodeG);
 
     return size;
 }
 
-void PopNode(Node3Cluster* a_cluster, const std::vector<BezierCurveNode3>::iterator& a_iter)
+void PopNode(Node3Cluster* a_cluster, const std::vector<NodeGroup>::iterator& a_iter)
 {
     if (a_cluster->Nodes.size() > 1)
     {
-        a_cluster->Nodes.erase(a_iter);
+        if (--a_iter->FaceCount <= 0)
+        {
+            a_cluster->Nodes.erase(a_iter);
+        }
     }
     else if (a_cluster->Nodes.size() == 1)
     {
-        a_cluster->Nodes.begin()->SetHandlePosition(glm::vec3(std::numeric_limits<float>().infinity()));
+        if (--a_iter->FaceCount <= 0)
+        {
+            a_cluster->Nodes.begin()->Node.SetHandlePosition(glm::vec3(std::numeric_limits<float>().infinity()));
+            a_cluster->Nodes.begin()->FaceCount;
+        }
     }
 }
 
@@ -280,12 +291,12 @@ bool InsertFaceAction::Revert()
         {
         case FaceMode_3Point:
         {
-            const std::vector<BezierCurveNode3>::iterator iterAB = nodes[face.Index[FaceIndex_3Point_AB]].Nodes.begin() + face.ClusterIndex[FaceIndex_3Point_AB];
-            const std::vector<BezierCurveNode3>::iterator iterAC = nodes[face.Index[FaceIndex_3Point_AC]].Nodes.begin() + face.ClusterIndex[FaceIndex_3Point_AC];
-            const std::vector<BezierCurveNode3>::iterator iterBA = nodes[face.Index[FaceIndex_3Point_BA]].Nodes.begin() + face.ClusterIndex[FaceIndex_3Point_BA];
-            const std::vector<BezierCurveNode3>::iterator iterBC = nodes[face.Index[FaceIndex_3Point_BC]].Nodes.begin() + face.ClusterIndex[FaceIndex_3Point_BC];
-            const std::vector<BezierCurveNode3>::iterator iterCA = nodes[face.Index[FaceIndex_3Point_CA]].Nodes.begin() + face.ClusterIndex[FaceIndex_3Point_CA];
-            const std::vector<BezierCurveNode3>::iterator iterCB = nodes[face.Index[FaceIndex_3Point_CB]].Nodes.begin() + face.ClusterIndex[FaceIndex_3Point_CB];
+            const std::vector<NodeGroup>::iterator iterAB = nodes[face.Index[FaceIndex_3Point_AB]].Nodes.begin() + face.ClusterIndex[FaceIndex_3Point_AB];
+            const std::vector<NodeGroup>::iterator iterAC = nodes[face.Index[FaceIndex_3Point_AC]].Nodes.begin() + face.ClusterIndex[FaceIndex_3Point_AC];
+            const std::vector<NodeGroup>::iterator iterBA = nodes[face.Index[FaceIndex_3Point_BA]].Nodes.begin() + face.ClusterIndex[FaceIndex_3Point_BA];
+            const std::vector<NodeGroup>::iterator iterBC = nodes[face.Index[FaceIndex_3Point_BC]].Nodes.begin() + face.ClusterIndex[FaceIndex_3Point_BC];
+            const std::vector<NodeGroup>::iterator iterCA = nodes[face.Index[FaceIndex_3Point_CA]].Nodes.begin() + face.ClusterIndex[FaceIndex_3Point_CA];
+            const std::vector<NodeGroup>::iterator iterCB = nodes[face.Index[FaceIndex_3Point_CB]].Nodes.begin() + face.ClusterIndex[FaceIndex_3Point_CB];
 
             PopNode(&(nodes[face.Index[FaceIndex_3Point_AB]]), iterAB);
             PopNode(&(nodes[face.Index[FaceIndex_3Point_AC]]), iterAC);
@@ -298,14 +309,14 @@ bool InsertFaceAction::Revert()
         }
         case FaceMode_4Point:
         {
-            const std::vector<BezierCurveNode3>::iterator iterAB = nodes[face.Index[FaceIndex_4Point_AB]].Nodes.begin() + face.ClusterIndex[FaceIndex_4Point_AB];
-            const std::vector<BezierCurveNode3>::iterator iterAC = nodes[face.Index[FaceIndex_4Point_AC]].Nodes.begin() + face.ClusterIndex[FaceIndex_4Point_AC];
-            const std::vector<BezierCurveNode3>::iterator iterBA = nodes[face.Index[FaceIndex_4Point_BA]].Nodes.begin() + face.ClusterIndex[FaceIndex_4Point_BA];
-            const std::vector<BezierCurveNode3>::iterator iterBD = nodes[face.Index[FaceIndex_4Point_BD]].Nodes.begin() + face.ClusterIndex[FaceIndex_4Point_BD];
-            const std::vector<BezierCurveNode3>::iterator iterCA = nodes[face.Index[FaceIndex_4Point_CA]].Nodes.begin() + face.ClusterIndex[FaceIndex_4Point_CA];
-            const std::vector<BezierCurveNode3>::iterator iterCD = nodes[face.Index[FaceIndex_4Point_CD]].Nodes.begin() + face.ClusterIndex[FaceIndex_4Point_CD];
-            const std::vector<BezierCurveNode3>::iterator iterDB = nodes[face.Index[FaceIndex_4Point_DB]].Nodes.begin() + face.ClusterIndex[FaceIndex_4Point_DB];
-            const std::vector<BezierCurveNode3>::iterator iterDC = nodes[face.Index[FaceIndex_4Point_DC]].Nodes.begin() + face.ClusterIndex[FaceIndex_4Point_DC];
+            const std::vector<NodeGroup>::iterator iterAB = nodes[face.Index[FaceIndex_4Point_AB]].Nodes.begin() + face.ClusterIndex[FaceIndex_4Point_AB];
+            const std::vector<NodeGroup>::iterator iterAC = nodes[face.Index[FaceIndex_4Point_AC]].Nodes.begin() + face.ClusterIndex[FaceIndex_4Point_AC];
+            const std::vector<NodeGroup>::iterator iterBA = nodes[face.Index[FaceIndex_4Point_BA]].Nodes.begin() + face.ClusterIndex[FaceIndex_4Point_BA];
+            const std::vector<NodeGroup>::iterator iterBD = nodes[face.Index[FaceIndex_4Point_BD]].Nodes.begin() + face.ClusterIndex[FaceIndex_4Point_BD];
+            const std::vector<NodeGroup>::iterator iterCA = nodes[face.Index[FaceIndex_4Point_CA]].Nodes.begin() + face.ClusterIndex[FaceIndex_4Point_CA];
+            const std::vector<NodeGroup>::iterator iterCD = nodes[face.Index[FaceIndex_4Point_CD]].Nodes.begin() + face.ClusterIndex[FaceIndex_4Point_CD];
+            const std::vector<NodeGroup>::iterator iterDB = nodes[face.Index[FaceIndex_4Point_DB]].Nodes.begin() + face.ClusterIndex[FaceIndex_4Point_DB];
+            const std::vector<NodeGroup>::iterator iterDC = nodes[face.Index[FaceIndex_4Point_DC]].Nodes.begin() + face.ClusterIndex[FaceIndex_4Point_DC];
 
             PopNode(&(nodes[face.Index[FaceIndex_4Point_AB]]), iterAB);
             PopNode(&(nodes[face.Index[FaceIndex_4Point_AC]]), iterAC);

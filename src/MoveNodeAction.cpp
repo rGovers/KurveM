@@ -26,7 +26,7 @@ MoveNodeAction::MoveNodeAction(Workspace* a_workspace,unsigned int* a_nodeIndice
     for (unsigned int i = 0; i < m_nodeCount; ++i)
     {
         m_nodeIndices[i] = a_nodeIndices[i];
-        m_startPos[i] = nodes[m_nodeIndices[i]].Nodes[0].GetPosition();
+        m_startPos[i] = nodes[m_nodeIndices[i]].Nodes[0].Node.GetPosition();
     }
 }
 MoveNodeAction::~MoveNodeAction()
@@ -53,7 +53,7 @@ bool MoveNodeAction::Execute()
     {
         for (auto iter = nodes[m_nodeIndices[i]].Nodes.begin(); iter != nodes[m_nodeIndices[i]].Nodes.end(); ++iter)
         {
-            iter->SetPosition(m_startPos[i] + (m_yAxis * diff.y) + (m_xAxis * diff.x));
+            iter->Node.SetPosition(m_startPos[i] + (m_yAxis * diff.y) + (m_xAxis * diff.x));
         }
     }
     
@@ -69,7 +69,7 @@ bool MoveNodeAction::Revert()
     {
         for (auto iter = nodes[m_nodeIndices[i]].Nodes.begin(); iter != nodes[m_nodeIndices[i]].Nodes.end(); ++iter)
         {
-            iter->SetPosition(m_startPos[i]);
+            iter->Node.SetPosition(m_startPos[i]);
         }
     }
 

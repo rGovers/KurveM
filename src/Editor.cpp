@@ -14,6 +14,7 @@
 #include "Camera.h"
 #include "Gizmos.h"
 #include "imgui.h"
+#include "Modals/DeleteNodesModal.h"
 #include "Object.h"
 #include "RenderTexture.h"
 #include "SelectionControl.h"
@@ -143,7 +144,7 @@ bool Editor::IsInteractingCurveNodeHandle(const Node3Cluster& a_node, unsigned i
 {
     for (auto nodeIter = a_node.Nodes.begin(); nodeIter != a_node.Nodes.end(); ++nodeIter)
     {
-        if (SelectionControl::NodeHandleInPoint(a_viewProj, a_cursorPos, 0.05f, a_transform, *nodeIter))
+        if (SelectionControl::NodeHandleInPoint(a_viewProj, a_cursorPos, 0.05f, a_transform, nodeIter->Node))
         {
             m_curAction = new MoveNodeHandleAction(m_workspace, nodeIter - a_node.Nodes.begin(), a_nodeIndex, a_model, a_cursorPos, a_right, a_up);
             if (!m_workspace->PushAction(m_curAction))
@@ -208,7 +209,7 @@ void Editor::DrawObject(Object* a_object, const glm::vec2& a_winSize)
 
                             for (int j = 0; j < 6; ++j)
                             {
-                                sNodes[j] = nodes[face.Index[j]].Nodes[face.ClusterIndex[j]];
+                                sNodes[j] = nodes[face.Index[j]].Nodes[face.ClusterIndex[j]].Node;
                             } 
 
                             DrawCurve(steps, modelMatrix, sNodes[FaceIndex_3Point_AB], sNodes[FaceIndex_3Point_BA]);
@@ -223,7 +224,7 @@ void Editor::DrawObject(Object* a_object, const glm::vec2& a_winSize)
 
                             for (int j = 0; j < 8; ++j)
                             {
-                                sNodes[j] = nodes[face.Index[j]].Nodes[face.ClusterIndex[j]];
+                                sNodes[j] = nodes[face.Index[j]].Nodes[face.ClusterIndex[j]].Node;
                             } 
 
                             DrawCurve(steps, modelMatrix, sNodes[FaceIndex_4Point_AB], sNodes[FaceIndex_4Point_BA]);
@@ -249,7 +250,7 @@ void Editor::DrawObject(Object* a_object, const glm::vec2& a_winSize)
 
                     if (!selected)
                     {
-                        const BezierCurveNode3 curve = nodes[i].Nodes[0];
+                        const BezierCurveNode3 curve = nodes[i].Nodes[0].Node;
 
                         const glm::vec4 pos = modelMatrix * glm::vec4(curve.GetPosition(), 1);
 
@@ -257,14 +258,14 @@ void Editor::DrawObject(Object* a_object, const glm::vec2& a_winSize)
                     }
                     else
                     {
-                        const std::vector<BezierCurveNode3> nodeCluster = nodes[i].Nodes;
+                        const std::vector<NodeGroup> nodeCluster = nodes[i].Nodes;
                         for (auto iter = nodeCluster.begin(); iter != nodeCluster.end(); ++iter)
                         {
-                            const glm::vec4 pos = modelMatrix * glm::vec4(iter->GetPosition(), 1);
+                            const glm::vec4 pos = modelMatrix * glm::vec4(iter->Node.GetPosition(), 1);
 
-                            if (iter->GetHandlePosition().x != std::numeric_limits<float>().infinity())
+                            if (iter->Node.GetHandlePosition().x != std::numeric_limits<float>().infinity())
                             {
-                                const glm::vec4 handlePos = modelMatrix * glm::vec4(iter->GetHandlePosition(), 1);
+                                const glm::vec4 handlePos = modelMatrix * glm::vec4(iter->Node.GetHandlePosition(), 1);
 
                                 Gizmos::DrawLine(pos, handlePos, camFor, 0.005f, glm::vec4(0.93f, 0.53f, 0.00f, 1.00f));
                                 Gizmos::DrawCircleFilled(handlePos, camFor, 0.05f, 15, glm::vec4(0.93f, 0.53f, 0.00f, 1.00f));
@@ -352,6 +353,34 @@ void Editor::Update(double a_delta, const glm::vec2& a_winPos, const glm::vec2& 
 
             if (model != nullptr)
             {
+                if (glfwGetKey(window, GLFW_KEY_DELETE))
+                {
+                    if (!m_deleteDown)
+                    {
+                        const unsigned int size = m_selectedNodes.size();
+                        if (size > 0)
+                        {
+                            unsigned int* indices = new unsigned int[size];
+
+                            unsigned int index = 0;
+                            for (auto iter = m_selectedNodes.begin(); iter != m_selectedNodes.end(); ++iter)
+                            {
+                                indices[index++] = *iter;
+                            }
+
+                            m_workspace->PushModal(new DeleteNodesModal(m_workspace, this, indices, size, model));
+
+                            delete[] indices;
+                        }
+                    }
+
+                    m_deleteDown = true;
+                }   
+                else
+                {
+                    m_deleteDown = false;
+                }
+
                 if (GetCurrentAction() != ActionType_InsertFace)
                 {
                     if (glfwGetKey(window, GLFW_KEY_F))
@@ -440,7 +469,7 @@ void Editor::Update(double a_delta, const glm::vec2& a_winPos, const glm::vec2& 
 
                         for (auto iter = m_selectedNodes.begin(); iter != m_selectedNodes.end(); ++iter)
                         {
-                            pos += nodes[*iter].Nodes[0].GetPosition();
+                            pos += nodes[*iter].Nodes[0].Node.GetPosition();
                         }
 
                         pos /= m_selectedNodes.size();
@@ -562,7 +591,7 @@ void Editor::Update(double a_delta, const glm::vec2& a_winPos, const glm::vec2& 
                             for (unsigned int i = 0; i < nodeCount; ++i)
                             {
                                 const Node3Cluster node = nodes[i];
-                                if (SelectionControl::NodeInSelection(viewProj, min, max, transformMat, node.Nodes[0]))
+                                if (SelectionControl::NodeInSelection(viewProj, min, max, transformMat, node.Nodes[0].Node))
                                 {
                                     m_selectedNodes.emplace_back(i);
                                 }
@@ -573,7 +602,7 @@ void Editor::Update(double a_delta, const glm::vec2& a_winPos, const glm::vec2& 
                             for (unsigned int i = 0; i < nodeCount; ++i)
                             {
                                 const Node3Cluster node = nodes[i];
-                                if (SelectionControl::NodeInSelection(viewProj, min, max, transformMat, node.Nodes[0]))
+                                if (SelectionControl::NodeInSelection(viewProj, min, max, transformMat, node.Nodes[0].Node))
                                 {
                                     bool found = false;
 
@@ -603,7 +632,7 @@ void Editor::Update(double a_delta, const glm::vec2& a_winPos, const glm::vec2& 
                             for (unsigned int i = 0; i < nodeCount; ++i)
                             {
                                 const Node3Cluster node = nodes[i];
-                                if (SelectionControl::NodeInSelection(viewProj, min, max, transformMat, node.Nodes[0]))
+                                if (SelectionControl::NodeInSelection(viewProj, min, max, transformMat, node.Nodes[0].Node))
                                 {
                                     m_selectedNodes.emplace_back(i);
                                 }
@@ -742,7 +771,7 @@ void Editor::Update(double a_delta, const glm::vec2& a_winPos, const glm::vec2& 
 
             for (auto iter = m_selectedNodes.begin(); iter != m_selectedNodes.end(); ++iter)
             {
-                pos += nodes[*iter].Nodes[0].GetPosition();
+                pos += nodes[*iter].Nodes[0].Node.GetPosition();
             }
 
             pos /= m_selectedNodes.size();
