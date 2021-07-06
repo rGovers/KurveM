@@ -126,6 +126,12 @@ public:
         return m_stepAdjust;
     }
 
+    unsigned int Get3PointFaceIndex(unsigned int a_indexA, unsigned int a_indexB, unsigned int a_indexC) const;
+    unsigned int Get3PointFaceIndex(const unsigned int a_indices[6]) const;
+
+    unsigned int Get4PointFaceIndex(unsigned int a_indexA, unsigned int a_indexB, unsigned int a_indexC, unsigned int a_indexD) const;
+    unsigned int Get4PointFaceIndex(const unsigned int a_indices[8]) const;
+
     void EmplaceFace(const CurveFace& a_face);
     void EmplaceFaces(const CurveFace* a_faces, unsigned int a_count);
 

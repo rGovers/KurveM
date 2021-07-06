@@ -6,6 +6,7 @@ enum e_ActionType
     ActionType_CreateObject,
     ActionType_DeleteObject,
     ActionType_ExtrudeNode,
+    ActionType_FlipFace,
     ActionType_InsertFace,
     ActionType_MoveNode,
     ActionType_MoveNodeHandle,

@@ -15,6 +15,8 @@ private:
     float      m_near;
     float      m_far;
 
+    bool       m_orthographic;
+
 protected:
 
 public:
@@ -42,6 +44,15 @@ public:
     inline float GetFar() const
     {
         return m_far;
+    }
+
+    inline bool IsOrthographic() const
+    {
+        return m_orthographic;
+    }
+    inline void SetOrthographic(bool a_value)
+    {
+        m_orthographic = a_value;
     }
 
     glm::mat4 GetView() const;

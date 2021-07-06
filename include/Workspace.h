@@ -52,8 +52,10 @@ private:
 
     // This is not proper multithreading but serves the purpose of pushing tasks into the background 
     // and keeping the main thread responsive
-    bool                         m_shutdown;
+    bool                         m_shutDown;
     bool                         m_join;
+    bool                         m_block;
+    bool                         m_clear;
     std::thread                  m_taskThread;
 
     std::list<Action*>           m_actionStack;
@@ -93,9 +95,13 @@ public:
     bool Undo();
     bool Redo();
 
-    bool IsShutingDown() const
+    inline bool IsShutingDown() const
     {
-        return m_shutdown;
+        return m_shutDown;
+    }
+    inline bool IsBlocked() const
+    {
+        return m_block;
     }
 
     inline Object* GetSelectedObject() const
@@ -125,8 +131,15 @@ public:
         return m_postTask;
     }
 
+    inline void SetThreadClearState(bool a_value)
+    {
+        m_clear = a_value;
+    }
     void PushCurrentTask();
-    void PushJoinState();
+    inline void PushJoinState()
+    {
+        m_join = true;
+    }
 
     inline std::list<LongTask*> GetTaskQueue()
     {

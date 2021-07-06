@@ -51,6 +51,97 @@ float GetNodeDist(const BezierCurveNode3& a_nodeA, const BezierCurveNode3& a_nod
     return glm::length(aDiff) + glm::length(abDiff) + glm::length(bDiff);
 }
 
+unsigned int CurveModel::Get3PointFaceIndex(unsigned int a_indexA, unsigned int a_indexB, unsigned int a_indexC) const
+{
+    const unsigned int arr[] = { a_indexA, a_indexA, a_indexB, a_indexB, a_indexC, a_indexC };
+
+    return Get3PointFaceIndex(arr);
+}
+unsigned int CurveModel::Get3PointFaceIndex(const unsigned int a_indices[6]) const
+{
+    for (unsigned int i = 0; i < m_faceCount; ++i)
+    {
+        const CurveFace face = m_faces[i];
+
+        if (face.FaceMode == FaceMode_3Point)
+        {
+            bool foundIndex = true;
+            for (unsigned int j = 0; j < 6; ++j)
+            {
+                bool found = false;
+                for (unsigned int k = 0; k < 6; ++k)
+                {
+                    if (face.Index[j] == a_indices[k])
+                    {
+                        found = true;
+
+                        break;
+                    }
+                }
+
+                if (!found)
+                {
+                    foundIndex = false;
+
+                    break;
+                }
+            }
+
+            if (foundIndex)
+            {
+                return i;
+            }
+        }        
+    }
+
+    return -1;
+}
+unsigned int CurveModel::Get4PointFaceIndex(unsigned int a_indexA, unsigned int a_indexB, unsigned int a_indexC, unsigned int a_indexD) const
+{
+    const unsigned int arr[] = { a_indexA, a_indexA, a_indexB, a_indexB, a_indexC, a_indexC, a_indexD, a_indexD };
+
+    return Get4PointFaceIndex(arr);
+}
+unsigned int CurveModel::Get4PointFaceIndex(const unsigned int a_indices[8]) const
+{
+    for (unsigned int i = 0; i < m_faceCount; ++i)
+    {
+        const CurveFace face = m_faces[i];
+
+        if (face.FaceMode == FaceMode_4Point)
+        {
+            bool foundIndex = true;
+            for (unsigned int j = 0; j < 8; ++j)
+            {
+                bool found = false;
+                for (unsigned int k = 0; k < 8; ++k)
+                {
+                    if (face.Index[j] == a_indices[k])
+                    {
+                        found = true;
+
+                        break;
+                    }
+                }
+
+                if (!found)
+                {
+                    foundIndex = false;
+
+                    break;
+                }
+            }
+
+            if (foundIndex)
+            {
+                return i;
+            }
+        }        
+    }
+
+    return -1;
+}
+
 void CurveModel::EmplaceFace(const CurveFace& a_face)
 {
     EmplaceFaces(&a_face, 1);

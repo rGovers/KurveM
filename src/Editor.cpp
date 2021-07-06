@@ -5,6 +5,7 @@
 #include <stdio.h>
 
 #include "Actions/ExtrudeNodeAction.h"
+#include "Actions/FlipFaceAction.h"
 #include "Actions/InsertFaceAction.h"
 #include "Actions/MoveNodeAction.h"
 #include "Actions/MoveNodeHandleAction.h"
@@ -380,6 +381,37 @@ void Editor::Update(double a_delta, const glm::vec2& a_winPos, const glm::vec2& 
                     m_curAction = nullptr;
                 }
 
+                if (GetCurrentAction() != ActionType_FlipFace)
+                {
+                    if (glfwGetKey(window, GLFW_KEY_N))
+                    {
+                        const unsigned int size = m_selectedNodes.size();
+
+                        unsigned int* indices = new unsigned int[size];
+
+                        unsigned int index = 0;
+                        for (auto iter = m_selectedNodes.begin(); iter != m_selectedNodes.end(); ++iter)
+                        {
+                            indices[index++] = *iter;
+                        }
+
+                        m_curAction = new FlipFaceAction(m_workspace, indices, size, model);
+                        if (!m_workspace->PushAction(m_curAction))
+                        {
+                            printf("Cannot flip face");
+
+                            delete m_curAction;
+                            m_curAction = nullptr;
+                        }
+
+                        delete[] indices;
+                    }
+                }
+                else if (!glfwGetKey(window, GLFW_KEY_N))
+                {
+                    m_curAction = nullptr;
+                }
+
                 if (ImGui::IsMouseDown(ImGuiMouseButton_Left))
                 {
                     if (!(m_mouseDown & 0b1 << 0))
@@ -439,6 +471,55 @@ void Editor::Update(double a_delta, const glm::vec2& a_winPos, const glm::vec2& 
         {
             m_mouseDown |= 0b1 << 1;
         }   
+
+        if (glfwGetKey(window, GLFW_KEY_KP_1))
+        {
+            camTransform->Translation() = { 0.0f, 0.0f, -10.0f };
+            camTransform->Quaternion() = glm::angleAxis(glm::pi<float>(), glm::normalize(glm::vec3(0.0f, 1.0f, 0.0f))) * glm::angleAxis(glm::pi<float>() * 2.0f, glm::normalize(glm::vec3(1.0f, 0.0f, 0.0f)));
+        }
+        if (glfwGetKey(window, GLFW_KEY_KP_7))
+        {
+            camTransform->Translation() = { 0.0f, 0.0f, 10.0f };
+            camTransform->Quaternion() = glm::angleAxis(glm::pi<float>() * 2.0f, glm::normalize(glm::vec3(0.0f, 1.0f, 0.0f))) * glm::angleAxis(glm::pi<float>() * 2.0f, glm::normalize(glm::vec3(1.0f, 0.0f, 0.0f)));
+        }
+
+        if (glfwGetKey(window, GLFW_KEY_KP_8))
+        {
+            camTransform->Translation() = { 0.0f, -10.0f, 0.0f };
+            camTransform->Quaternion() = glm::angleAxis(glm::pi<float>() * 2.0f, glm::normalize(glm::vec3(0.0f, 1.0f, 0.0f))) * glm::angleAxis(glm::pi<float>() * 0.5f, glm::normalize(glm::vec3(1.0f, 0.0f, 0.0f)));
+        }
+        if (glfwGetKey(window, GLFW_KEY_KP_2))
+        {
+            camTransform->Translation() = { 0.0f, 10.0f, 0.0f };
+            camTransform->Quaternion() = glm::angleAxis(glm::pi<float>() * 2.0f, glm::normalize(glm::vec3(0.0f, 1.0f, 0.0f))) * glm::angleAxis(glm::pi<float>() * 1.5f, glm::normalize(glm::vec3(1.0f, 0.0f, 0.0f)));
+        }
+
+        if (glfwGetKey(window, GLFW_KEY_KP_4))
+        {
+            camTransform->Translation() = { 10.0f, 0.0f, 0.0f };
+            camTransform->Quaternion() = glm::angleAxis(glm::pi<float>() * 0.5f, glm::normalize(glm::vec3(0.0f, 1.0f, 0.0f))) * glm::angleAxis(glm::pi<float>() * 2.0f, glm::normalize(glm::vec3(1.0f, 0.0f, 0.0f)));
+        }
+        if (glfwGetKey(window, GLFW_KEY_KP_6))
+        {
+            camTransform->Translation() = { -10.0f, 0.0f, 0.0f };
+            camTransform->Quaternion() = glm::angleAxis(glm::pi<float>() * 1.5f, glm::normalize(glm::vec3(0.0f, 1.0f, 0.0f))) * glm::angleAxis(glm::pi<float>() * 2.0f, glm::normalize(glm::vec3(1.0f, 0.0f, 0.0f)));
+        }
+
+        if (glfwGetKey(window, GLFW_KEY_KP_5))
+        {
+            if (!m_orthoDown)
+            {
+                m_camera->SetOrthographic(!m_camera->IsOrthographic());
+            }
+
+            m_orthoDown = true;
+        }
+        else
+        {
+            m_orthoDown = false;
+        }
+
+        
     }
 
     if (m_mouseDown & 0b1 << 0 && ImGui::IsMouseReleased(ImGuiMouseButton_Left))

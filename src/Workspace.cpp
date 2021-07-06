@@ -29,23 +29,28 @@ void RunTasks(Workspace* a_workspace)
 {
     while (!a_workspace->IsShutingDown())
     {
-        LongTask* curTask = a_workspace->GetCurrentTask();
-
-        if (curTask != nullptr && a_workspace->GetPostTask() == nullptr)
+        if (a_workspace->IsBlocked())
         {
-            curTask->Execute();
+            a_workspace->SetThreadClearState(true);
+        }
+        else
+        {
+            a_workspace->SetThreadClearState(false);
 
-            a_workspace->PushCurrentTask();
+            LongTask* curTask = a_workspace->GetCurrentTask();
+
+            if (curTask != nullptr && a_workspace->GetPostTask() == nullptr)
+            {
+                curTask->Execute();
+
+                a_workspace->PushCurrentTask();
+            }
         }
     }
 
     a_workspace->PushJoinState();
 }
 
-void Workspace::PushJoinState()
-{
-    m_join = true;
-}
 void Workspace::PushCurrentTask()
 {
     m_postTask = m_currentTask;
@@ -56,8 +61,6 @@ Workspace::Workspace()
 {   
     m_currentDir = nullptr;
 
-    New();
-
     m_curAction = nullptr;
 
     m_init = true;
@@ -67,8 +70,10 @@ Workspace::Workspace()
 
     m_toolMode = ToolMode_Translate;
 
+    m_shutDown = false;
     m_join = false;
-    m_shutdown = false;
+    m_block = false;
+    m_clear = false;
 
     m_currentTask = nullptr;
     m_postTask = nullptr;
@@ -76,10 +81,12 @@ Workspace::Workspace()
     m_taskThread = std::thread(RunTasks, this);
 
     m_editor = new Editor(this);
+
+    New();
 }
 Workspace::~Workspace()
 {
-    m_shutdown = true;
+    m_shutDown = true;
 
     while (!m_join)
     {
@@ -87,16 +94,6 @@ Workspace::~Workspace()
     }
     
     m_taskThread.join();
-
-    if (m_postTask != nullptr)
-    {
-        delete m_postTask;
-    }
-
-    for (auto iter = m_taskQueue.begin(); iter != m_taskQueue.end(); ++iter)
-    {
-        delete *iter;
-    }
 
     Gizmos::Destroy();
     Datastore::Destroy();
@@ -106,6 +103,8 @@ Workspace::~Workspace()
 
 void Workspace::ClearBuffers()
 {
+    ClearSelectedObjects();
+
     for (auto iter = m_objectList.begin(); iter != m_objectList.end(); ++iter)
     {
         delete *iter;
@@ -119,16 +118,39 @@ void Workspace::ClearBuffers()
     m_actionStack.clear();
 
     m_actionStackIndex = m_actionStack.end();
+
+    if (m_postTask != nullptr)
+    {
+        delete m_postTask;
+        m_postTask = nullptr;
+    }
+
+    for (auto iter = m_taskQueue.begin(); iter != m_taskQueue.end(); ++iter)
+    {
+        delete *iter;
+    }
+    m_taskQueue.clear();
 }
 
 void Workspace::New()
 {
+    m_block = true;
+
+    while (!m_clear)
+    {
+        std::this_thread::yield();
+    }
+
     ClearBuffers();
+
+    Gizmos::Destroy();
 
     Datastore::Destroy();
     Datastore::Init();
 
     Gizmos::Init();
+
+    m_block = false;
 }
 void Workspace::Open(const char* a_dir)
 {
