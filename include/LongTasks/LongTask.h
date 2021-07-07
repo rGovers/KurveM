@@ -20,6 +20,6 @@ public:
 
     virtual bool PushAction(Workspace* a_workspace) { return true; }
 
-    virtual void Execute() { }
+    virtual bool Execute() { return true; }
     virtual void PostExecute() { }
 };

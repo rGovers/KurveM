@@ -1,5 +1,7 @@
 #include "LongTasks/TriangulateCurveLongTask.h"
 
+#include <exception>
+#include <stdio.h>
 #include <string.h>
 
 #include "CurveModel.h"
@@ -36,9 +38,22 @@ bool TriangulateCurveLongTask::PushAction(Workspace* a_workspace)
     return true;
 }
 
-void TriangulateCurveLongTask::Execute()
+bool TriangulateCurveLongTask::Execute()
 {
-    m_curveModel->PreTriangulate(&m_indices, &m_indexCount, &m_vertices, &m_vertexCount);
+    try
+    {
+        m_curveModel->PreTriangulate(&m_indices, &m_indexCount, &m_vertices, &m_vertexCount);
+    }
+    catch (std::exception e)
+    {
+        printf("Error triangulating: ");
+        printf(e.what());
+        printf("\n");
+
+        return false;
+    }
+
+    return true;
 }
 void TriangulateCurveLongTask::PostExecute()
 {

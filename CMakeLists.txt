@@ -1,5 +1,7 @@
-cmake_minimum_required (VERSION 2.8)
+cmake_minimum_required (VERSION 2.9)
 project (KurveM)
+
+set(CMAKE_CXX_STANDARD 17)
 
 set (KURVEM_VERSION_MAJOR 0)
 set (KURVEM_VERSION_MINOR 1)
@@ -40,8 +42,9 @@ include_directories("${PROJECT_SOURCE_DIR}/lib/glfw/include/")
 include_directories("${PROJECT_SOURCE_DIR}/lib/glm/")
 include_directories("${PROJECT_SOURCE_DIR}/lib/imgui/")
 include_directories("${PROJECT_SOURCE_DIR}/lib/imgui/backends/")
+include_directories("${PROJECT_SOURCE_DIR}/lib/tinyxml2")
 
-file(GLOB SOURCES "src/*.cpp" "lib/glad/src/*.c" "lib/imgui/*.cpp" "lib/imgui/backends/imgui_impl_opengl3.cpp" "lib/imgui/backends/imgui_impl_glfw.cpp")
+file(GLOB SOURCES "src/*.cpp" "lib/glad/src/*.c" "lib/tinyxml2/tinyxml2.cpp" "lib/imgui/*.cpp" "lib/imgui/backends/imgui_impl_opengl3.cpp" "lib/imgui/backends/imgui_impl_glfw.cpp")
 
 add_subdirectory("lib/glfw")
 

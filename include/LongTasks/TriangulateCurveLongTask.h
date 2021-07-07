@@ -24,6 +24,6 @@ public:
 
     virtual bool PushAction(Workspace* a_workspace);
 
-    virtual void Execute();
+    virtual bool Execute();
     virtual void PostExecute();
 };

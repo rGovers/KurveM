@@ -1,7 +1,8 @@
 #include <stdio.h>
 
-#include "AppMain.h"
 #include "KurveMConfig.h"
+
+#include "AppMain.h"
 
 int main (int a_argc, char* a_argv[])
 {

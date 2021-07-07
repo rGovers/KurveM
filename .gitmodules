@@ -7,3 +7,6 @@
 [submodule "lib/glm"]
 	path = lib/glm
 	url = https://github.com/g-truc/glm
+[submodule "lib/tinyxml2"]
+	path = lib/tinyxml2
+	url = https://github.com/leethomason/tinyxml2

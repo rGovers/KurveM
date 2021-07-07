@@ -4,6 +4,8 @@
 #include <string>
 #include <string.h>
 
+#include "KurveMConfig.h"
+
 #include "Actions/Action.h"
 #include "Actions/CreateObjectAction.h"
 #include "Actions/DeleteObjectAction.h"
@@ -19,6 +21,7 @@
 #include "LongTasks/LongTask.h"
 #include "LongTasks/TriangulateCurveLongTask.h"
 #include "Modals/Modal.h"
+#include "Modals/SaveFileModal.h"
 #include "Object.h"
 #include "RenderTexture.h"
 #include "Texture.h"
@@ -28,6 +31,7 @@ const char* EditorMode_String[] = { "Object Mode", "Edit Mode" };
 
 void RunTasks(Workspace* a_workspace)
 {
+    int timeOut = 0;
     while (!a_workspace->IsShutingDown())
     {
         if (a_workspace->IsBlocked())
@@ -42,9 +46,15 @@ void RunTasks(Workspace* a_workspace)
 
             if (curTask != nullptr && a_workspace->GetPostTask() == nullptr)
             {
-                curTask->Execute();
-
-                a_workspace->PushCurrentTask();
+                if (!curTask->Execute() || timeOut > 5)
+                {
+                    timeOut = 0;
+                    a_workspace->PushCurrentTask();
+                }
+                else
+                {
+                    ++timeOut;
+                }
             }
         }
     }
@@ -164,9 +174,45 @@ void Workspace::Open(const char* a_dir)
     New();
 }
 
+void SaveObject(tinyxml2::XMLDocument* a_doc, tinyxml2::XMLElement* a_parentElement, const Object* a_object)
+{
+    if (a_object != nullptr)
+    {
+        tinyxml2::XMLElement* objectElement = a_doc->NewElement("Object");
+        a_parentElement->InsertEndChild(objectElement);
+
+        a_object->Serialize(a_doc, objectElement);
+
+        const std::list<Object*> children = a_object->GetChildren();
+
+        for (auto iter = children.begin(); iter != children.end(); ++iter)
+        {
+            SaveObject(a_doc, objectElement, *iter);
+        }
+    }
+}
+
 void Workspace::Save()
 {
+    tinyxml2::XMLDocument doc;
 
+    tinyxml2::XMLDeclaration* dec = doc.NewDeclaration();
+    doc.InsertEndChild(dec);
+
+    tinyxml2::XMLElement* scene = doc.NewElement("Scene");
+    doc.InsertEndChild(scene);
+    scene->SetAttribute("Major", KURVEM_VERSION_MAJOR);
+    scene->SetAttribute("Minor", KURVEM_VERSION_MINOR);
+
+    tinyxml2::XMLElement* objects = doc.NewElement("Objects");
+    scene->InsertEndChild(objects);
+
+    for (auto iter = m_objectList.begin(); iter != m_objectList.end(); ++iter)
+    {
+        SaveObject(&doc, objects, *iter);
+    }
+
+    doc.SaveFile(m_currentDir);
 }
 void Workspace::SaveAs(const char* a_dir)
 {
@@ -176,22 +222,22 @@ void Workspace::SaveAs(const char* a_dir)
         m_currentDir = nullptr;
     }
 
-    int len = strlen(a_dir) + 1;
-    if (len > 0)
+    if (a_dir != nullptr)
     {
-        m_currentDir = new char[len];
-
-        for (int i = 0; i < len; ++i)
+        int len = strlen(a_dir) + 1;
+        if (len > 1)
         {
-            m_currentDir[i] = a_dir[i];
+            m_currentDir = new char[len];
+
+            for (int i = 0; i < len; ++i)
+            {
+                m_currentDir[i] = a_dir[i];
+            }
         }
     }
 
     if (m_currentDir != nullptr)
     {
-        printf(m_currentDir);
-        printf("\n");
-
         Save();
     }
 }
@@ -616,14 +662,80 @@ void Workspace::Update(double a_delta)
 
             ImGui::Separator();
 
-            if (ImGui::MenuItem("Save", "Ctrl+S"))
+            if (ImGui::MenuItem("Save", "Ctrl+S", nullptr, m_currentDir != nullptr))
             {
                 Save();
             }
 
             if (ImGui::MenuItem("Save As", "Ctrl+Shift+S"))
             {
-                SaveAs(nullptr);
+#if _WIN32
+                const char* drive = getenv("HOMEDRIVE");
+                const char* path = getenv("HOMEPATH");
+
+                const int driveLen = strlen(drive);
+                const int pathLen = strlen(path);
+
+                const int len = driveLen + pathLen + 1;
+                
+                char* home = new char[len];
+
+                for (int i = 0; i < driveLen; ++i)
+                {
+                    home[i] = drive[i];
+                }
+                for (int i = 0; i < pathLen + 1; ++i)
+                {
+                    home[i + driveLen] = path[i];
+                }
+#else
+                const char* tmp = getenv("HOME");
+
+                int len = strlen(tmp) + 1;
+
+                char* home = new char[len];
+
+                for (int i = 0; i < len; ++i)
+                {
+                    home[i] = tmp[i];
+                }
+#endif
+                PushModal(new SaveFileModal(this, home));
+
+                delete[] home;
+            }
+
+            ImGui::Separator();
+
+            if (ImGui::BeginMenu("Export"))
+            {
+                if (ImGui::MenuItem("Erde Curve Model"))
+                {
+
+                }
+
+                ImGui::Separator();
+
+                if (ImGui::MenuItem("Wavefront OBJ"))
+                {
+                    
+                }
+
+                if (ImGui::MenuItem("Collada"))
+                {
+
+                }
+
+                ImGui::EndMenu();
+            }
+            if (ImGui::BeginMenu("Import"))
+            {
+                if (ImGui::MenuItem("Erde Curve Model"))
+                {
+
+                }
+
+                ImGui::EndMenu();
             }
 
             ImGui::Separator();

@@ -8,7 +8,12 @@ bool Modal::Open()
 
     const char* name = GetName();
 
-    if (ImGui::BeginPopupModal(name))
+    const glm::vec2 size = GetSize();
+    if (size.x > 0 && size.y > 0)
+    {
+        ImGui::SetNextWindowSize({ size.x, size.y });
+    }
+    if (ImGui::BeginPopupModal(name, nullptr, ImGuiWindowFlags_NoResize))
     {
         ret = Execute();
         

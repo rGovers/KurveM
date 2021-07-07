@@ -1,6 +1,7 @@
 #pragma once
 
 #include "BezierCurveNode3.h"
+#include "tinyxml2.h"
 
 #include <vector>
 
@@ -177,4 +178,6 @@ public:
 
     void PreTriangulate(unsigned int** a_indices, unsigned int* a_indexCount, Vertex** a_vertices, unsigned int* a_vertexCount) const;
     void PostTriangulate(unsigned int* a_indices, unsigned int a_indexCount, Vertex* a_vertices, unsigned int a_vertexCount);
+
+    void Serialize(tinyxml2::XMLDocument* a_doc, tinyxml2::XMLElement* a_parent) const;
 };

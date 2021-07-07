@@ -5,6 +5,8 @@
 
 #include <list>
 
+#include "tinyxml2.h"
+
 class Camera;
 class CurveModel;
 class Model;
@@ -28,7 +30,6 @@ private:
     ShaderProgram*     m_program;
 
     CurveModel*        m_curveModel;
-    Model*             m_displayModel;
 
 protected:
 
@@ -75,4 +76,6 @@ public:
     glm::mat4 GetGlobalMatrix() const;
 
     void Draw(Camera* a_camera, const glm::vec2& a_winSize);
+
+    void Serialize(tinyxml2::XMLDocument* a_doc, tinyxml2::XMLElement* a_element) const;
 };

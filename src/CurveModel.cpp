@@ -690,3 +690,114 @@ void CurveModel::PostTriangulate(unsigned int* a_indices, unsigned int a_indexCo
     delete[] a_vertices;
     delete[] a_indices;
 }
+
+void CurveModel::Serialize(tinyxml2::XMLDocument* a_doc, tinyxml2::XMLElement* a_parent) const
+{
+    tinyxml2::XMLElement* curveModelElement = a_doc->NewElement("CurveModel");
+    a_parent->InsertEndChild(curveModelElement);
+
+    curveModelElement->SetAttribute("StepAdjust", m_stepAdjust);
+    curveModelElement->SetAttribute("Steps", m_steps);
+
+    tinyxml2::XMLElement* facesElement = a_doc->NewElement("Faces");
+    curveModelElement->InsertEndChild(facesElement);
+
+    for (unsigned int i = 0; i < m_faceCount; ++i)
+    {
+        const CurveFace face = m_faces[i];
+
+        tinyxml2::XMLElement* fElement = a_doc->NewElement("Face");
+        facesElement->InsertEndChild(fElement);
+
+        fElement->SetAttribute("FaceMode", (int)face.FaceMode);
+
+        switch (face.FaceMode)
+        {
+        case FaceMode_3Point:
+        {
+            for (int i = 0; i < 6; ++i)
+            {
+                tinyxml2::XMLElement* indexElement = a_doc->NewElement("Index");
+                fElement->InsertEndChild(indexElement);
+                indexElement->SetText(face.Index[i]);
+
+                tinyxml2::XMLElement* clusterIndexElement = a_doc->NewElement("ClusterIndex");
+                fElement->InsertEndChild(clusterIndexElement);
+                clusterIndexElement->SetText(face.ClusterIndex[i]);
+            }
+
+            break;
+        }
+        case FaceMode_4Point:
+        {
+            for (int i = 0; i < 8; ++i)
+            {
+                tinyxml2::XMLElement* indexElement = a_doc->NewElement("Index");
+                fElement->InsertEndChild(indexElement);
+                indexElement->SetText(face.Index[i]);
+
+                tinyxml2::XMLElement* clusterIndexElement = a_doc->NewElement("ClusterIndex");
+                fElement->InsertEndChild(clusterIndexElement);
+                clusterIndexElement->SetText(face.ClusterIndex[i]);
+            }
+
+            break;
+        }
+        }
+    }
+
+    tinyxml2::XMLElement* nodesElement = a_doc->NewElement("Nodes");
+    curveModelElement->InsertEndChild(nodesElement);
+
+    for (unsigned int i = 0; i < m_nodeCount; ++i)
+    {
+        const Node3Cluster node = m_nodes[i];
+
+        tinyxml2::XMLElement* nElement = a_doc->NewElement("Node");
+        nodesElement->InsertEndChild(nElement);
+
+        const std::vector<NodeGroup> nodes = node.Nodes;
+        const int size = nodes.size();
+
+        if (size > 0)
+        {
+            const glm::vec3 pos = nodes[0].Node.GetPosition();
+
+            tinyxml2::XMLElement* positionElement = a_doc->NewElement("Position");
+            nElement->InsertEndChild(positionElement);
+
+            tinyxml2::XMLElement* pXElement = a_doc->NewElement("X");
+            positionElement->InsertEndChild(pXElement);
+            pXElement->SetText(pos.x);
+            tinyxml2::XMLElement* pYElement = a_doc->NewElement("Y");
+            positionElement->InsertEndChild(pYElement);
+            pYElement->SetText(pos.y);
+            tinyxml2::XMLElement* pZElement = a_doc->NewElement("Z");
+            positionElement->InsertEndChild(pZElement);
+            pZElement->SetText(pos.z);
+
+            for (int j = 0; j < size; ++j)
+            {
+                const NodeGroup g = nodes[j];
+
+                tinyxml2::XMLElement* cNodeElement = a_doc->NewElement("ClusterNode");
+                nElement->InsertEndChild(cNodeElement);
+
+                const glm::vec3 hPos = g.Node.GetHandlePosition();
+
+                tinyxml2::XMLElement* hPositionElement = a_doc->NewElement("HandlePosition");
+                cNodeElement->InsertEndChild(hPositionElement);
+
+                tinyxml2::XMLElement* pHXElement = a_doc->NewElement("X");
+                hPositionElement->InsertEndChild(pHXElement);
+                pHXElement->SetText(hPos.x);
+                tinyxml2::XMLElement* pHYElement = a_doc->NewElement("Y");
+                hPositionElement->InsertEndChild(pHYElement);
+                pHYElement->SetText(hPos.y);
+                tinyxml2::XMLElement* pHZElement = a_doc->NewElement("Z");
+                hPositionElement->InsertEndChild(pHZElement);
+                pHZElement->SetText(hPos.z);
+            }
+        }
+    }
+}

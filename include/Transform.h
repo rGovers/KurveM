@@ -5,6 +5,8 @@
 
 #include <glm/gtc/quaternion.hpp>
 
+#include "tinyxml2.h"
+
 class Transform
 {
 private:
@@ -32,4 +34,6 @@ public:
     }
 
     glm::mat4 ToMatrix() const;
+
+    void Serialize(tinyxml2::XMLDocument* a_doc, tinyxml2::XMLElement* a_parent) const;
 };

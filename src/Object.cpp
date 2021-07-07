@@ -27,7 +27,6 @@ Object::Object(const char* a_name)
     SetName(a_name);
 
     m_curveModel = nullptr;
-    m_displayModel = nullptr;
 
     m_program = Datastore::GetShaderProgram("SHADER_EDITORSTANDARD");
     if (m_program == nullptr)
@@ -52,12 +51,6 @@ Object::~Object()
     {
         delete m_curveModel;
         m_curveModel = nullptr;
-    }
-
-    if (m_displayModel != nullptr)
-    {
-        delete m_displayModel;
-        m_displayModel = nullptr;
     }
 
     if (m_name != nullptr)
@@ -134,7 +127,7 @@ glm::mat4 Object::GetGlobalMatrix() const
 
 void Object::Draw(Camera* a_camera, const glm::vec2& a_winSize)
 {
-    Model* model = m_displayModel;
+    Model* model = nullptr;
 
     if (m_curveModel != nullptr)
     {
@@ -162,5 +155,21 @@ void Object::Draw(Camera* a_camera, const glm::vec2& a_winSize)
         glUniformMatrix4fv(2, 1, false, (float*)&world);
 
         glDrawElements(GL_TRIANGLES, model->GetIndexCount(), GL_UNSIGNED_INT, nullptr);
+    }
+}
+
+void Object::Serialize(tinyxml2::XMLDocument* a_doc, tinyxml2::XMLElement* a_element) const
+{
+    a_element->SetAttribute("ID", (unsigned int)m_id);
+    a_element->SetAttribute("Name", m_name);   
+
+    if (m_transform != nullptr)
+    {
+        m_transform->Serialize(a_doc, a_element);
+    }
+
+    if (m_curveModel != nullptr)
+    {
+        m_curveModel->Serialize(a_doc, a_element);
     }
 }
