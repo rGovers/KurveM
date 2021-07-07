@@ -3,6 +3,7 @@
 #define GLM_FORCE_SWIZZLE 
 #include <glm/glm.hpp>
 
+#include <fstream>
 #include <list>
 
 #include "tinyxml2.h"
@@ -77,5 +78,6 @@ public:
 
     void Draw(Camera* a_camera, const glm::vec2& a_winSize);
 
+    void WriteOBJ(std::ofstream* a_file, bool a_smartStep, int a_steps) const;
     void Serialize(tinyxml2::XMLDocument* a_doc, tinyxml2::XMLElement* a_element) const;
 };

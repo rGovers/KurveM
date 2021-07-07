@@ -1,5 +1,6 @@
 #include "Workspace.h"
 
+#include <fstream>
 #include <stdio.h>
 #include <string>
 #include <string.h>
@@ -21,6 +22,7 @@
 #include "LongTasks/LongTask.h"
 #include "LongTasks/TriangulateCurveLongTask.h"
 #include "Modals/Modal.h"
+#include "Modals/ExportOBJModal.h"
 #include "Modals/SaveFileModal.h"
 #include "Object.h"
 #include "RenderTexture.h"
@@ -66,6 +68,43 @@ void Workspace::PushCurrentTask()
 {
     m_postTask = m_currentTask;
     m_currentTask = nullptr;
+}
+
+char* Workspace::GetHomePath() const
+{
+#if _WIN32
+    const char* drive = getenv("HOMEDRIVE");
+    const char* path = getenv("HOMEPATH");
+
+    const int driveLen = strlen(drive);
+    const int pathLen = strlen(path);
+
+    const int len = driveLen + pathLen + 1;
+                
+    char* home = new char[len];
+
+    for (int i = 0; i < driveLen; ++i)
+    {
+        home[i] = drive[i];
+    }
+    for (int i = 0; i < pathLen + 1; ++i)
+    {
+        home[i + driveLen] = path[i];
+    }
+#else
+    const char* tmp = getenv("HOME");
+
+    int len = strlen(tmp) + 1;
+
+    char* home = new char[len];
+
+    for (int i = 0; i < len; ++i)
+    {
+        home[i] = tmp[i];
+    }
+#endif
+
+    return home;
 }
 
 Workspace::Workspace()
@@ -239,6 +278,48 @@ void Workspace::SaveAs(const char* a_dir)
     if (m_currentDir != nullptr)
     {
         Save();
+    }
+}
+
+void SaveOBJObject(std::ofstream* a_file, const Object* a_obj, bool a_smartStep, int a_steps)
+{
+    if (a_obj != nullptr)
+    {
+        a_file->write("\n", 1);
+
+        a_obj->WriteOBJ(a_file, a_smartStep, a_steps);
+
+        const std::list<Object*> children = a_obj->GetChildren();
+
+        for (auto iter = children.begin(); iter != children.end(); ++iter)
+        {
+            SaveOBJObject(a_file, *iter, a_smartStep, a_steps);
+        }
+    }    
+}
+void Workspace::ExportOBJ(const char* a_dir, bool a_selectedObjects, bool a_smartStep, int a_steps)
+{
+    std::ofstream file;
+
+    file.open(a_dir); 
+    if (file.is_open())
+    {
+        if (a_selectedObjects)
+        {
+            for (auto iter = m_selectedObjects.begin(); iter != m_selectedObjects.end(); ++iter)
+            {
+                (*iter)->WriteOBJ(&file, a_smartStep, a_steps);
+            }
+        }
+        else
+        {
+            for (auto iter = m_objectList.begin(); iter != m_objectList.end(); ++iter)
+            {
+                SaveOBJObject(&file, *iter, a_smartStep, a_steps);
+            }
+        }
+
+        file.close();
     }
 }
 
@@ -669,37 +750,8 @@ void Workspace::Update(double a_delta)
 
             if (ImGui::MenuItem("Save As", "Ctrl+Shift+S"))
             {
-#if _WIN32
-                const char* drive = getenv("HOMEDRIVE");
-                const char* path = getenv("HOMEPATH");
+                char* home = GetHomePath();
 
-                const int driveLen = strlen(drive);
-                const int pathLen = strlen(path);
-
-                const int len = driveLen + pathLen + 1;
-                
-                char* home = new char[len];
-
-                for (int i = 0; i < driveLen; ++i)
-                {
-                    home[i] = drive[i];
-                }
-                for (int i = 0; i < pathLen + 1; ++i)
-                {
-                    home[i + driveLen] = path[i];
-                }
-#else
-                const char* tmp = getenv("HOME");
-
-                int len = strlen(tmp) + 1;
-
-                char* home = new char[len];
-
-                for (int i = 0; i < len; ++i)
-                {
-                    home[i] = tmp[i];
-                }
-#endif
                 PushModal(new SaveFileModal(this, home));
 
                 delete[] home;
@@ -707,7 +759,7 @@ void Workspace::Update(double a_delta)
 
             ImGui::Separator();
 
-            if (ImGui::BeginMenu("Export"))
+            if (ImGui::BeginMenu("Export", m_objectList.size() > 0))
             {
                 if (ImGui::MenuItem("Erde Curve Model"))
                 {
@@ -718,7 +770,11 @@ void Workspace::Update(double a_delta)
 
                 if (ImGui::MenuItem("Wavefront OBJ"))
                 {
-                    
+                    char* home = GetHomePath();
+
+                    PushModal(new ExportOBJModal(this, home));
+
+                    delete[] home;
                 }
 
                 if (ImGui::MenuItem("Collada"))

@@ -158,6 +158,21 @@ void Object::Draw(Camera* a_camera, const glm::vec2& a_winSize)
     }
 }
 
+void Object::WriteOBJ(std::ofstream* a_file, bool a_smartStep, int a_steps) const
+{
+    if (m_curveModel != nullptr)
+    {
+        a_file->write("o ", 2);
+        a_file->write(m_name, strlen(m_name));
+        
+        const std::string str = std::to_string(m_id);
+        a_file->write(str.c_str(), str.length());
+
+        a_file->write("\n", 1);
+
+        return m_curveModel->WriteOBJ(a_file, a_smartStep, a_steps);
+    }
+}
 void Object::Serialize(tinyxml2::XMLDocument* a_doc, tinyxml2::XMLElement* a_element) const
 {
     a_element->SetAttribute("ID", (unsigned int)m_id);

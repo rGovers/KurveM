@@ -85,6 +85,7 @@ private:
     void ToolbarButton(const char* a_text, e_ToolMode a_toolMode);
     bool ObjectHeirachyGUI(Object* a_object, bool* a_blockMenu);
 
+    char* GetHomePath() const;
 protected:
 
 public:
@@ -95,6 +96,8 @@ public:
     void Open(const char* a_dir);
     void Save();
     void SaveAs(const char* a_dir);
+
+    void ExportOBJ(const char* a_dir, bool a_selectedObjects, bool a_smartStep, int a_steps);
 
     bool Undo();
     bool Redo();

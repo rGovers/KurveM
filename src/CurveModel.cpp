@@ -393,7 +393,7 @@ void CurveModel::Triangulate()
     PostTriangulate(indices, indexCount, vertices, vertexCount);
 }
 
-void CurveModel::PreTriangulate(unsigned int** a_indices, unsigned int* a_indexCount, Vertex** a_vertices, unsigned int* a_vertexCount) const
+void CurveModel::GetModelData(bool a_smartStep, int a_steps, unsigned int** a_indices, unsigned int* a_indexCount, Vertex** a_vertices, unsigned int* a_vertexCount) const
 {
     *a_vertices = nullptr;
     *a_indices = nullptr;
@@ -425,15 +425,15 @@ void CurveModel::PreTriangulate(unsigned int** a_indices, unsigned int* a_indexC
 
                     // I am not good at maths so I could be wrong but I am sensing a coastline problem here therefore I am just doing
                     // an approximation based on the points instead of the curve
-                    int step = m_steps;
-                    if (m_stepAdjust)
+                    int step = a_steps;
+                    if (a_smartStep)
                     {
                         const float aDist = GetNodeDist(nodes[FaceIndex_3Point_AB], nodes[FaceIndex_3Point_BA]);
                         const float bDist = GetNodeDist(nodes[FaceIndex_3Point_BC], nodes[FaceIndex_3Point_CB]);
                         const float cDist = GetNodeDist(nodes[FaceIndex_3Point_CA], nodes[FaceIndex_3Point_AC]);
 
                         const float m = glm::max(aDist, glm::max(bDist, cDist));
-                        step = (int)glm::ceil(m * m_steps * 0.5f);
+                        step = (int)glm::ceil(m * a_steps * 0.5f);
                     }
 
                     // Still not 100% and I suspect I went down the wrong path trying to triangulate it 
@@ -522,9 +522,9 @@ void CurveModel::PreTriangulate(unsigned int** a_indices, unsigned int* a_indexC
                         nodes[i] = m_nodes[face.Index[i]].Nodes[face.ClusterIndex[i]].Node;
                     } 
 
-                    int xStep = m_steps;
-                    int yStep = m_steps;
-                    if (m_stepAdjust)
+                    int xStep = a_steps;
+                    int yStep = a_steps;
+                    if (a_smartStep)
                     {
                         const float xADist = GetNodeDist(nodes[FaceIndex_4Point_AB], nodes[FaceIndex_4Point_BA]);
                         const float xBDist = GetNodeDist(nodes[FaceIndex_4Point_CD], nodes[FaceIndex_4Point_DC]);
@@ -534,8 +534,8 @@ void CurveModel::PreTriangulate(unsigned int** a_indices, unsigned int* a_indexC
                         const float mX = glm::max(xADist, xBDist);
                         const float mY = glm::max(yADist, yBDist);
                         
-                        xStep = (int)glm::ceil(mX * m_steps * 0.5f);
-                        yStep = (int)glm::ceil(mY * m_steps * 0.5f);
+                        xStep = (int)glm::ceil(mX * a_steps * 0.5f);
+                        yStep = (int)glm::ceil(mY * a_steps * 0.5f);
                     }
 
                     for (int i = 0; i < xStep; ++i)
@@ -601,9 +601,9 @@ void CurveModel::PreTriangulate(unsigned int** a_indices, unsigned int* a_indexC
 
         unsigned int vertexIndex = 0;
 
-        if (m_stepAdjust)
+        if (a_smartStep)
         {
-            const double cDist = 1.0f / m_steps * 0.75f;
+            const double cDist = 1.0f / a_steps * 0.75f;
             const double cDSqr = cDist * cDist;
 
             for (unsigned int i = 0; i < *a_indexCount; ++i)
@@ -674,6 +674,10 @@ void CurveModel::PreTriangulate(unsigned int** a_indices, unsigned int* a_indexC
     }
 }
 
+void CurveModel::PreTriangulate(unsigned int** a_indices, unsigned int* a_indexCount, Vertex** a_vertices, unsigned int* a_vertexCount) const
+{
+    GetModelData(m_stepAdjust, m_steps, a_indices, a_indexCount, a_vertices, a_vertexCount);
+}
 void CurveModel::PostTriangulate(unsigned int* a_indices, unsigned int a_indexCount, Vertex* a_vertices, unsigned int a_vertexCount)
 {
     if (m_displayModel != nullptr)
@@ -799,5 +803,62 @@ void CurveModel::Serialize(tinyxml2::XMLDocument* a_doc, tinyxml2::XMLElement* a
                 pHZElement->SetText(hPos.z);
             }
         }
+    }
+}
+
+
+void CurveModel::WriteOBJ(std::ofstream* a_file, bool a_stepAdjust, int a_steps)
+{
+    Vertex* vertices;
+    unsigned int* indices;
+
+    unsigned int indexCount;
+    unsigned int vertexCount;
+
+    GetModelData(a_stepAdjust, a_steps, &indices, &indexCount, &vertices, &vertexCount);
+
+    a_file->write("\n", 1);
+
+    const char* vertexPosComment = "# Vertex Data \n";
+    a_file->write(vertexPosComment, strlen(vertexPosComment));
+
+    for (unsigned int i = 0; i < vertexCount; ++i)
+    {
+        const Vertex vert = vertices[i];
+
+        a_file->write("v", 1);
+        for (int j = 0; j < 4; ++j)
+        {
+            const std::string str = " " + std::to_string(vert.Position[j]);
+            a_file->write(str.c_str(), str.length());
+        }
+        a_file->write("\n", 1);
+
+        a_file->write("vn", 2);
+        for (int j = 0; j < 3; ++j)
+        {
+            const std::string str = " " + std::to_string(-vert.Normal[j]);
+            a_file->write(str.c_str(), str.length());
+        }    
+        a_file->write("\n", 1);
+    }
+
+    a_file->write("\n", 1);
+
+    const char* facesComment = "# Faces \n";
+    a_file->write(facesComment, strlen(facesComment));
+
+    for (unsigned int i = 0; i < indexCount; i += 3)
+    {
+        a_file->write("f", 1);
+        
+        for (int j = 0; j < 3; ++j)
+        {
+            const std::string strVal = std::to_string(indices[i + j] + 1);
+            const std::string str = " " + strVal + "//" + strVal;
+            a_file->write(str.c_str(), str.length());
+        }
+
+        a_file->write(" \n", 2);    
     }
 }

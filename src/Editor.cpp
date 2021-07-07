@@ -345,6 +345,8 @@ void Editor::Update(double a_delta, const glm::vec2& a_winPos, const glm::vec2& 
 
     if (ImGui::IsWindowHovered())
     {
+        camTransform->Translation() -= camForward * io.MouseWheel * 2.0f;
+
         const Object* obj = m_workspace->GetSelectedObject();
 
         if (obj != nullptr)
@@ -721,8 +723,6 @@ void Editor::Update(double a_delta, const glm::vec2& a_winPos, const glm::vec2& 
         }
         } 
     }
-
-    camTransform->Translation() -= camForward * io.MouseWheel * 2.0f;
 
     if (m_mouseDown & 0b1 << 1)
     {

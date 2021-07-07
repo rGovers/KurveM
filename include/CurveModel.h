@@ -3,6 +3,7 @@
 #include "BezierCurveNode3.h"
 #include "tinyxml2.h"
 
+#include <fstream>
 #include <vector>
 
 struct Vertex;
@@ -176,8 +177,11 @@ public:
     void PassModelData(Node3Cluster* a_nodes, unsigned int a_nodeCount, CurveFace* a_faces, unsigned int a_faceCount);
     void Triangulate();
 
+    void GetModelData(bool a_smartStep, int a_steps, unsigned int** a_indices, unsigned int* a_indexCount, Vertex** a_vertices, unsigned int* a_vertexCount) const;
+
     void PreTriangulate(unsigned int** a_indices, unsigned int* a_indexCount, Vertex** a_vertices, unsigned int* a_vertexCount) const;
     void PostTriangulate(unsigned int* a_indices, unsigned int a_indexCount, Vertex* a_vertices, unsigned int a_vertexCount);
 
     void Serialize(tinyxml2::XMLDocument* a_doc, tinyxml2::XMLElement* a_parent) const;
+    void WriteOBJ(std::ofstream* a_file, bool a_stepAdjust, int a_steps);
 };
