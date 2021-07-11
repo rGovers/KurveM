@@ -1,6 +1,7 @@
 #include "Object.h"
 
 #include <glad/glad.h>
+#include <string>
 #include <string.h>
 
 #include "Camera.h"

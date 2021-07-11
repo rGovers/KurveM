@@ -3,6 +3,8 @@
 #include "Model.h"
 #include "XMLIO.h"
 
+#include <string>
+
 CurveModel::CurveModel()
 {
     m_nodes = nullptr;

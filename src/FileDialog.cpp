@@ -21,7 +21,7 @@ bool FileDialog::GenerateFilesAndDirs(std::list<char*>* a_dirs, std::list<char*>
             if (iter.is_directory())
             {
                 // Have to use string otherwise I get garbage data
-                std::string str = iter.path().filename();
+                const std::string str = iter.path().filename().u8string();
 
                 int len = str.length() + 1;
 
@@ -37,7 +37,7 @@ bool FileDialog::GenerateFilesAndDirs(std::list<char*>* a_dirs, std::list<char*>
             }
             else if (iter.is_regular_file())
             {
-                std::string str = iter.path().filename();
+                const std::string str = iter.path().filename().u8string();
 
                 int len = str.length() + 1;
 

@@ -406,6 +406,16 @@ bool Workspace::Redo()
     return false;
 }
 
+Object* Workspace::GetSelectedObject() const
+{
+    if (m_selectedObjects.size() > 0)
+    {
+        return *m_selectedObjects.begin();
+    }
+
+    return nullptr;
+}
+
 void Workspace::PushModal(Modal* a_modal)
 {
     m_modalStack.emplace_back(a_modal);

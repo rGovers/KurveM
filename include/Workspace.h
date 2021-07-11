@@ -111,10 +111,7 @@ public:
         return m_block;
     }
 
-    inline Object* GetSelectedObject() const
-    {
-        return *m_selectedObjects.begin();
-    }
+    Object* GetSelectedObject() const;
     inline std::list<Object*> GetSelectedObjects() const
     {
         return m_selectedObjects;
