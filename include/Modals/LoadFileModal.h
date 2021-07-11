@@ -6,7 +6,7 @@
 
 class Workspace;
 
-class ExportOBJModal : public Modal
+class LoadFileModal : public Modal
 {
 private:
     Workspace*       m_workspace;
@@ -19,13 +19,6 @@ private:
     std::list<char*> m_dirs;
     std::list<char*> m_files;
 
-    bool             m_ret;
-
-    bool             m_smartStep;
-    int              m_step;
-
-    bool             m_exportSelected;
-
     void Overwrite(bool a_value);
     
     void Clear();
@@ -33,8 +26,8 @@ private:
 protected:
 
 public:
-    ExportOBJModal(Workspace* a_workspace, const char* a_path);
-    ~ExportOBJModal();
+    LoadFileModal(Workspace* a_workspace, const char* a_path);
+    ~LoadFileModal();
 
     virtual const char* GetName();
 

@@ -10,6 +10,8 @@ private:
 protected:
 
 public:
+    virtual ~Modal() { }
+
     virtual const char* GetName() = 0;
 
     virtual glm::vec2 GetSize() { return glm::vec2(0); } 

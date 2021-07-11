@@ -188,3 +188,42 @@ void Object::Serialize(tinyxml2::XMLDocument* a_doc, tinyxml2::XMLElement* a_ele
         m_curveModel->Serialize(a_doc, a_element);
     }
 }
+
+Object* Object::ParseData(const tinyxml2::XMLElement* a_element, Object* a_parent)
+{
+    const tinyxml2::XMLAttribute* nameAtt = a_element->FindAttribute("Name");
+
+    Object* obj = new Object(nameAtt->Value());
+    if (a_parent != nullptr)
+    {
+        obj->SetParent(a_parent);
+    }
+
+    for (const tinyxml2::XMLElement* iter = a_element->FirstChildElement(); iter != nullptr; iter = iter->NextSiblingElement())
+    {
+        const char* str = iter->Value();
+
+        if (strcmp(str, "Object") == 0)
+        {
+            ParseData(iter, obj);
+        }
+        else if (strcmp(str, "Transform") == 0)
+        {
+            obj->m_transform->ParseData(iter);
+        }
+        else if (strcmp(str, "CurveModel") == 0)
+        {
+            obj->m_curveModel = new CurveModel();
+            obj->m_curveModel->ParseData(iter);
+            obj->m_curveModel->Triangulate();
+        }
+        else
+        {
+            printf("Object::ParseData: Invalid Element: ");
+            printf(str);
+            printf("\n");
+        }
+    }
+
+    return obj;
+}

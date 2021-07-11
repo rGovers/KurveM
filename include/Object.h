@@ -80,4 +80,6 @@ public:
 
     void WriteOBJ(std::ofstream* a_file, bool a_smartStep, int a_steps) const;
     void Serialize(tinyxml2::XMLDocument* a_doc, tinyxml2::XMLElement* a_element) const;
+
+    static Object* ParseData(const tinyxml2::XMLElement* a_element, Object* a_parent);
 };

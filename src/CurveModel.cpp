@@ -1,6 +1,7 @@
 #include "CurveModel.h"
 
 #include "Model.h"
+#include "XMLIO.h"
 
 CurveModel::CurveModel()
 {
@@ -765,20 +766,7 @@ void CurveModel::Serialize(tinyxml2::XMLDocument* a_doc, tinyxml2::XMLElement* a
 
         if (size > 0)
         {
-            const glm::vec3 pos = nodes[0].Node.GetPosition();
-
-            tinyxml2::XMLElement* positionElement = a_doc->NewElement("Position");
-            nElement->InsertEndChild(positionElement);
-
-            tinyxml2::XMLElement* pXElement = a_doc->NewElement("X");
-            positionElement->InsertEndChild(pXElement);
-            pXElement->SetText(pos.x);
-            tinyxml2::XMLElement* pYElement = a_doc->NewElement("Y");
-            positionElement->InsertEndChild(pYElement);
-            pYElement->SetText(pos.y);
-            tinyxml2::XMLElement* pZElement = a_doc->NewElement("Z");
-            positionElement->InsertEndChild(pZElement);
-            pZElement->SetText(pos.z);
+            XMLIO::WriteVec3(a_doc, nElement, "Position", nodes[0].Node.GetPosition());
 
             for (int j = 0; j < size; ++j)
             {
@@ -787,25 +775,207 @@ void CurveModel::Serialize(tinyxml2::XMLDocument* a_doc, tinyxml2::XMLElement* a
                 tinyxml2::XMLElement* cNodeElement = a_doc->NewElement("ClusterNode");
                 nElement->InsertEndChild(cNodeElement);
 
-                const glm::vec3 hPos = g.Node.GetHandlePosition();
-
-                tinyxml2::XMLElement* hPositionElement = a_doc->NewElement("HandlePosition");
-                cNodeElement->InsertEndChild(hPositionElement);
-
-                tinyxml2::XMLElement* pHXElement = a_doc->NewElement("X");
-                hPositionElement->InsertEndChild(pHXElement);
-                pHXElement->SetText(hPos.x);
-                tinyxml2::XMLElement* pHYElement = a_doc->NewElement("Y");
-                hPositionElement->InsertEndChild(pHYElement);
-                pHYElement->SetText(hPos.y);
-                tinyxml2::XMLElement* pHZElement = a_doc->NewElement("Z");
-                hPositionElement->InsertEndChild(pHZElement);
-                pHZElement->SetText(hPos.z);
+                XMLIO::WriteVec3(a_doc, cNodeElement, "HandlePosition", g.Node.GetHandlePosition());
             }
         }
     }
 }
+void CurveModel::ParseData(const tinyxml2::XMLElement* a_element)
+{
+    m_stepAdjust = a_element->BoolAttribute("StepAdjust");
+    m_steps = a_element->IntAttribute("Steps");
 
+    for (const tinyxml2::XMLElement* iter = a_element->FirstChildElement(); iter != nullptr; iter = iter->NextSiblingElement())
+    {
+        const char* str = iter->Value();
+
+        if (strcmp(str, "Faces") == 0)
+        {
+            std::vector<CurveFace> faces;
+
+            for (const tinyxml2::XMLElement* fIter = iter->FirstChildElement(); fIter != nullptr; fIter = fIter->NextSiblingElement())
+            {
+                const char* fStr = fIter->Value();
+
+                if (strcmp(fStr, "Face") == 0)
+                {
+                    CurveFace face;
+
+                    face.FaceMode = (e_FaceMode)fIter->IntAttribute("FaceMode");
+
+                    int index = 0;
+                    int cIndex = 0;
+                    for (const tinyxml2::XMLElement* iIter = fIter->FirstChildElement(); iIter != nullptr; iIter = iIter->NextSiblingElement())
+                    {
+                        const char* iStr = iIter->Value();
+
+                        if (strcmp(iStr, "Index") == 0)
+                        {
+                            face.Index[index++] = iIter->IntText();
+                        }
+                        else if (strcmp(iStr, "ClusterIndex") == 0)
+                        {
+                            face.ClusterIndex[cIndex++] = iIter->IntText();
+                        }
+                        else 
+                        {
+                            printf("CurveModel::ParseData: InvalidElement: ");
+                            printf(iStr);
+                            printf("\n");
+                        }
+                    }
+
+                    faces.emplace_back(face);
+                }
+                else 
+                {
+                    printf("CurveModel::ParseData: Invalid Element: ");
+                    printf(fStr);
+                    printf("\n");
+                }
+            }
+
+            m_faceCount = faces.size();
+
+            if (m_faces != nullptr)
+            {
+                delete[] m_faces;
+                m_faces = nullptr;
+            }
+
+            m_faces = new CurveFace[m_faceCount];
+
+            for (unsigned int i = 0; i < m_faceCount; ++i)
+            {
+                m_faces[i] = faces[i];
+            }
+        }
+        else if (strcmp(str, "Nodes") == 0)
+        {
+            std::vector<Node3Cluster> nodes;
+
+            for (const tinyxml2::XMLElement* nIter = iter->FirstChildElement(); nIter != nullptr; nIter = nIter->NextSiblingElement())
+            {
+                const char* nStr = nIter->Value();
+
+                if (strcmp(nStr, "Node") == 0)
+                {
+                    Node3Cluster node;
+
+                    glm::vec3 pos = glm::vec3(0);
+
+                    for (const tinyxml2::XMLElement* iIter = nIter->FirstChildElement(); iIter != nullptr; iIter = iIter->NextSiblingElement())
+                    {
+                        const char* iStr = iIter->Value();
+
+                        if (strcmp(iStr, "Position") == 0)
+                        {
+                            XMLIO::ReadVec3(iIter, &pos);
+                        }
+                        else if (strcmp(iStr, "ClusterNode") == 0)
+                        {
+                            NodeGroup n;
+
+                            n.Node.SetPosition(glm::vec3(std::numeric_limits<float>::infinity()));
+
+                            for (const tinyxml2::XMLElement* cIter = iIter->FirstChildElement(); cIter != nullptr; cIter = cIter->NextSiblingElement())
+                            {
+                                const char* cStr = cIter->Value();
+
+                                if (strcmp(cStr, "HandlePosition") == 0)
+                                {
+                                    glm::vec3 hPos = glm::vec3(0);
+
+                                    XMLIO::ReadVec3(cIter, &hPos);
+
+                                    n.Node.SetHandlePosition(hPos);
+                                }
+                                else
+                                {
+                                    printf("CurveModel::ParseData: InvalidElement: ");
+                                    printf(cStr);
+                                    printf("\n");
+                                }
+                            }
+
+                            node.Nodes.emplace_back(n);
+                        }
+                        else
+                        {
+                            printf("CurveModel::ParseData: InvalidElement: ");
+                            printf(iStr);
+                            printf("\n");
+                        }
+                    }
+
+                    for (auto iter = node.Nodes.begin(); iter != node.Nodes.end(); ++iter)
+                    {
+                        if (iter->Node.GetPosition().x == std::numeric_limits<float>::infinity())
+                        {
+                            iter->Node.SetPosition(pos);
+                        }
+                    }
+
+                    nodes.emplace_back(node);
+                }
+                else
+                {
+                    printf("CurveModel::ParseData: Invalid Element: ");
+                    printf(nStr);
+                    printf("\n");
+                }
+            }
+
+            m_nodeCount = nodes.size();
+
+            if (m_nodes != nullptr)
+            {
+                delete[] m_nodes;
+                m_nodes = nullptr;
+            }
+
+            m_nodes = new Node3Cluster[m_nodeCount];
+
+            for (unsigned int i = 0; i < m_nodeCount; ++i)
+            {
+                m_nodes[i] = nodes[i];
+            }
+        }
+        else
+        {
+            printf("CurveModel::ParseData: Invalid Element: ");
+            printf(str);
+            printf("\n");
+        }
+    }
+
+    for (unsigned int i = 0; i < m_faceCount; ++i)
+    {
+        const CurveFace face = m_faces[i];
+
+        switch (face.FaceMode)
+        {
+        case FaceMode_3Point:
+        {
+            for (int i = 0; i < 6; ++i)
+            {
+                ++m_nodes[face.Index[i]].Nodes[face.ClusterIndex[i]].FaceCount;
+            }
+
+            break;
+        }
+        case FaceMode_4Point:
+        {
+            for (int i = 0; i < 8; ++i)
+            {
+                ++m_nodes[face.Index[i]].Nodes[face.ClusterIndex[i]].FaceCount;
+            }
+
+            break;
+        }
+        }
+    }
+}
 
 void CurveModel::WriteOBJ(std::ofstream* a_file, bool a_stepAdjust, int a_steps)
 {

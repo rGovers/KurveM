@@ -183,5 +183,7 @@ public:
     void PostTriangulate(unsigned int* a_indices, unsigned int a_indexCount, Vertex* a_vertices, unsigned int a_vertexCount);
 
     void Serialize(tinyxml2::XMLDocument* a_doc, tinyxml2::XMLElement* a_parent) const;
+    void ParseData(const tinyxml2::XMLElement* a_element);
+
     void WriteOBJ(std::ofstream* a_file, bool a_stepAdjust, int a_steps);
 };

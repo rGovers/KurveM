@@ -22,7 +22,9 @@
 #include "LongTasks/LongTask.h"
 #include "LongTasks/TriangulateCurveLongTask.h"
 #include "Modals/Modal.h"
+#include "Modals/ErrorModal.h"
 #include "Modals/ExportOBJModal.h"
+#include "Modals/LoadFileModal.h"
 #include "Modals/SaveFileModal.h"
 #include "Object.h"
 #include "RenderTexture.h"
@@ -149,6 +151,12 @@ Workspace::~Workspace()
     Datastore::Destroy();
 
     ClearBuffers();
+
+    for (auto iter = m_modalStack.begin(); iter != m_modalStack.end(); ++iter)
+    {
+        delete *iter;
+    }
+    m_modalStack.clear();
 }
 
 void Workspace::ClearBuffers()
@@ -175,12 +183,6 @@ void Workspace::ClearBuffers()
         m_postTask = nullptr;
     }
 
-    for (auto iter = m_modalStack.begin(); iter != m_modalStack.end(); ++iter)
-    {
-        delete *iter;
-    }
-    m_modalStack.clear();
-
     for (auto iter = m_taskQueue.begin(); iter != m_taskQueue.end(); ++iter)
     {
         delete *iter;
@@ -191,6 +193,12 @@ void Workspace::ClearBuffers()
 void Workspace::New()
 {
     m_block = true;
+
+    if (m_currentDir != nullptr)
+    {
+        delete[] m_currentDir;
+        m_currentDir = nullptr;
+    }
 
     while (!m_clear)
     {
@@ -210,7 +218,45 @@ void Workspace::New()
 }
 void Workspace::Open(const char* a_dir)
 {
-    New();
+    tinyxml2::XMLDocument doc;
+    if (doc.LoadFile(a_dir) == tinyxml2::XMLError::XML_SUCCESS)
+    {
+        New();
+
+        const int len = strlen(a_dir) + 1;
+
+        m_currentDir = new char[len];
+
+        for (int i = 0; i < len; ++i)
+        {
+            m_currentDir[i] = a_dir[i];
+        }
+
+        const tinyxml2::XMLElement* sceneElement = doc.FirstChildElement("Scene");
+        if (sceneElement != nullptr)
+        {
+            const tinyxml2::XMLElement* objectsElement = sceneElement->FirstChildElement("Objects");
+            if (objectsElement != nullptr)
+            {   
+                for (const tinyxml2::XMLElement* iter = objectsElement->FirstChildElement(); iter != nullptr; iter = iter->NextSiblingElement())
+                {
+                    m_objectList.emplace_back(Object::ParseData(iter, nullptr));
+                }
+            }   
+            else
+            {
+                PushModal(new ErrorModal("Error Opening File: No Objects Node"));
+            }
+        }
+        else
+        {
+            PushModal(new ErrorModal("Error Opening File: No Scene Node"));
+        }
+    }
+    else
+    {
+        PushModal(new ErrorModal("Cannot Open File"));
+    }
 }
 
 void SaveObject(tinyxml2::XMLDocument* a_doc, tinyxml2::XMLElement* a_parentElement, const Object* a_object)
@@ -263,7 +309,7 @@ void Workspace::SaveAs(const char* a_dir)
 
     if (a_dir != nullptr)
     {
-        int len = strlen(a_dir) + 1;
+        const int len = strlen(a_dir) + 1;
         if (len > 1)
         {
             m_currentDir = new char[len];
@@ -557,7 +603,9 @@ bool Workspace::ObjectHeirachyGUI(Object* a_object, bool* a_blockMenu)
     }
 
     bool open = ImGui::TreeNode((void*)&id, "");
+
     ImGui::SameLine();
+
     const char* name = a_object->GetName();
     if (name == nullptr)
     {
@@ -738,7 +786,11 @@ void Workspace::Update(double a_delta)
 
             if (ImGui::MenuItem("Open", "Ctrl+O"))
             {
-                Open(nullptr);
+                char* home = GetHomePath();
+
+                PushModal(new LoadFileModal(this, home));
+
+                delete[] home;
             }
 
             ImGui::Separator();
@@ -1042,7 +1094,7 @@ void Workspace::Update(double a_delta)
                         buff[i] = name[i];
                     }
 
-                        if (ImGui::InputText("Name", buff, 1000))
+                    if (ImGui::InputText("Name", buff, 1000))
                     {
                         if (m_curAction != nullptr && m_curAction->GetActionType() == ActionType_RenameObject)
                         {

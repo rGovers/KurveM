@@ -24,7 +24,6 @@ private:
     void Overwrite(bool a_value);
     
     void Clear();
-    void GenerateFiles();
 
 protected:
 

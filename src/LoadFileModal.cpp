@@ -1,4 +1,4 @@
-#include "Modals/ExportOBJModal.h"
+#include "Modals/LoadFileModal.h"
 
 #include "FileDialog.h"
 #include "imgui.h"
@@ -9,17 +9,7 @@
 
 #define PATHSIZE 2048
 
-void ExportOBJModal::Overwrite(bool a_value)
-{
-    if (a_value)
-    {
-        m_ret = false;
-
-        m_workspace->ExportOBJ(m_fPath, m_exportSelected, m_smartStep, m_step);
-    }
-}
-
-void ExportOBJModal::Clear()
+void LoadFileModal::Clear()
 {
     for (auto iter = m_dirs.begin(); iter != m_dirs.end(); ++iter)
     {
@@ -34,7 +24,7 @@ void ExportOBJModal::Clear()
     m_files.clear();
 }
 
-ExportOBJModal::ExportOBJModal(Workspace* a_workspace, const char* a_path)
+LoadFileModal::LoadFileModal(Workspace* a_workspace, const char* a_path)
 {
     m_workspace = a_workspace;
 
@@ -51,15 +41,9 @@ ExportOBJModal::ExportOBJModal(Workspace* a_workspace, const char* a_path)
 
     m_name = new char[PATHSIZE] { 0 };
 
-    m_exportSelected = false;
-    m_smartStep = true;
-    m_step = 10;
-
-    m_ret = true;
-
     FileDialog::GenerateFilesAndDirs(&m_dirs, &m_files, m_path);
 }
-ExportOBJModal::~ExportOBJModal()
+LoadFileModal::~LoadFileModal()
 {
     delete[] m_path;
     delete[] m_name;
@@ -73,17 +57,17 @@ ExportOBJModal::~ExportOBJModal()
     Clear();
 }
 
-const char* ExportOBJModal::GetName()
+const char* LoadFileModal::GetName()
 {
-    return "Export Wavefront OBJ";
+    return "Load File";
 }
 
-glm::vec2 ExportOBJModal::GetSize()
+glm::vec2 LoadFileModal::GetSize()
 {
     return glm::vec2(640, 480);
 }
 
-bool ExportOBJModal::Execute()
+bool LoadFileModal::Execute()
 {  
     if (ImGui::InputText("Path", m_path, PATHSIZE))
     {
@@ -91,35 +75,17 @@ bool ExportOBJModal::Execute()
         FileDialog::GenerateFilesAndDirs(&m_dirs, &m_files, m_path);
     }
 
-    if (!FileDialog::PartialExplorer(m_dirs, m_files, m_path, m_name))
+    if (!FileDialog::FullExplorer(m_dirs, m_files, m_path, m_name))
     {
         Clear();
         FileDialog::GenerateFilesAndDirs(&m_dirs, &m_files, m_path);
     }
 
-    ImGui::SameLine();
-
-    ImGui::BeginGroup();
-
-    ImGui::Checkbox("Export Selected Objects", &m_exportSelected);
-
-    ImGui::Separator();
-
-    ImGui::Checkbox("Smart Step", &m_smartStep);
-
-    ImGui::PushItemWidth(100.0f);
-    if (ImGui::InputInt("Resolution", &m_step))
-    {
-        m_step = glm::max(m_step, 1);
-    }
-
-    ImGui::EndGroup();
-
     ImGui::InputText("Name", m_name, PATHSIZE);
 
     ImGui::SameLine();
 
-    if (ImGui::Button("Save"))
+    if (ImGui::Button("Load"))
     {
         if (m_name[0] == 0)
         {
@@ -139,7 +105,7 @@ bool ExportOBJModal::Execute()
 
             if (namePtr == nullptr)
             {
-                const char* ext = ".obj";
+                const char* ext = ".kumSC";
 
                 int nameLen = strlen(m_name);
                 int extLen = strlen(ext) + 1;
@@ -171,25 +137,23 @@ bool ExportOBJModal::Execute()
                 m_fPath[i + pathLen] = m_name[i];
             }
 
-            if (std::ifstream(m_fPath).good())
+            if (!std::ifstream(m_fPath).good())
             {
-                m_workspace->PushModal(new ConfirmModal("Overwrite File", std::bind(&ExportOBJModal::Overwrite, this, std::placeholders::_1)));
+                m_workspace->PushModal(new ErrorModal("No file found"));
             }
             else
             {
-                m_workspace->ExportOBJ(m_fPath, m_exportSelected, m_smartStep, m_step);
+                m_workspace->Open(m_fPath);
 
                 return false;
             }
         }
     }
-
     ImGui::SameLine();
-
     if (ImGui::Button("Cancel"))
     {
         return false;
     }
 
-    return m_ret;
+    return true;
 }
