@@ -134,9 +134,11 @@ Workspace::Workspace()
     
     m_taskThread = std::thread(RunTasks, this);
 
-    m_editor = new Editor(this);
+    m_editor = nullptr;
 
     New();
+
+    m_editor = new Editor(this);
 }
 Workspace::~Workspace()
 {
@@ -514,7 +516,10 @@ void Workspace::ClearSelectedObjects()
 {
     m_selectedObjects.clear();
 
-    m_editor->ClearSelectedNodes();
+    if (m_editor != nullptr)
+    {
+        m_editor->ClearSelectedNodes();
+    }
 }
 void Workspace::AddSelectedObject(Object* a_object)
 {

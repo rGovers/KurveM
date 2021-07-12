@@ -27,6 +27,15 @@ FileToHeader(
     VARIABLE_NAME "EditorStandardPixel")
 
 FileToHeader(
+    SOURCE_FILE "shaders/grid.vert"
+    HEADER_FILE "include/Shaders/GridVertex.h"
+    VARIABLE_NAME "GridVertex")
+FileToHeader(
+    SOURCE_FILE "shaders/grid.frag"
+    HEADER_FILE "include/Shaders/GridPixel.h"
+    VARIABLE_NAME "GridPixel")
+
+FileToHeader(
     SOURCE_FILE "shaders/gizmos.vert"
     HEADER_FILE "include/Shaders/GizmosVertex.h"
     VARIABLE_NAME "GizmosVertex")

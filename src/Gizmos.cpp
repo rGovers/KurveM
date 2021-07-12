@@ -74,29 +74,33 @@ void Gizmos::Clear()
 }
 void Gizmos::DrawAll(Camera* a_camera, const glm::vec2& a_winSize)
 {
-    glDisable(GL_CULL_FACE);  
-
-    const unsigned int programHandle = Instance->m_program->GetHandle();
-    glUseProgram(programHandle);
-
-    glBindVertexArray(Instance->m_vao);
-    
-    const unsigned int vertexCount = Instance->m_vertices.size();
-    glBindBuffer(GL_ARRAY_BUFFER, Instance->m_vbo);
-    glBufferData(GL_ARRAY_BUFFER, vertexCount * sizeof(GizmoVertex), &Instance->m_vertices[0], GL_STATIC_DRAW);
-    
     const unsigned int indexCount = Instance->m_indices.size();
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, Instance->m_ibo);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexCount * sizeof(unsigned int), &Instance->m_indices[0], GL_STATIC_DRAW);
-
-    const glm::mat4 view = a_camera->GetView();
-    const glm::mat4 proj = a_camera->GetProjection((int)a_winSize.x, (int)a_winSize.y);
-
-    const glm::mat4 viewProj = proj * view;
-
-    glUniformMatrix4fv(0, 1, false, (float*)&viewProj);
-
-    glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, nullptr);
+    const unsigned int vertexCount = Instance->m_vertices.size();
+    if (indexCount > 0 && vertexCount > 0)
+    {
+        glDisable(GL_CULL_FACE);  
+        glDisable(GL_DEPTH_TEST);
+    
+        const unsigned int programHandle = Instance->m_program->GetHandle();
+        glUseProgram(programHandle);
+    
+        glBindVertexArray(Instance->m_vao);
+        
+        glBindBuffer(GL_ARRAY_BUFFER, Instance->m_vbo);
+        glBufferData(GL_ARRAY_BUFFER, vertexCount * sizeof(GizmoVertex), &Instance->m_vertices[0], GL_STATIC_DRAW);
+        
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, Instance->m_ibo);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexCount * sizeof(unsigned int), &Instance->m_indices[0], GL_STATIC_DRAW);
+    
+        const glm::mat4 view = a_camera->GetView();
+        const glm::mat4 proj = a_camera->GetProjection((int)a_winSize.x, (int)a_winSize.y);
+    
+        const glm::mat4 viewProj = proj * view;
+    
+        glUniformMatrix4fv(0, 1, false, (float*)&viewProj);
+    
+        glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, nullptr);
+    }
 }
 
 void Gizmos::DrawLine(const glm::vec3& a_start, const glm::vec3& a_end, float a_width, const glm::vec4& a_color)

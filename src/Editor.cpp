@@ -12,11 +12,17 @@
 #include "Application.h"
 #include "BezierCurveNode3.h"
 #include "Camera.h"
+#include "Datastore.h"
 #include "Gizmos.h"
 #include "imgui.h"
 #include "Modals/DeleteNodesModal.h"
 #include "Object.h"
 #include "RenderTexture.h"
+#include "ShaderPixel.h"
+#include "ShaderProgram.h"
+#include "Shaders/GridPixel.h"
+#include "Shaders/GridVertex.h"
+#include "ShaderVertex.h"
 #include "SelectionControl.h"
 #include "Transform.h"
 #include "Workspace.h"
@@ -24,6 +30,28 @@
 Editor::Editor(Workspace* a_workspace)
 {
     m_workspace = a_workspace;
+    
+    m_gridShader = Datastore::GetShaderProgram("SHADER_GRID");
+    if (m_gridShader == nullptr)
+    {   
+        ShaderVertex* vertexShader = new ShaderVertex(GRIDVERTEX);
+        ShaderPixel* pixelShader = new ShaderPixel(GRIDPIXEL);
+
+        m_gridShader = new ShaderProgram(vertexShader, pixelShader);
+
+        delete vertexShader;
+        delete pixelShader;
+
+        Datastore::AddShaderProgram("SHADER_GRID", m_gridShader);
+    }
+
+    glGenBuffers(1, &m_dummyVBO);
+    glGenBuffers(1, &m_dummyIBO);
+    glGenVertexArrays(1, &m_dummyVAO);
+
+    glBindVertexArray(m_dummyVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, m_dummyVBO);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_dummyIBO);
 
     m_renderTexture = new RenderTexture(640, 480);
 
@@ -46,6 +74,10 @@ Editor::~Editor()
     delete m_renderTexture;
 
     delete m_camera;
+
+    glDeleteBuffers(1, &m_dummyVBO);
+    glDeleteBuffers(1, &m_dummyIBO);
+    glDeleteVertexArrays(1, &m_dummyVAO);
 }
 
 bool Editor::IsFaceSelected() const
@@ -864,6 +896,24 @@ void Editor::Update(double a_delta, const glm::vec2& a_winPos, const glm::vec2& 
 
     const unsigned int handle = m_renderTexture->GetHandle();
 
+    glm::vec4 viewCache;
+    int fbCache;
+
+    glGetFloatv(GL_VIEWPORT, (float*)&viewCache);
+    glGetIntegerv(GL_FRAMEBUFFER_BINDING, (GLint*)&fbCache);
+
+    glViewport(0, 0, width, height);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, handle);
+    glDrawBuffer(GL_COLOR_ATTACHMENT0);
+
+    glClearColor(163.0f / 255, 163.0f / 255, 162.0f / 255, 1);
+
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);  
+
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LESS);  
+    
     switch (m_faceCullingMode)
     {
         case EditorFaceCullingMode_Back:
@@ -894,23 +944,6 @@ void Editor::Update(double a_delta, const glm::vec2& a_winPos, const glm::vec2& 
             break;
         }
     }
-    
-    glEnable(GL_DEPTH_TEST);  
-
-    glm::vec4 viewCache;
-    int fbCache;
-
-    glGetFloatv(GL_VIEWPORT, (float*)&viewCache);
-    glGetIntegerv(GL_FRAMEBUFFER_BINDING, (GLint*)&fbCache);
-
-    glViewport(0, 0, width, height);
-
-    glBindFramebuffer(GL_FRAMEBUFFER, handle);
-    glDrawBuffer(GL_COLOR_ATTACHMENT0);
-
-    glClearColor(163.0f / 255, 163.0f / 255, 162.0f / 255, 1);
-
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);    
 
     const std::list<Object*> objs = m_workspace->GetObjectList();
 
@@ -921,15 +954,26 @@ void Editor::Update(double a_delta, const glm::vec2& a_winPos, const glm::vec2& 
         DrawObject(obj, a_winSize);
     }
 
-    // TODO: Create transform Gizmos
-    Gizmos::DrawLine(glm::vec3(0), glm::vec3(1, 0, 0), viewInv[2].xyz(), 0.01f, glm::vec4(1, 0, 0, 1));
-    Gizmos::DrawLine(glm::vec3(0), glm::vec3(0, 1, 0), viewInv[2].xyz(), 0.01f, glm::vec4(0, 1, 0, 1));
-    Gizmos::DrawLine(glm::vec3(0), glm::vec3(0, 0, 1), viewInv[2].xyz(), 0.01f, glm::vec4(0, 0, 1, 1));
-
-    glDisable(GL_CULL_FACE);
-    glDisable(GL_DEPTH_TEST);
-
     Gizmos::DrawAll(m_camera, a_winSize);
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);  
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LESS);  
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_BACK);  
+
+    const unsigned int programHandle = m_gridShader->GetHandle();
+    glUseProgram(programHandle);
+
+    glBindVertexArray(m_dummyVAO);
+
+    glUniformMatrix4fv(0, 1, false, (float*)&view);
+    glUniformMatrix4fv(1, 1, false, (float*)&proj);
+
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+    glDisable(GL_BLEND);
 
     // Restore framebuffer state for imgui
     glBindFramebuffer(GL_FRAMEBUFFER, fbCache);

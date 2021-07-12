@@ -3,6 +3,7 @@
 class Camera;
 class Object;
 class RenderTexture;
+class ShaderProgram;
 class Workspace;
 
 #define GLM_FORCE_SWIZZLE 
@@ -35,6 +36,12 @@ private:
     e_EditorFaceCullingMode  m_faceCullingMode;
     e_EditorMode             m_editorMode;
          
+    ShaderProgram*           m_gridShader;
+
+    unsigned int             m_dummyIBO;
+    unsigned int             m_dummyVBO;
+    unsigned int             m_dummyVAO;
+
     Camera*                  m_camera;
          
     Workspace*               m_workspace;
