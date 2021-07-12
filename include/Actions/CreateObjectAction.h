@@ -8,6 +8,8 @@ class Workspace;
 enum e_CreateObjectType
 {
     CreateObjectType_Empty,
+    CreateObjectType_TriangleCurve,
+    CreateObjectType_PlaneCurve,
     CreateObjectType_SphereCurve,
     CreateObjectType_CubeCurve
 };

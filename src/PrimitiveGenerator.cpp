@@ -1,5 +1,143 @@
 #include "PrimitiveGenerator.h"
 
+void GetData(const std::vector<Node3Cluster>& a_nodes, const std::vector<CurveFace>& a_faces, Node3Cluster** a_nodePtr, unsigned int* a_nodeCount, CurveFace** a_facePtr, unsigned int* a_faceCount)
+{
+    *a_nodeCount = a_nodes.size();
+    *a_nodePtr = new Node3Cluster[*a_nodeCount];
+
+    for (unsigned int i = 0; i < *a_nodeCount; ++i)
+    {
+        (*a_nodePtr)[i] = a_nodes[i];
+    }
+
+    *a_faceCount = a_faces.size();
+    *a_facePtr = new CurveFace[*a_faceCount];
+
+    for (unsigned int i = 0; i < *a_faceCount; ++i)
+    {
+        const CurveFace face = a_faces[i];
+
+        (*a_facePtr)[i] = face;
+
+        switch (face.FaceMode)
+        {
+        case FaceMode_3Point:
+        {   
+            for (int j = 0; j < 6; ++j)
+            {
+                ++(*a_nodePtr)[face.Index[j]].Nodes[face.ClusterIndex[j]].FaceCount;
+            }
+
+            break;
+        }
+        case FaceMode_4Point:
+        {
+            for (int j = 0; j < 8; ++j)
+            {
+                ++(*a_nodePtr)[face.Index[j]].Nodes[face.ClusterIndex[j]].FaceCount;
+            }
+
+            break;
+        }
+        } 
+    }
+}
+
+void PrimitiveGenerator::CreateCurveTriangle(Node3Cluster** a_nodePtr, unsigned int* a_nodeCount, CurveFace** a_facePtr, unsigned int* a_faceCount)
+{
+    std::vector<Node3Cluster> nodes;
+    std::vector<CurveFace> faces;
+
+    Node3Cluster t;
+    t.Nodes.emplace_back(BezierCurveNode3(glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)));
+    t.Nodes.emplace_back(BezierCurveNode3(glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)));
+
+    Node3Cluster bL;
+    bL.Nodes.emplace_back(BezierCurveNode3(glm::vec3(-0.5f, 0.0f, 0.0f), glm::vec3(-0.5f, 0.0f, 0.0f)));
+    bL.Nodes.emplace_back(BezierCurveNode3(glm::vec3(-0.5f, 0.0f, 0.0f), glm::vec3(-0.5f, 0.0f, 0.0f)));
+
+    Node3Cluster bR;
+    bR.Nodes.emplace_back(BezierCurveNode3(glm::vec3(0.5f, 0.0f, 0.0f), glm::vec3(0.5f, 0.0f, 0.0f)));
+    bR.Nodes.emplace_back(BezierCurveNode3(glm::vec3(0.5f, 0.0f, 0.0f), glm::vec3(0.5f, 0.0f, 0.0f)));
+
+    nodes.emplace_back(t);
+    nodes.emplace_back(bL);
+    nodes.emplace_back(bR);
+
+    CurveFace face;
+
+    face.FaceMode = FaceMode_3Point;
+    
+    face.Index[FaceIndex_3Point_AB] = 0;
+    face.Index[FaceIndex_3Point_AC] = 0;
+    face.Index[FaceIndex_3Point_BA] = 1;
+    face.Index[FaceIndex_3Point_BC] = 1;
+    face.Index[FaceIndex_3Point_CA] = 2;
+    face.Index[FaceIndex_3Point_CB] = 2;
+
+    face.ClusterIndex[FaceIndex_3Point_AB] = 0;
+    face.ClusterIndex[FaceIndex_3Point_AC] = 1;
+    face.ClusterIndex[FaceIndex_3Point_BA] = 0;
+    face.ClusterIndex[FaceIndex_3Point_BC] = 1;
+    face.ClusterIndex[FaceIndex_3Point_CA] = 0;
+    face.ClusterIndex[FaceIndex_3Point_CB] = 1;
+
+    faces.emplace_back(face);
+
+    GetData(nodes, faces, a_nodePtr, a_nodeCount, a_facePtr, a_faceCount);
+}
+void PrimitiveGenerator::CreateCurvePlane(Node3Cluster** a_nodePtr, unsigned int* a_nodeCount, CurveFace** a_facePtr, unsigned int* a_faceCount)
+{
+    std::vector<Node3Cluster> nodes;
+    std::vector<CurveFace> faces;
+
+    Node3Cluster tL;
+    tL.Nodes.emplace_back(BezierCurveNode3(glm::vec3(-1.0f, 0.0f, 1.0f), glm::vec3(-1.0f, 0.0f, 1.0f)));
+    tL.Nodes.emplace_back(BezierCurveNode3(glm::vec3(-1.0f, 0.0f, 1.0f), glm::vec3(-1.0f, 0.0f, 1.0f)));
+
+    Node3Cluster tR;
+    tR.Nodes.emplace_back(BezierCurveNode3(glm::vec3(1.0f, 0.0f, 1.0f), glm::vec3(1.0f, 0.0f, 1.0f)));
+    tR.Nodes.emplace_back(BezierCurveNode3(glm::vec3(1.0f, 0.0f, 1.0f), glm::vec3(1.0f, 0.0f, 1.0f)));
+
+    Node3Cluster bL;
+    bL.Nodes.emplace_back(BezierCurveNode3(glm::vec3(-1.0f, 0.0f, -1.0f), glm::vec3(-1.0f, 0.0f, -1.0f)));
+    bL.Nodes.emplace_back(BezierCurveNode3(glm::vec3(-1.0f, 0.0f, -1.0f), glm::vec3(-1.0f, 0.0f, -1.0f)));
+
+    Node3Cluster bR;
+    bR.Nodes.emplace_back(BezierCurveNode3(glm::vec3(1.0f, 0.0f, -1.0f), glm::vec3(1.0f, 0.0f, -1.0f)));
+    bR.Nodes.emplace_back(BezierCurveNode3(glm::vec3(1.0f, 0.0f, -1.0f), glm::vec3(1.0f, 0.0f, -1.0f)));
+
+    nodes.emplace_back(tL);
+    nodes.emplace_back(tR);
+    nodes.emplace_back(bL);
+    nodes.emplace_back(bR);
+
+    CurveFace face;
+
+    face.FaceMode = FaceMode_4Point;
+
+    face.Index[FaceIndex_4Point_AB] = 0;
+    face.Index[FaceIndex_4Point_AC] = 0;
+    face.Index[FaceIndex_4Point_BA] = 2;
+    face.Index[FaceIndex_4Point_BD] = 2;
+    face.Index[FaceIndex_4Point_CA] = 1;
+    face.Index[FaceIndex_4Point_CD] = 1;
+    face.Index[FaceIndex_4Point_DB] = 3;
+    face.Index[FaceIndex_4Point_DC] = 3;
+
+    face.ClusterIndex[FaceIndex_4Point_AB] = 0;
+    face.ClusterIndex[FaceIndex_4Point_AC] = 1;
+    face.ClusterIndex[FaceIndex_4Point_BA] = 0;
+    face.ClusterIndex[FaceIndex_4Point_BD] = 1;
+    face.ClusterIndex[FaceIndex_4Point_CA] = 0;
+    face.ClusterIndex[FaceIndex_4Point_CD] = 1;
+    face.ClusterIndex[FaceIndex_4Point_DB] = 0;
+    face.ClusterIndex[FaceIndex_4Point_DC] = 1;
+
+    faces.emplace_back(face);
+
+    GetData(nodes, faces, a_nodePtr, a_nodeCount, a_facePtr, a_faceCount);
+}
 void PrimitiveGenerator::CreateCurveSphere(Node3Cluster** a_nodePtr, unsigned int* a_nodeCount, CurveFace** a_facePtr, unsigned int* a_faceCount)
 {
     std::vector<Node3Cluster> nodes;
@@ -280,27 +418,7 @@ void PrimitiveGenerator::CreateCurveSphere(Node3Cluster** a_nodePtr, unsigned in
     faces.emplace_back(bBLFace);
     faces.emplace_back(bFLFace);
 
-    *a_nodeCount = nodes.size();
-    *a_nodePtr = new Node3Cluster[*a_nodeCount];
-
-    for (unsigned int i = 0; i < *a_nodeCount; ++i)
-    {
-        (*a_nodePtr)[i] = nodes[i];
-    }
-
-    *a_faceCount = faces.size();
-    *a_facePtr = new CurveFace[*a_faceCount];
-
-    for (unsigned int i = 0; i < *a_faceCount; ++i)
-    {
-        const CurveFace face = faces[i];
-
-        (*a_facePtr)[i] = face;
-        for (int j = 0; j < 6; ++j)
-        {
-            ++(*a_nodePtr)[face.Index[j]].Nodes[face.ClusterIndex[j]].FaceCount;
-        }
-    }
+    GetData(nodes, faces, a_nodePtr, a_nodeCount, a_facePtr, a_faceCount);
 }
 void PrimitiveGenerator::CreateCurveCube(Node3Cluster** a_nodePtr, unsigned int* a_nodeCount, CurveFace** a_facePtr, unsigned int* a_faceCount)
 {   
@@ -496,25 +614,5 @@ void PrimitiveGenerator::CreateCurveCube(Node3Cluster** a_nodePtr, unsigned int*
     faces.emplace_back(lfFace);
     faces.emplace_back(btFace);
 
-    *a_nodeCount = nodes.size();
-    *a_nodePtr = new Node3Cluster[*a_nodeCount];
-
-    for (unsigned int i = 0; i < *a_nodeCount; ++i)
-    {
-        (*a_nodePtr)[i] = nodes[i];
-    }
-
-    *a_faceCount = faces.size();
-    *a_facePtr = new CurveFace[*a_faceCount];
-
-    for (unsigned int i = 0; i < *a_faceCount; ++i)
-    {
-        const CurveFace face = faces[i];
-
-        (*a_facePtr)[i] = face;
-        for (int j = 0; j < 8; ++j)
-        {
-            ++(*a_nodePtr)[face.Index[j]].Nodes[face.ClusterIndex[j]].FaceCount;
-        }
-    }
+    GetData(nodes, faces, a_nodePtr, a_nodeCount, a_facePtr, a_faceCount);
 }

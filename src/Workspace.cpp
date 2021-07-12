@@ -591,6 +591,53 @@ void Workspace::DefaultWindowConfig()
     ImGui::DockBuilderFinish(id);
 }
 
+void Workspace::CreateObjectMenuList(Object* a_parent)
+{
+    if (ImGui::MenuItem("New Triangle(Curve)"))
+    {
+        Action* action = new CreateObjectAction(this, a_parent, CreateObjectType_TriangleCurve);
+        if (!PushAction(action))
+        {
+            printf("Error Creating Object \n");
+
+            delete action;
+        }
+    }
+
+    if (ImGui::MenuItem("New Plane(Curve)"))
+    {
+        Action* action = new CreateObjectAction(this, a_parent, CreateObjectType_PlaneCurve);
+        if (!PushAction(action))
+        {
+            printf("Error Creating Object \n");
+
+            delete action;
+        }
+    }
+
+    if (ImGui::MenuItem("New Sphere(Curve)"))
+    {
+        Action* action = new CreateObjectAction(this, a_parent, CreateObjectType_SphereCurve);
+        if (!PushAction(action))
+        {
+            printf("Error Creating Object \n");
+
+            delete action;
+        }
+    }
+
+    if (ImGui::MenuItem("New Cube(Curve)"))
+    {
+        Action* action = new CreateObjectAction(this, a_parent, CreateObjectType_CubeCurve);
+        if (!PushAction(action))
+        {
+            printf("Error Creating Object \n");
+
+            delete action;
+        }
+    }
+}
+
 void Workspace::EditorFaceButton(const char* a_text, e_EditorFaceCullingMode a_face)
 {
     if (ImGuiExt::ToggleButton(a_text, m_editor->GetEditorFaceCullingMode() == a_face, { 32, 32 }))
@@ -696,27 +743,7 @@ bool Workspace::ObjectHeirachyGUI(Object* a_object, bool* a_blockMenu)
 
         ImGui::Separator();
 
-        if (ImGui::MenuItem("New Sphere(Curve)"))
-        {
-            Action* action = new CreateObjectAction(this, a_object, CreateObjectType_SphereCurve);
-            if (!PushAction(action))
-            {
-                printf("Error Creating Object \n");
-
-                delete action;
-            }
-        }
-
-        if (ImGui::MenuItem("New Cube(Curve)"))
-            {
-                Action* action = new CreateObjectAction(this, a_object, CreateObjectType_CubeCurve);
-                if (!PushAction(action))
-                {
-                    printf("Error Creating Object \n");
-
-                    delete action;
-                }
-            }
+        CreateObjectMenuList(a_object);
 
         ImGui::Separator();
 
@@ -1136,27 +1163,7 @@ void Workspace::Update(double a_delta)
 
             ImGui::Separator();
 
-            if (ImGui::MenuItem("New Sphere(Curve)"))
-            {
-                Action* action = new CreateObjectAction(this, nullptr, CreateObjectType_SphereCurve);
-                if (!PushAction(action))
-                {
-                    printf("Error Creating Object \n");
-
-                    delete action;
-                }
-            }
-
-            if (ImGui::MenuItem("New Cube(Curve)"))
-            {
-                Action* action = new CreateObjectAction(this, nullptr, CreateObjectType_CubeCurve);
-                if (!PushAction(action))
-                {
-                    printf("Error Creating Object \n");
-
-                    delete action;
-                }
-            }
+            CreateObjectMenuList(nullptr);
 
             ImGui::EndPopup();
         }
@@ -1352,26 +1359,7 @@ void Workspace::Update(double a_delta)
             {
             case EditorMode_Object:
             {
-                if (ImGui::MenuItem("New Sphere(Curve)"))
-                {
-                    Action* action = new CreateObjectAction(this, nullptr, CreateObjectType_SphereCurve);
-                    if (!PushAction(action))
-                    {
-                        printf("Error Creating Object \n");
-
-                        delete action;
-                    }
-                }
-                if (ImGui::MenuItem("New Cube(Curve)"))
-                {
-                    Action* action = new CreateObjectAction(this, nullptr, CreateObjectType_CubeCurve);
-                    if (!PushAction(action))
-                    {
-                        printf("Error Creating Object \n");
-
-                        delete action;
-                    }
-                }
+                CreateObjectMenuList(nullptr);
 
                 break;
             }

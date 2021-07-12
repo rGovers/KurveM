@@ -57,6 +57,18 @@ bool CreateObjectAction::Execute()
 
     switch (m_objectType)
     {
+        case CreateObjectType_TriangleCurve:
+        {
+            PrimitiveGenerator::CreateCurveTriangle(&nodePtr, &nodeCount, &facePtr, &faceCount);
+
+            break;
+        }
+        case CreateObjectType_PlaneCurve:
+        {
+            PrimitiveGenerator::CreateCurvePlane(&nodePtr, &nodeCount, &facePtr, &faceCount);
+            
+            break;
+        }
         case CreateObjectType_SphereCurve:
         {
             PrimitiveGenerator::CreateCurveSphere(&nodePtr, &nodeCount, &facePtr, &faceCount);
