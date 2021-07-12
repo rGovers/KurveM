@@ -1,6 +1,6 @@
 #include "Modals/DeleteNodesModal.h"
 
-#include <stdio.h>>
+#include <stdio.h>
 
 #include "Actions/DeleteNodeAction.h"
 #include "Editor.h"
@@ -40,7 +40,7 @@ bool DeleteNodesModal::Execute()
 
         if (!m_workspace->PushAction(action))
         {
-            printf("Error Deleting Node");
+            printf("Error Deleting Node \n");
 
             delete action;
         }

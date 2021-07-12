@@ -96,6 +96,8 @@ bool CreateObjectAction::Revert()
         {
             m_workspace->RemoveObject(m_object);
         }
+
+        m_workspace->ClearSelectedObjects();
         
         delete m_object;
         m_object = nullptr;

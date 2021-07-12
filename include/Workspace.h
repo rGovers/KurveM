@@ -70,6 +70,11 @@ private:
 
     Action*                      m_curAction;
 
+    bool                         m_undoDown;
+    bool                         m_redoDown;
+    bool                         m_saveDown;
+    bool                         m_editModeDown;
+
     inline bool UndoEnabled() const
     {
         return m_actionQueue.size() > 0 && m_actionQueueIndex != m_actionQueue.begin();

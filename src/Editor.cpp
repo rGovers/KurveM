@@ -48,6 +48,79 @@ Editor::~Editor()
     delete m_camera;
 }
 
+bool Editor::IsFaceSelected() const
+{
+    const Object* obj = m_workspace->GetSelectedObject();
+    if (obj != nullptr)
+    {
+        const CurveModel* curveModel = obj->GetCurveModel();
+        if (curveModel != nullptr)
+        {
+            const unsigned int nodeCount = m_selectedNodes.size();
+
+            unsigned int* nodes = new unsigned int[nodeCount];
+
+            unsigned int index = 0;
+            for (auto iter = m_selectedNodes.begin(); iter != m_selectedNodes.end(); ++iter)
+            {
+                nodes[index++] = *iter;
+            }
+
+            bool ret = false;
+
+            switch (nodeCount)
+            {
+            case 3:
+            {
+                ret = curveModel->Get3PointFaceIndex(nodes[0], nodes[1], nodes[2]) != -1;
+
+                break;
+            }
+            case 6:
+            {
+                ret = curveModel->Get3PointFaceIndex(nodes) != -1;
+
+                break;
+            }
+            case 4:
+            {
+                ret = curveModel->Get4PointFaceIndex(nodes[0], nodes[1], nodes[2], nodes[3]) != -1;
+
+                break;
+            }
+            case 8:
+            {
+                ret = curveModel->Get4PointFaceIndex(nodes) != -1;
+
+                break;
+            }
+            }
+
+            delete[] nodes;
+
+            return ret;
+        }
+    }
+
+    return false;
+}
+bool Editor::CanInsertFace() const
+{
+    const Object* obj = m_workspace->GetSelectedObject();
+    if (obj != nullptr)
+    {
+        const CurveModel* curveModel = obj->GetCurveModel();
+        if (curveModel != nullptr)
+        {
+            const unsigned int nodeCount = m_selectedNodes.size();
+
+            return nodeCount == 3 || nodeCount == 4;
+        }
+    }
+
+    return false;
+}
+
 bool Editor::IsEditorModeEnabled(e_EditorMode a_editorMode) const
 {
     switch (a_editorMode)
@@ -429,7 +502,7 @@ void Editor::Update(double a_delta, const glm::vec2& a_winPos, const glm::vec2& 
                         m_curAction = new FlipFaceAction(m_workspace, indices, size, model);
                         if (!m_workspace->PushAction(m_curAction))
                         {
-                            printf("Cannot flip face");
+                            printf("Cannot flip face \n");
 
                             delete m_curAction;
                             m_curAction = nullptr;

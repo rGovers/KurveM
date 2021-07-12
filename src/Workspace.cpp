@@ -10,6 +10,8 @@
 #include "Actions/Action.h"
 #include "Actions/CreateObjectAction.h"
 #include "Actions/DeleteObjectAction.h"
+#include "Actions/FlipFaceAction.h"
+#include "Actions/InsertFaceAction.h"
 #include "Actions/RenameObjectAction.h"
 #include "Actions/ScaleObjectAction.h"
 #include "Actions/TranslateObjectAction.h"
@@ -379,7 +381,7 @@ bool Workspace::Undo()
 
         if (action->Revert())
         {
-            m_actionQueueIndex = iter;
+            --m_actionQueueIndex;
 
             return true;
         }
@@ -391,13 +393,13 @@ bool Workspace::Redo()
 {
     auto iter = m_actionQueueIndex;
 
-    if (++iter != m_actionQueue.end())
+    if (iter != m_actionQueue.end())
     {
         Action* action = *iter;
 
         if (action->Redo())
         {
-            m_actionQueueIndex = iter;
+            ++m_actionQueueIndex;
 
             return true;
         }
@@ -418,6 +420,14 @@ Object* Workspace::GetSelectedObject() const
 
 void Workspace::PushModal(Modal* a_modal)
 {
+    for (auto iter = m_modalStack.begin(); iter != m_modalStack.end(); ++iter)
+    {
+        if (strcmp((*iter)->GetName(), a_modal->GetName()) == 0)
+        {
+            return;
+        }
+    }
+
     m_modalStack.emplace_back(a_modal);
 }
 
@@ -754,6 +764,108 @@ void Workspace::Resize(int a_width, int a_height)
 void Workspace::Update(double a_delta)
 {
     Application* app = Application::GetInstance();
+    GLFWwindow* window = app->GetWindow();
+
+    if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) || glfwGetKey(window, GLFW_KEY_RIGHT_CONTROL))
+    {
+        if (!m_undoDown && glfwGetKey(window, GLFW_KEY_Z))
+        {
+            m_undoDown = true;
+
+            Undo();
+        }
+        else if (!glfwGetKey(window, GLFW_KEY_Z))
+        {
+            m_undoDown = false;
+        }
+
+        if (!m_redoDown && glfwGetKey(window, GLFW_KEY_Y))
+        {
+            m_redoDown = true;
+
+            Redo();
+        }
+        else if (!glfwGetKey(window, GLFW_KEY_Y))
+        {
+            m_redoDown = false;
+        }
+
+        if (glfwGetKey(window, GLFW_KEY_N))
+        {
+            New();
+        }
+
+        if (glfwGetKey(window, GLFW_KEY_O))
+        {
+            char* home = GetHomePath();
+
+            PushModal(new LoadFileModal(this, home));
+
+            delete[] home;
+        }
+
+        if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) || glfwGetKey(window, GLFW_KEY_RIGHT_SHIFT))
+        {
+            if (glfwGetKey(window, GLFW_KEY_S))
+            {
+                char* home = GetHomePath();
+
+                PushModal(new SaveFileModal(this, home));
+
+                delete[] home;
+            }
+        }
+        else
+        {
+            if (!m_shutDown && glfwGetKey(window, GLFW_KEY_S))
+            {
+                m_saveDown = true;
+
+                Save();
+            }
+            else if (!glfwGetKey(window, GLFW_KEY_S))
+            {
+                m_saveDown = false;
+            }
+        }
+    }
+    else 
+    {
+        if (glfwGetKey(window, GLFW_KEY_T))
+        {
+            m_toolMode = ToolMode_Translate;
+        }
+        if (glfwGetKey(window, GLFW_KEY_R))
+        {
+            m_toolMode = ToolMode_Rotate;
+        }
+        if (glfwGetKey(window, GLFW_KEY_S))
+        {
+            m_toolMode = ToolMode_Scale;
+        }
+        if (glfwGetKey(window, GLFW_KEY_E))
+        {
+            m_toolMode = ToolMode_Extrude;
+        }
+
+        if (!m_editModeDown && glfwGetKey(window, GLFW_KEY_TAB))
+        {
+            m_editModeDown = true;
+
+            if (m_editor->GetEditorMode() == EditorMode_Edit)
+            {
+                m_editor->SetEditorMode(EditorMode_Object);
+            }
+            else
+            {
+                m_editor->SetEditorMode(EditorMode_Edit);
+            }
+        }
+        else if (!glfwGetKey(window, GLFW_KEY_TAB))
+        {
+            m_editModeDown = false;
+        }
+    }
 
     if (m_currentTask == nullptr)
     {
@@ -823,14 +935,14 @@ void Workspace::Update(double a_delta)
 
             if (ImGui::BeginMenu("Export", m_objectList.size() > 0))
             {
-                if (ImGui::MenuItem("Erde Curve Model"))
+                if (ImGui::MenuItem("Erde Curve Model(.ECMdl)"))
                 {
 
                 }
 
                 ImGui::Separator();
 
-                if (ImGui::MenuItem("Wavefront OBJ"))
+                if (ImGui::MenuItem("Wavefront OBJ(.obj)"))
                 {
                     char* home = GetHomePath();
 
@@ -839,7 +951,7 @@ void Workspace::Update(double a_delta)
                     delete[] home;
                 }
 
-                if (ImGui::MenuItem("Collada"))
+                if (ImGui::MenuItem("Collada(.dae)"))
                 {
 
                 }
@@ -848,7 +960,7 @@ void Workspace::Update(double a_delta)
             }
             if (ImGui::BeginMenu("Import"))
             {
-                if (ImGui::MenuItem("Erde Curve Model"))
+                if (ImGui::MenuItem("Erde Curve Model(.ECMdl)"))
                 {
 
                 }
@@ -1231,26 +1343,91 @@ void Workspace::Update(double a_delta)
 
         if (ImGui::BeginPopupContextWindow())
         {
-            if (ImGui::MenuItem("New Sphere(Curve)"))
+            switch (m_editor->GetEditorMode())
             {
-                Action* action = new CreateObjectAction(this, nullptr, CreateObjectType_SphereCurve);
-                if (!PushAction(action))
-                {
-                    printf("Error Creating Object \n");
-    
-                    delete action;
-                }
-            }
-            if (ImGui::MenuItem("New Cube(Curve)"))
+            case EditorMode_Object:
             {
-                Action* action = new CreateObjectAction(this, nullptr, CreateObjectType_CubeCurve);
-                if (!PushAction(action))
+                if (ImGui::MenuItem("New Sphere(Curve)"))
                 {
-                    printf("Error Creating Object \n");
+                    Action* action = new CreateObjectAction(this, nullptr, CreateObjectType_SphereCurve);
+                    if (!PushAction(action))
+                    {
+                        printf("Error Creating Object \n");
 
-                    delete action;
+                        delete action;
+                    }
                 }
+                if (ImGui::MenuItem("New Cube(Curve)"))
+                {
+                    Action* action = new CreateObjectAction(this, nullptr, CreateObjectType_CubeCurve);
+                    if (!PushAction(action))
+                    {
+                        printf("Error Creating Object \n");
+
+                        delete action;
+                    }
+                }
+
+                break;
             }
+            case EditorMode_Edit:
+            {
+                if (m_editor->CanInsertFace() && ImGui::MenuItem("Insert Face"))
+                {
+                    const std::list<unsigned int> selectedNodes = m_editor->GetSelectedNodes();
+
+                    const unsigned int nodeCount = selectedNodes.size();
+
+                    unsigned int* nodes = new unsigned int[nodeCount];
+
+                    unsigned int index = 0;
+                    for (auto iter = selectedNodes.begin(); iter != selectedNodes.end(); ++iter)
+                    {
+                        nodes[index++] = *iter;
+                    }
+
+                    Action* action = new InsertFaceAction(this, nodes, nodeCount, GetSelectedObject()->GetCurveModel());
+                    if (!PushAction(action))
+                    {
+                        printf("Error creating face \n");
+
+                        delete action;
+                    }
+
+                    delete[] nodes;
+                }
+
+                if (m_editor->IsFaceSelected() && ImGui::MenuItem("Flip Face"))
+                {
+                    const std::list<unsigned int> selectedNodes = m_editor->GetSelectedNodes();
+
+                    const unsigned int nodeCount = selectedNodes.size();
+
+                    unsigned int* nodes = new unsigned int[nodeCount];
+
+                    unsigned int index = 0;
+                    for (auto iter = selectedNodes.begin(); iter != selectedNodes.end(); ++iter)
+                    {
+                        nodes[index++] = *iter;
+                    }
+
+                    Action* action = new FlipFaceAction(this, nodes, nodeCount, GetSelectedObject()->GetCurveModel());
+                    if (!PushAction(action))
+                    {
+                        printf("Error fliping face \n");
+
+                        delete action;
+                    }
+
+                    delete[] nodes;
+                }
+
+                ImGui::Separator();
+
+                break;
+            }
+            }
+            
 
             ImGui::EndPopup();
         }

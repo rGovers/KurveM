@@ -63,6 +63,14 @@ public:
     Editor(Workspace* a_workspace);
     ~Editor();
 
+    bool IsFaceSelected() const;
+    bool CanInsertFace() const;
+
+    inline std::list<unsigned int> GetSelectedNodes() const
+    {
+        return m_selectedNodes;
+    }
+
     inline e_EditorMode GetEditorMode() const
     {
         return m_editorMode;
