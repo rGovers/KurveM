@@ -429,6 +429,25 @@ Object* Workspace::GetSelectedObject() const
 
     return nullptr;
 }
+Object** Workspace::GetSelectedObjectArray() const
+{
+    const unsigned int objectCount = m_selectedObjects.size();
+
+    if (objectCount > 0)
+    {
+        Object** objs = new Object*[objectCount];
+
+        int index = 0;
+        for (auto iter = m_selectedObjects.begin(); iter != m_selectedObjects.end(); ++iter)
+        {
+            objs[index++] = *iter;
+        }
+
+        return objs;
+    }
+    
+    return nullptr;
+}
 
 void Workspace::PushModal(Modal* a_modal)
 {

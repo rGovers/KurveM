@@ -38,3 +38,13 @@ glm::mat4 Camera::GetProjection(int a_width, int a_height) const
     }
     return glm::perspective(m_fov, (float)a_width / a_height, m_near, m_far);
 }
+
+glm::vec3 Camera::GetScreenToWorld(const glm::vec3& a_screenPos, int a_width, int a_height) const
+{
+    const glm::mat4 viewInv = m_transform->ToMatrix();
+    const glm::mat4 projInv = glm::inverse(GetProjection(a_width, a_height));
+
+    const glm::vec4 pos = viewInv * projInv * glm::vec4(a_screenPos, 1);
+
+    return pos.xyz() / pos.w;
+}

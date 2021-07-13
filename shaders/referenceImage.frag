@@ -10,5 +10,12 @@ layout(location = 0) out vec4 color;
 
 void main()
 {
-    color = vec4(texture(MainTex, vUV).xyz, 1.0f);
+    vec4 c = texture(MainTex, vUV);
+
+    if (c.a <= 0.5)
+    {
+        discard;
+    }
+
+    color = vec4(c.xyz, 1.0f);
 }

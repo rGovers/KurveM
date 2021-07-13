@@ -14,6 +14,7 @@ enum e_ActionType
     ActionType_RenameObject,
     ActionType_ScaleObject,
     ActionType_TranslateObject,
+    ActionType_TranslateObjectRelative,
     ActionType_End
 };
 

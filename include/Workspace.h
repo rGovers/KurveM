@@ -119,11 +119,17 @@ public:
         return m_block;
     }
 
+    inline unsigned int GetSelectedObjectCount() const
+    {
+        return m_selectedObjects.size();
+    }
     Object* GetSelectedObject() const;
     inline std::list<Object*> GetSelectedObjects() const
     {
         return m_selectedObjects;
     }
+    Object** GetSelectedObjectArray() const;
+
     inline std::list<Object*> GetObjectList() const
     {
         return m_objectList;
