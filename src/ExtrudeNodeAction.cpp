@@ -5,7 +5,7 @@
 #include "LongTasks/TriangulateCurveLongTask.h"
 #include "Workspace.h"
 
-ExtrudeNodeAction::ExtrudeNodeAction(Workspace* a_workspace, Editor* a_editor, unsigned int* a_nodeIndices, unsigned int a_nodeCount, CurveModel* a_curveModel, const glm::vec2& a_startCursorPos, const glm::vec3& a_xAxis, const glm::vec3& a_yAxis)
+ExtrudeNodeAction::ExtrudeNodeAction(Workspace* a_workspace, Editor* a_editor, unsigned int* a_nodeIndices, unsigned int a_nodeCount, CurveModel* a_curveModel, const glm::vec3& a_startPos, const glm::vec3& a_axis)
 {
     m_workspace = a_workspace;
     m_editor = a_editor;
@@ -14,10 +14,10 @@ ExtrudeNodeAction::ExtrudeNodeAction(Workspace* a_workspace, Editor* a_editor, u
 
     m_curveModel = a_curveModel;
 
-    m_xAxis = a_xAxis;
-    m_yAxis = a_yAxis;
+    m_axis = a_axis;
 
-    m_startCursorPos = a_startCursorPos;
+    m_startPos = a_startPos;
+    m_endPos = a_startPos;
 
     m_nodeIndices = new unsigned[m_nodeCount];
 
@@ -50,7 +50,12 @@ bool ExtrudeNodeAction::Execute()
         return false;
     }
 
-    const glm::vec2 diff = m_cursorPos - m_startCursorPos;
+    const glm::vec3 endAxis = m_endPos - m_startPos;
+        
+    const float len = glm::length(endAxis);
+
+    const glm::vec3 scaledAxis = m_axis * len;
+    const float scale = glm::dot(scaledAxis, endAxis); 
     
     if (m_startNodeIndex == -1)
     {
@@ -80,9 +85,9 @@ bool ExtrudeNodeAction::Execute()
 
         for (unsigned int j = 0; j < size; ++j)
         {
-            const glm::vec3 startPos = startNode.Nodes[0].Node.GetPosition();
+            const glm::vec3 diff = startNode.Nodes[0].Node.GetPosition() - m_startPos;
 
-            nodes[i + m_startNodeIndex].Nodes[j].Node.SetPosition(startPos + (m_yAxis * diff.y) + (m_xAxis * diff.x));
+            nodes[i + m_startNodeIndex].Nodes[j].Node.SetPosition((m_startPos + (m_axis * scale)) + diff);
             nodes[i + m_startNodeIndex].Nodes[j].Node.SetHandlePosition(glm::vec3(std::numeric_limits<float>().infinity()));
         }
     }

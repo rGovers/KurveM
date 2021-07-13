@@ -23,21 +23,20 @@ private:
     unsigned int  m_startNodeIndex;
     unsigned int  m_startFaceIndex;
 
-    glm::vec2     m_startCursorPos;
-    glm::vec2     m_cursorPos;
+    glm::vec3     m_startPos;
+    glm::vec3     m_endPos;
 
-    glm::vec3     m_xAxis;
-    glm::vec3     m_yAxis;
+    glm::vec3     m_axis;
     
 protected:
 
 public:
-    ExtrudeNodeAction(Workspace* a_workspace, Editor* a_editor, unsigned int* a_nodeIndices, unsigned int a_nodeCount, CurveModel* a_curveModel, const glm::vec2& a_startCursorPos, const glm::vec3& a_xAxis, const glm::vec3& a_yAxis);
+    ExtrudeNodeAction(Workspace* a_workspace, Editor* a_editor, unsigned int* a_nodeIndices, unsigned int a_nodeCount, CurveModel* a_curveModel, const glm::vec3& a_startPos, const glm::vec3& a_axis);
     ~ExtrudeNodeAction();
 
-    void SetCursorPos(const glm::vec2& a_cursorPos)
+    void SetPosition(const glm::vec3& a_position)
     {
-        m_cursorPos = a_cursorPos;
+        m_endPos = a_position;
     }
 
     virtual e_ActionType GetActionType();

@@ -43,18 +43,18 @@ bool TranslateObjectRelativeAction::Redo()
 }
 bool TranslateObjectRelativeAction::Execute()
 {
-    for (unsigned int i = 0; i < m_objectCount; ++i)
-    {
-        const glm::vec3 endAxis = m_endPos - m_startPos;
+    const glm::vec3 endAxis = m_endPos - m_startPos;
         
-        const float len = glm::length(endAxis);
+    const float len = glm::length(endAxis);
 
-        if (len != 0)
+    if (len != 0)
+    {
+        const glm::vec3 scaledAxis = m_axis * len;
+
+        const float scale = glm::dot(scaledAxis, endAxis); 
+
+        for (unsigned int i = 0; i < m_objectCount; ++i)
         {
-            const glm::vec3 scaledAxis = m_axis * len;
-
-            const float scale = glm::dot(scaledAxis, endAxis); 
-
             const glm::vec3 diff = m_oldPos[i] - m_startPos;
 
             m_objects[i]->GetTransform()->Translation() = (m_startPos + (m_axis * scale)) + diff;

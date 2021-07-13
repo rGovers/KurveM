@@ -6,33 +6,33 @@
 #include "LongTasks/TriangulateCurveLongTask.h"
 #include "Workspace.h"
 
-MoveNodeAction::MoveNodeAction(Workspace* a_workspace,unsigned int* a_nodeIndices, unsigned int a_nodeCount, CurveModel* a_curveModel, const glm::vec2& a_startCursorPos, const glm::vec3& a_xAxis, const glm::vec3& a_yAxis)
+MoveNodeAction::MoveNodeAction(Workspace* a_workspace, unsigned int* a_nodeIndices, unsigned int a_nodeCount, CurveModel* a_curveModel, const glm::vec3& a_startPos, const glm::vec3& a_axis)
 {
     m_workspace = a_workspace;
 
     m_nodeCount = a_nodeCount;
 
     m_nodeIndices = new unsigned int[m_nodeCount];
-    m_startPos = new glm::vec3[m_nodeCount];
+    m_oldPos = new glm::vec3[m_nodeCount];
 
     m_curveModel = a_curveModel;
 
-    m_startCursorPos = a_startCursorPos;
+    m_startPos = a_startPos;
+    m_endPos = a_startPos;
 
-    m_xAxis = a_xAxis;
-    m_yAxis = a_yAxis;
+    m_axis = a_axis;
 
     const Node3Cluster* nodes = m_curveModel->GetNodes();
     for (unsigned int i = 0; i < m_nodeCount; ++i)
     {
         m_nodeIndices[i] = a_nodeIndices[i];
-        m_startPos[i] = nodes[m_nodeIndices[i]].Nodes[0].Node.GetPosition();
+        m_oldPos[i] = nodes[m_nodeIndices[i]].Nodes[0].Node.GetPosition();
     }
 }
 MoveNodeAction::~MoveNodeAction()
 {
     delete[] m_nodeIndices;
-    delete[] m_startPos;
+    delete[] m_oldPos;
 }  
 
 e_ActionType MoveNodeAction::GetActionType()
@@ -46,14 +46,25 @@ bool MoveNodeAction::Redo()
 }
 bool MoveNodeAction::Execute()
 {
-    const glm::vec2 diff = m_cursorPos - m_startCursorPos;
+    const glm::vec3 endAxis = m_endPos - m_startPos;
+        
+    const float len = glm::length(endAxis);
 
-    Node3Cluster* nodes = m_curveModel->GetNodes();
-    for (unsigned int i = 0; i < m_nodeCount; ++i)
+    if (len != 0)
     {
-        for (auto iter = nodes[m_nodeIndices[i]].Nodes.begin(); iter != nodes[m_nodeIndices[i]].Nodes.end(); ++iter)
+        const glm::vec3 scaledAxis = m_axis * len;
+
+        const float scale = glm::dot(scaledAxis, endAxis); 
+
+        Node3Cluster* nodes = m_curveModel->GetNodes();
+        for (unsigned int i = 0; i < m_nodeCount; ++i)
         {
-            iter->Node.SetPosition(m_startPos[i] + (m_yAxis * diff.y) + (m_xAxis * diff.x));
+            const glm::vec3 diff = m_oldPos[i] - m_startPos;
+
+            for (auto iter = nodes[m_nodeIndices[i]].Nodes.begin(); iter != nodes[m_nodeIndices[i]].Nodes.end(); ++iter)
+            {
+                iter->Node.SetPosition((m_startPos + (m_axis * scale)) + diff);
+            }
         }
     }
     
@@ -69,7 +80,7 @@ bool MoveNodeAction::Revert()
     {
         for (auto iter = nodes[m_nodeIndices[i]].Nodes.begin(); iter != nodes[m_nodeIndices[i]].Nodes.end(); ++iter)
         {
-            iter->Node.SetPosition(m_startPos[i]);
+            iter->Node.SetPosition(m_oldPos[i]);
         }
     }
 

@@ -219,10 +219,12 @@ bool Editor::IsInteractingTransform(const glm::vec3& a_pos, const glm::vec3& a_a
         delete[] objs;
     }
 }
-bool Editor::IsInteractingCurveNode(const glm::vec3& a_pos, const glm::vec3& a_axis, const glm::vec2& a_cursorPos, CurveModel* a_model, const glm::mat4& a_viewProj)
+bool Editor::IsInteractingCurveNode(const glm::vec3& a_pos, const glm::vec3& a_axis, const glm::vec2& a_cursorPos, const glm::vec2& a_screenSize, CurveModel* a_model, const glm::mat4& a_viewProj)
 {
     if (SelectionControl::PointInPoint(a_viewProj, a_cursorPos, 0.05f, a_pos + a_axis * 0.25f))
     {
+        const glm::vec3 cPos = m_camera->GetScreenToWorld(glm::vec3(a_cursorPos, 0.9f), (int)a_screenSize.x, (int)a_screenSize.y);
+
         const unsigned int nodeCount = m_selectedNodes.size();
         unsigned int* indices = new unsigned int[nodeCount];
 
@@ -236,7 +238,7 @@ bool Editor::IsInteractingCurveNode(const glm::vec3& a_pos, const glm::vec3& a_a
         {
         case ToolMode_Translate:
         {
-            m_curAction = new MoveNodeAction(m_workspace, indices, nodeCount, a_model, a_cursorPos, a_axis, a_axis);
+            m_curAction = new MoveNodeAction(m_workspace, indices, nodeCount, a_model, cPos, a_axis);
             if (!m_workspace->PushAction(m_curAction))
             {
                 printf("Error moving node \n");
@@ -249,7 +251,7 @@ bool Editor::IsInteractingCurveNode(const glm::vec3& a_pos, const glm::vec3& a_a
         }
         case ToolMode_Extrude:
         {
-            m_curAction = new ExtrudeNodeAction(m_workspace, this, indices, nodeCount, a_model, a_cursorPos, a_axis, a_axis);
+            m_curAction = new ExtrudeNodeAction(m_workspace, this, indices, nodeCount, a_model, cPos, a_axis);
             if (!m_workspace->PushAction(m_curAction))
             {
                 printf("Error extruding node \n");
@@ -465,7 +467,7 @@ void Editor::Update(double a_delta, const glm::vec2& a_winPos, const glm::vec2& 
 
     const glm::vec2 curCursorPos = (cursorPos - (a_winPos + halfWinSize)) / halfWinSize;
 
-    if (ImGui::IsWindowHovered())
+    if (ImGui::IsWindowFocused())
     {
         camTransform->Translation() -= camForward * io.MouseWheel * 2.0f;
 
@@ -626,9 +628,9 @@ void Editor::Update(double a_delta, const glm::vec2& a_winPos, const glm::vec2& 
                             pos /= m_selectedNodes.size();
 
                             const glm::vec4 fPos = transformMat * glm::vec4(pos, 1);
-                            if (!IsInteractingCurveNode(fPos.xyz(), glm::vec3(0, 0, 1), curCursorPos, model, viewProj) &&
-                                !IsInteractingCurveNode(fPos.xyz(), glm::vec3(0, 1, 0), curCursorPos, model, viewProj) &&
-                                !IsInteractingCurveNode(fPos.xyz(), glm::vec3(1, 0, 0), curCursorPos, model, viewProj))
+                            if (!IsInteractingCurveNode(fPos.xyz(), glm::vec3(0, 0, 1), curCursorPos, a_winSize, model, viewProj) &&
+                                !IsInteractingCurveNode(fPos.xyz(), glm::vec3(0, 1, 0), curCursorPos, a_winSize, model, viewProj) &&
+                                !IsInteractingCurveNode(fPos.xyz(), glm::vec3(1, 0, 0), curCursorPos, a_winSize, model, viewProj))
                             {
                                 for (auto iter = m_selectedNodes.begin(); iter != m_selectedNodes.end(); ++iter)
                                 {
@@ -818,7 +820,7 @@ void Editor::Update(double a_delta, const glm::vec2& a_winPos, const glm::vec2& 
         case ActionType_ExtrudeNode:
         {
             ExtrudeNodeAction* action = (ExtrudeNodeAction*)m_curAction;
-            action->SetCursorPos(curCursorPos);
+            action->SetPosition(cWorldPos);
 
             action->Execute();
 
@@ -836,7 +838,7 @@ void Editor::Update(double a_delta, const glm::vec2& a_winPos, const glm::vec2& 
         case ActionType_MoveNode:
         {
             MoveNodeAction* action = (MoveNodeAction*)m_curAction;
-            action->SetCursorPos(curCursorPos);
+            action->SetPosition(cWorldPos);
 
             action->Execute();
 

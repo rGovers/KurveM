@@ -18,22 +18,21 @@ private:
     unsigned int  m_nodeCount;
     unsigned int* m_nodeIndices;
     
-    glm::vec3*    m_startPos;
-    glm::vec2     m_startCursorPos;
-    glm::vec2     m_cursorPos;
+    glm::vec3*    m_oldPos;
+    glm::vec3     m_startPos;
+    glm::vec3     m_endPos;
 
-    glm::vec3     m_xAxis;
-    glm::vec3     m_yAxis;
+    glm::vec3     m_axis;
     
 protected:
 
 public:
-    MoveNodeAction(Workspace* a_workspace, unsigned int* a_nodeIndices, unsigned int a_nodeCount, CurveModel* a_curveModel, const glm::vec2& a_startCursorPos, const glm::vec3& a_xAxis, const glm::vec3& a_yAxis);
+    MoveNodeAction(Workspace* a_workspace, unsigned int* a_nodeIndices, unsigned int a_nodeCount, CurveModel* a_curveModel, const glm::vec3& a_startPos, const glm::vec3& a_axis);
     ~MoveNodeAction();
 
-    void SetCursorPos(const glm::vec2& a_cursorPos)
+    void SetPosition(const glm::vec3& a_pos)
     {
-        m_cursorPos = a_cursorPos;
+        m_endPos = a_pos;
     }
 
     virtual e_ActionType GetActionType();
