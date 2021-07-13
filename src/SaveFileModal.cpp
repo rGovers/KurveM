@@ -53,7 +53,7 @@ SaveFileModal::SaveFileModal(Workspace* a_workspace, const char* a_path)
 
     m_ret = true;
 
-    FileDialog::GenerateFilesAndDirs(&m_dirs, &m_files, m_path);
+    FileDialog::GenerateFilesAndDirs(&m_dirs, &m_files, m_path, ".kumSC");
 }
 SaveFileModal::~SaveFileModal()
 {
@@ -85,13 +85,13 @@ bool SaveFileModal::Execute()
     if (ImGui::InputText("Path", m_path, PATHSIZE))
     {
         Clear();
-        FileDialog::GenerateFilesAndDirs(&m_dirs, &m_files, m_path);
+        FileDialog::GenerateFilesAndDirs(&m_dirs, &m_files, m_path, ".kumSC");
     }
 
     if (!FileDialog::FullExplorer(m_dirs, m_files, m_path, m_name))
     {
         Clear();
-        FileDialog::GenerateFilesAndDirs(&m_dirs, &m_files, m_path);
+        FileDialog::GenerateFilesAndDirs(&m_dirs, &m_files, m_path, ".kumSC");
     }
 
     ImGui::InputText("Name", m_name, PATHSIZE);

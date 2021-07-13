@@ -86,7 +86,9 @@ private:
 
     void ClearBuffers();
 
-    void CreateObjectMenuList(Object* a_parent);
+    void CreateCurveObjectMenuList(Object* a_parent);
+    void ImportObjectMenuList(Object* a_parent);
+
     void EditorFaceButton(const char* a_text, e_EditorFaceCullingMode a_face);
     void ToolbarButton(const char* a_text, e_ToolMode a_toolMode);
     bool ObjectHeirachyGUI(Object* a_object, bool* a_blockMenu);

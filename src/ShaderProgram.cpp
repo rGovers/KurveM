@@ -3,6 +3,7 @@
 #include <glad/glad.h>
 #include <stdio.h>
 
+#include "Datastore.h"
 #include "ShaderPixel.h"
 #include "ShaderVertex.h"
 
@@ -33,4 +34,23 @@ ShaderProgram::ShaderProgram(ShaderVertex* a_vertexShader, ShaderPixel* a_pixelS
 
     glDetachShader(m_handle, a_vertexShader->GetHandle());
     glDetachShader(m_handle, a_pixelShader->GetHandle());
+}
+ShaderProgram::~ShaderProgram()
+{
+    glDeleteProgram(m_handle);
+}
+
+ShaderProgram* ShaderProgram::InitProgram(const char* a_name, const char* a_vertexSource, const char* a_pixelSource)
+{
+    ShaderVertex* shaderVertex = new ShaderVertex(a_vertexSource);
+    ShaderPixel* shaderPixel = new ShaderPixel(a_pixelSource);
+
+    ShaderProgram* program = new ShaderProgram(shaderVertex, shaderPixel);
+
+    delete shaderVertex;
+    delete shaderPixel;
+
+    Datastore::AddShaderProgram(a_name, program);
+
+    return program;
 }

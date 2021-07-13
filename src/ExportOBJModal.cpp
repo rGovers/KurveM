@@ -57,7 +57,7 @@ ExportOBJModal::ExportOBJModal(Workspace* a_workspace, const char* a_path)
 
     m_ret = true;
 
-    FileDialog::GenerateFilesAndDirs(&m_dirs, &m_files, m_path);
+    FileDialog::GenerateFilesAndDirs(&m_dirs, &m_files, m_path, ".obj");
 }
 ExportOBJModal::~ExportOBJModal()
 {
@@ -88,13 +88,13 @@ bool ExportOBJModal::Execute()
     if (ImGui::InputText("Path", m_path, PATHSIZE))
     {
         Clear();
-        FileDialog::GenerateFilesAndDirs(&m_dirs, &m_files, m_path);
+        FileDialog::GenerateFilesAndDirs(&m_dirs, &m_files, m_path, ".obj");
     }
 
     if (!FileDialog::PartialExplorer(m_dirs, m_files, m_path, m_name))
     {
         Clear();
-        FileDialog::GenerateFilesAndDirs(&m_dirs, &m_files, m_path);
+        FileDialog::GenerateFilesAndDirs(&m_dirs, &m_files, m_path, ".obj");
     }
 
     ImGui::SameLine();

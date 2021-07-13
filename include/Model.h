@@ -14,17 +14,28 @@ struct Vertex
 class Model
 {
 private:
+    static Model* InstanceEmpty;
+
     unsigned int m_vbo;
     unsigned int m_ibo;
     unsigned int m_vao;
 
     unsigned int m_indices;
     
+    Model();
 protected:
 
 public:
     Model(Vertex* a_vertices, unsigned int* a_indices, unsigned int a_vertexCount, unsigned int a_indexCount);
     ~Model();
+
+    static void Init();
+    static void Destroy();
+
+    static Model* GetEmpty()
+    {
+        return InstanceEmpty;
+    }
 
     inline unsigned int GetIndexCount() const
     {

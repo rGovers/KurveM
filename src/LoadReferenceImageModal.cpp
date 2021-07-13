@@ -1,5 +1,6 @@
-#include "Modals/LoadFileModal.h"
+#include "Modals/LoadReferenceImageModal.h"
 
+#include "Actions/CreateObjectAction.h"
 #include "FileDialog.h"
 #include "imgui.h"
 #include "imgui_internal.h"
@@ -9,7 +10,7 @@
 
 #define PATHSIZE 2048
 
-void LoadFileModal::Clear()
+void LoadReferenceImageModal::Clear()
 {
     for (auto iter = m_dirs.begin(); iter != m_dirs.end(); ++iter)
     {
@@ -24,9 +25,11 @@ void LoadFileModal::Clear()
     m_files.clear();
 }
 
-LoadFileModal::LoadFileModal(Workspace* a_workspace, const char* a_path)
+LoadReferenceImageModal::LoadReferenceImageModal(Workspace* a_workspace, Object* a_parent, const char* a_path, const char* a_ext)
 {
     m_workspace = a_workspace;
+
+    m_parent = a_parent;
 
     const int size = strlen(a_path) + 1;
 
@@ -41,9 +44,17 @@ LoadFileModal::LoadFileModal(Workspace* a_workspace, const char* a_path)
 
     m_name = new char[PATHSIZE] { 0 };
 
-    FileDialog::GenerateFilesAndDirs(&m_dirs, &m_files, m_path, ".kumSC");
+    const int extSize = strlen(a_ext) + 1;
+
+    m_ext = new char[extSize];
+    for (int i = 0; i < extSize; ++i)
+    {
+        m_ext[i] = a_ext[i];
+    }
+
+    FileDialog::GenerateFilesAndDirs(&m_dirs, &m_files, m_path, m_ext);
 }
-LoadFileModal::~LoadFileModal()
+LoadReferenceImageModal::~LoadReferenceImageModal()
 {
     delete[] m_path;
     delete[] m_name;
@@ -54,31 +65,33 @@ LoadFileModal::~LoadFileModal()
         m_fPath = nullptr;
     }
 
+    delete[] m_ext;
+
     Clear();
 }
 
-const char* LoadFileModal::GetName()
+const char* LoadReferenceImageModal::GetName()
 {
-    return "Load File";
+    return "Load Reference Image";
 }
 
-glm::vec2 LoadFileModal::GetSize()
+glm::vec2 LoadReferenceImageModal::GetSize()
 {
     return glm::vec2(640, 480);
 }
 
-bool LoadFileModal::Execute()
+bool LoadReferenceImageModal::Execute()
 {  
     if (ImGui::InputText("Path", m_path, PATHSIZE))
     {
         Clear();
-        FileDialog::GenerateFilesAndDirs(&m_dirs, &m_files, m_path, ".kumSC");
+        FileDialog::GenerateFilesAndDirs(&m_dirs, &m_files, m_path, m_ext);
     }
 
     if (!FileDialog::FullExplorer(m_dirs, m_files, m_path, m_name))
     {
         Clear();
-        FileDialog::GenerateFilesAndDirs(&m_dirs, &m_files, m_path, ".kumSC");
+        FileDialog::GenerateFilesAndDirs(&m_dirs, &m_files, m_path, m_ext);
     }
 
     ImGui::InputText("Name", m_name, PATHSIZE);
@@ -137,16 +150,15 @@ bool LoadFileModal::Execute()
                 m_fPath[i + pathLen] = m_name[i];
             }
 
-            if (!std::ifstream(m_fPath).good())
+            Action* action = new CreateObjectAction(m_workspace, m_parent, m_fPath);
+            if (!m_workspace->PushAction(action))
             {
-                m_workspace->PushModal(new ErrorModal("No file found"));
-            }
-            else
-            {
-                m_workspace->Open(m_fPath);
+                printf("Error loading reference image");
 
-                return false;
+                delete action;
             }
+
+            return false;
         }
     }
     ImGui::SameLine();

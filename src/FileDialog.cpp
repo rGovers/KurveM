@@ -10,7 +10,7 @@
 #define BASELENGTH 1
 #endif
 
-bool FileDialog::GenerateFilesAndDirs(std::list<char*>* a_dirs, std::list<char*>* a_files, const char* a_path)
+bool FileDialog::GenerateFilesAndDirs(std::list<char*>* a_dirs, std::list<char*>* a_files, const char* a_path, const char* a_ext)
 {
     if (std::filesystem::exists(a_path))
     {
@@ -37,19 +37,23 @@ bool FileDialog::GenerateFilesAndDirs(std::list<char*>* a_dirs, std::list<char*>
             }
             else if (iter.is_regular_file())
             {
-                const std::string str = iter.path().filename().u8string();
-
-                int len = str.length() + 1;
-
-                char* fileName = new char[len];
-
-                for (int i = 0; i < len; ++i)
+                const std::string extStr = iter.path().extension().u8string();
+                if (extStr == a_ext)
                 {
-                    fileName[i] = str[i];
-                }
-                fileName[len - 1] = 0;
+                    const std::string str = iter.path().filename().u8string();
 
-                a_files->emplace_back(fileName);
+                    int len = str.length() + 1;
+
+                    char* fileName = new char[len];
+
+                    for (int i = 0; i < len; ++i)
+                    {
+                        fileName[i] = str[i];
+                    }
+                    fileName[len - 1] = 0;
+
+                    a_files->emplace_back(fileName);
+                }
             }
         }
 

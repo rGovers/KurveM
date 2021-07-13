@@ -16,6 +16,7 @@
 #include "Gizmos.h"
 #include "imgui.h"
 #include "Modals/DeleteNodesModal.h"
+#include "Model.h"
 #include "Object.h"
 #include "RenderTexture.h"
 #include "ShaderPixel.h"
@@ -31,6 +32,24 @@ Editor::Editor(Workspace* a_workspace)
 {
     m_workspace = a_workspace;
     
+    m_renderTexture = new RenderTexture(640, 480);
+
+    m_mouseDown = 0;
+
+    m_camera = new Camera();
+    m_camera->SetFOV(0.6911504f);
+    
+    Init();
+}
+Editor::~Editor()
+{
+    delete m_renderTexture;
+
+    delete m_camera;
+}
+
+void Editor::Init()
+{
     m_gridShader = Datastore::GetShaderProgram("SHADER_GRID");
     if (m_gridShader == nullptr)
     {   
@@ -45,39 +64,14 @@ Editor::Editor(Workspace* a_workspace)
         Datastore::AddShaderProgram("SHADER_GRID", m_gridShader);
     }
 
-    glGenBuffers(1, &m_dummyVBO);
-    glGenBuffers(1, &m_dummyIBO);
-    glGenVertexArrays(1, &m_dummyVAO);
-
-    glBindVertexArray(m_dummyVAO);
-    glBindBuffer(GL_ARRAY_BUFFER, m_dummyVBO);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_dummyIBO);
-
-    m_renderTexture = new RenderTexture(640, 480);
-
-    m_editorMode = EditorMode_Object;
-    m_faceCullingMode = EditorFaceCullingMode_Back;
-
-    m_mouseDown = 0;
-
-    m_camera = new Camera();
-    m_camera->SetFOV(0.6911504f);
-
-    m_curAction = nullptr;
-
     Transform* transform = m_camera->GetTransform();
     transform->Translation() = { 0.0f, -2.5f, -10.0f };
     transform->Quaternion() = glm::angleAxis(3.14159f, glm::normalize(glm::vec3(0.0f, 1.0f, 0.0f))) * glm::angleAxis(3.14159f * 0.1f, glm::normalize(glm::vec3(1.0f, 0.0f, 0.0f)));
-}
-Editor::~Editor()
-{
-    delete m_renderTexture;
 
-    delete m_camera;
+    m_curAction = nullptr;
 
-    glDeleteBuffers(1, &m_dummyVBO);
-    glDeleteBuffers(1, &m_dummyIBO);
-    glDeleteVertexArrays(1, &m_dummyVAO);
+    m_editorMode = EditorMode_Object;
+    m_faceCullingMode = EditorFaceCullingMode_Back;
 }
 
 bool Editor::IsFaceSelected() const
@@ -966,7 +960,7 @@ void Editor::Update(double a_delta, const glm::vec2& a_winPos, const glm::vec2& 
     const unsigned int programHandle = m_gridShader->GetHandle();
     glUseProgram(programHandle);
 
-    glBindVertexArray(m_dummyVAO);
+    glBindVertexArray(Model::GetEmpty()->GetVAO());
 
     glUniformMatrix4fv(0, 1, false, (float*)&view);
     glUniformMatrix4fv(1, 1, false, (float*)&proj);

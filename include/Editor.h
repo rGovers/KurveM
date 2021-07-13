@@ -38,10 +38,6 @@ private:
          
     ShaderProgram*           m_gridShader;
 
-    unsigned int             m_dummyIBO;
-    unsigned int             m_dummyVBO;
-    unsigned int             m_dummyVAO;
-
     Camera*                  m_camera;
          
     Workspace*               m_workspace;
@@ -69,6 +65,8 @@ protected:
 public:
     Editor(Workspace* a_workspace);
     ~Editor();
+
+    void Init();
 
     bool IsFaceSelected() const;
     bool CanInsertFace() const;

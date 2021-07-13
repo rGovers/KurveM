@@ -18,4 +18,6 @@ public:
     {
         return m_handle;
     }
+
+    static ShaderProgram* InitProgram(const char* a_name, const char* a_vertexSource, const char* a_pixelSource);
 };

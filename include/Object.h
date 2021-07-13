@@ -12,6 +12,7 @@ class Camera;
 class CurveModel;
 class Model;
 class ShaderProgram;
+class Texture;
 class Transform;
 
 class Object
@@ -23,12 +24,16 @@ private:
         
     char*              m_name; 
         
+    char*              m_referencePath;
+    Texture*           m_referenceImage;
+
     Transform*         m_transform;
 
     Object*            m_parent;
     std::list<Object*> m_children;
 
     ShaderProgram*     m_program;
+    ShaderProgram*     m_referenceProgram;
 
     CurveModel*        m_curveModel;
 
@@ -73,6 +78,8 @@ public:
     {
         m_curveModel = a_curveModel;
     }
+
+    bool SetReferenceImage(const char* a_path);
 
     glm::mat4 GetGlobalMatrix() const;
 

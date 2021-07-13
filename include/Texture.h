@@ -14,6 +14,7 @@ protected:
 
 public:
     Texture(int a_width, int a_height, int a_pixelFormat, int a_internalPixelFormat);
+    Texture(int a_width, int a_height, int a_pixelFormat, int a_internalPixelFormat, unsigned char* a_data);
     ~Texture();
 
     inline int GetHandle() const

@@ -27,6 +27,15 @@ FileToHeader(
     VARIABLE_NAME "EditorStandardPixel")
 
 FileToHeader(
+    SOURCE_FILE "shaders/gizmos.vert"
+    HEADER_FILE "include/Shaders/GizmosVertex.h"
+    VARIABLE_NAME "GizmosVertex")
+FileToHeader(
+    SOURCE_FILE "shaders/gizmos.frag"
+    HEADER_FILE "include/Shaders/GizmosPixel.h"
+    VARIABLE_NAME "GizmosPixel")
+    
+FileToHeader(
     SOURCE_FILE "shaders/grid.vert"
     HEADER_FILE "include/Shaders/GridVertex.h"
     VARIABLE_NAME "GridVertex")
@@ -36,14 +45,14 @@ FileToHeader(
     VARIABLE_NAME "GridPixel")
 
 FileToHeader(
-    SOURCE_FILE "shaders/gizmos.vert"
-    HEADER_FILE "include/Shaders/GizmosVertex.h"
-    VARIABLE_NAME "GizmosVertex")
+    SOURCE_FILE "shaders/referenceImage.vert"
+    HEADER_FILE "include/Shaders/ReferenceImageVertex.h"
+    VARIABLE_NAME "ReferenceImageVertex")
 FileToHeader(
-    SOURCE_FILE "shaders/gizmos.frag"
-    HEADER_FILE "include/Shaders/GizmosPixel.h"
-    VARIABLE_NAME "GizmosPixel")
-    
+    SOURCE_FILE "shaders/referenceImage.frag"
+    HEADER_FILE "include/Shaders/ReferenceImagePixel.h"
+    VARIABLE_NAME "ReferenceImagePixel")
+
 include_directories("${PROJECT_SOURCE_DIR}")
 include_directories("${PROJECT_SOURCE_DIR}/include/")
 include_directories("${PROJECT_SOURCE_DIR}/lib/glad/include/")
@@ -51,6 +60,7 @@ include_directories("${PROJECT_SOURCE_DIR}/lib/glfw/include/")
 include_directories("${PROJECT_SOURCE_DIR}/lib/glm/")
 include_directories("${PROJECT_SOURCE_DIR}/lib/imgui/")
 include_directories("${PROJECT_SOURCE_DIR}/lib/imgui/backends/")
+include_directories("${PROJECT_SOURCE_DIR}/lib/stb/")
 include_directories("${PROJECT_SOURCE_DIR}/lib/tinyxml2")
 
 file(GLOB SOURCES "src/*.cpp" "lib/glad/src/*.c" "lib/tinyxml2/tinyxml2.cpp" "lib/imgui/*.cpp" "lib/imgui/backends/imgui_impl_opengl3.cpp" "lib/imgui/backends/imgui_impl_glfw.cpp")

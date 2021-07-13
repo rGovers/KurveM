@@ -12,7 +12,10 @@
 #include "ShaderProgram.h"
 #include "Shaders/EditorStandardPixel.h"
 #include "Shaders/EditorStandardVertex.h"
+#include "Shaders/ReferenceImagePixel.h"
+#include "Shaders/ReferenceImageVertex.h"
 #include "ShaderVertex.h"
+#include "Texture.h"
 #include "Transform.h"
 
 long long Object::ObjectIDNum = 0;
@@ -29,18 +32,19 @@ Object::Object(const char* a_name)
 
     m_curveModel = nullptr;
 
+    m_referencePath = nullptr;
+    m_referenceImage = nullptr;
+
     m_program = Datastore::GetShaderProgram("SHADER_EDITORSTANDARD");
     if (m_program == nullptr)
     {
-        ShaderVertex* vertexShader = new ShaderVertex(EDITORSTANDARDVERTEX);
-        ShaderPixel* pixelShader = new ShaderPixel(EDITORSTANDARDPIXEL);
+        m_program = ShaderProgram::InitProgram("SHADER_EDITORSTANDARD", EDITORSTANDARDVERTEX, EDITORSTANDARDPIXEL);
+    }
 
-        m_program = new ShaderProgram(vertexShader, pixelShader);
-
-        delete vertexShader;
-        delete pixelShader;
-
-        Datastore::AddShaderProgram("SHADER_EDITORSTANDARD", m_program);
+    m_referenceProgram = Datastore::GetShaderProgram("SHADER_REFERENCEIMAGE");
+    if (m_referenceProgram == nullptr)
+    {
+        m_referenceProgram = ShaderProgram::InitProgram("SHADER_REFERENCEIMAGE", REFERENCEIMAGEVERTEX, REFERENCEIMAGEPIXEL);
     }
 
     // Not the best but it works
@@ -116,6 +120,27 @@ void Object::SetParent(Object* a_parent)
     }
 }
 
+bool Object::SetReferenceImage(const char* a_path)
+{
+    if (a_path != nullptr)
+    {
+        const int size = strlen(a_path) + 1;
+
+        m_referencePath = new char[size];
+
+        for (int i = 0; i < size; ++i)
+        {
+            m_referencePath[i] = a_path[i];
+        }
+
+        m_referenceImage = Datastore::GetTexture(m_referencePath);
+
+        return m_referenceImage != nullptr;
+    }
+
+    return false;
+}
+
 glm::mat4 Object::GetGlobalMatrix() const
 {
     if (m_parent != nullptr)
@@ -128,34 +153,58 @@ glm::mat4 Object::GetGlobalMatrix() const
 
 void Object::Draw(Camera* a_camera, const glm::vec2& a_winSize)
 {
-    Model* model = nullptr;
+    const glm::mat4 view = a_camera->GetView();
+    const glm::mat4 proj = a_camera->GetProjection((int)a_winSize.x, (int)a_winSize.y);
 
-    if (m_curveModel != nullptr)
-    {
-        model = m_curveModel->GetDisplayModel();
-    }
+    const glm::mat4 world = GetGlobalMatrix();
 
-    if (model != nullptr)
+    if (m_referencePath != nullptr)
     {
-        const unsigned int programHandle = m_program->GetHandle();
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);  
+
+        const unsigned int programHandle = m_referenceProgram->GetHandle();
         glUseProgram(programHandle);
 
-        const unsigned int vao = model->GetVAO();
+        const unsigned int vao = Model::GetEmpty()->GetVAO();
         glBindVertexArray(vao);
-
-        const glm::mat4 view = a_camera->GetView();
-        const glm::mat4 proj = a_camera->GetProjection((int)a_winSize.x, (int)a_winSize.y);
-
-        // const glm::mat4 viewProj = view * proj;
-        const glm::mat4 viewProj = proj * view;
-
-        const glm::mat4 world = GetGlobalMatrix();
 
         glUniformMatrix4fv(0, 1, false, (float*)&view);
         glUniformMatrix4fv(1, 1, false, (float*)&proj);
         glUniformMatrix4fv(2, 1, false, (float*)&world);
 
-        glDrawElements(GL_TRIANGLES, model->GetIndexCount(), GL_UNSIGNED_INT, nullptr);
+        const unsigned int texHandle = m_referenceImage->GetHandle();
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, texHandle);  
+        glUniform1i(4, 0);
+
+        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+        glDisable(GL_BLEND);
+    }
+    else
+    {
+        Model* model = nullptr;
+
+        if (m_curveModel != nullptr)
+        {
+            model = m_curveModel->GetDisplayModel();
+        }
+
+        if (model != nullptr)
+        {
+            const unsigned int programHandle = m_program->GetHandle();
+            glUseProgram(programHandle);
+
+            const unsigned int vao = model->GetVAO();
+            glBindVertexArray(vao);
+            
+            glUniformMatrix4fv(0, 1, false, (float*)&view);
+            glUniformMatrix4fv(1, 1, false, (float*)&proj);
+            glUniformMatrix4fv(2, 1, false, (float*)&world);
+
+            glDrawElements(GL_TRIANGLES, model->GetIndexCount(), GL_UNSIGNED_INT, nullptr);
+        }
     }
 }
 
@@ -182,6 +231,14 @@ void Object::Serialize(tinyxml2::XMLDocument* a_doc, tinyxml2::XMLElement* a_ele
     if (m_transform != nullptr)
     {
         m_transform->Serialize(a_doc, a_element);
+    }
+
+    if (m_referencePath != nullptr)
+    {
+        tinyxml2::XMLElement* element = a_doc->NewElement("ReferenceImage");
+        a_element->InsertEndChild(element);
+
+        element->SetAttribute("Path", m_referencePath);
     }
 
     if (m_curveModel != nullptr)
@@ -211,6 +268,24 @@ Object* Object::ParseData(const tinyxml2::XMLElement* a_element, Object* a_paren
         else if (strcmp(str, "Transform") == 0)
         {
             obj->m_transform->ParseData(iter);
+        }
+        else if (strcmp(str, "ReferenceImage") == 0)
+        {
+            const char* val = iter->Attribute("Path");
+
+            if (val != nullptr)
+            {
+                const int size = strlen(val) + 1;
+
+                obj->m_referencePath = new char[size];
+
+                for (int i = 0; i < size; ++i)
+                {
+                    obj->m_referencePath[i] = val[i];
+                }
+
+                obj->m_referenceImage = Datastore::GetTexture(obj->m_referencePath);
+            }
         }
         else if (strcmp(str, "CurveModel") == 0)
         {

@@ -15,7 +15,20 @@ CreateObjectAction::CreateObjectAction(Workspace* a_workspace, Object* a_parent,
     m_parentObject = a_parent;
     m_object = nullptr;
 
+    m_texPath = nullptr;
+
     m_objectType = a_type;
+}
+CreateObjectAction::CreateObjectAction(Workspace* a_workspace, Object* a_parent, const char* a_texPath)
+{
+    m_workspace = a_workspace;
+
+    m_parentObject = a_parent;
+    m_object = nullptr;
+
+    m_texPath = a_texPath;
+
+    m_objectType = CreateObjectType_ReferenceImage;
 }
 CreateObjectAction::~CreateObjectAction()
 {
@@ -80,6 +93,15 @@ bool CreateObjectAction::Execute()
             PrimitiveGenerator::CreateCurveCube(&nodePtr, &nodeCount, &facePtr, &faceCount);
 
             break;
+        }
+        case CreateObjectType_ReferenceImage:
+        {
+            if (!m_object->SetReferenceImage(m_texPath))
+            {
+                printf("Error Creating Reference Image \n");
+
+                return false;
+            } 
         }
     }
 

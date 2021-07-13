@@ -3,6 +3,21 @@
 #include <cstddef>
 #include <glad/glad.h>
 
+Model* Model::InstanceEmpty = nullptr;
+
+Model::Model()
+{
+    glGenBuffers(1, &m_vbo);
+    glGenBuffers(1, &m_ibo);
+    glGenVertexArrays(1, &m_vao);
+
+    glBindVertexArray(m_vao);
+    
+    glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_ibo);
+
+    m_indices = 0;
+}
 Model::Model(Vertex* a_vertices, unsigned int* a_indices, unsigned int a_vertexCount, unsigned int a_indexCount)
 {
     glGenBuffers(1, &m_vbo);
@@ -31,4 +46,20 @@ Model::~Model()
     glDeleteBuffers(1, &m_vbo);
     glDeleteBuffers(1, &m_ibo);
     glDeleteVertexArrays(1, &m_vao);
+}
+
+void Model::Init()
+{
+    if (InstanceEmpty == nullptr)
+    {
+        InstanceEmpty = new Model();
+    }
+}
+void Model::Destroy()
+{
+    if (InstanceEmpty != nullptr)
+    {
+        delete InstanceEmpty;
+        InstanceEmpty = nullptr;
+    }
 }

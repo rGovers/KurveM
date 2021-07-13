@@ -23,11 +23,12 @@
 #include "imgui_internal.h"
 #include "LongTasks/LongTask.h"
 #include "LongTasks/TriangulateCurveLongTask.h"
-#include "Modals/Modal.h"
 #include "Modals/ErrorModal.h"
 #include "Modals/ExportOBJModal.h"
 #include "Modals/LoadFileModal.h"
+#include "Modals/LoadReferenceImageModal.h"
 #include "Modals/SaveFileModal.h"
+#include "Model.h"
 #include "Object.h"
 #include "RenderTexture.h"
 #include "Texture.h"
@@ -113,6 +114,8 @@ char* Workspace::GetHomePath() const
 
 Workspace::Workspace()
 {   
+    Model::Init();
+
     m_currentDir = nullptr;
 
     m_curAction = nullptr;
@@ -161,6 +164,8 @@ Workspace::~Workspace()
         delete *iter;
     }
     m_modalStack.clear();
+
+    Model::Destroy();
 }
 
 void Workspace::ClearBuffers()
@@ -217,6 +222,11 @@ void Workspace::New()
     Datastore::Init();
 
     Gizmos::Init();
+
+    if (m_editor != nullptr)
+    {
+        m_editor->Init();
+    }
 
     m_block = false;
 }
@@ -591,50 +601,71 @@ void Workspace::DefaultWindowConfig()
     ImGui::DockBuilderFinish(id);
 }
 
-void Workspace::CreateObjectMenuList(Object* a_parent)
+void Workspace::CreateCurveObjectMenuList(Object* a_parent)
 {
-    if (ImGui::MenuItem("New Triangle(Curve)"))
+    if (ImGui::BeginMenu("New Curve Object"))
     {
-        Action* action = new CreateObjectAction(this, a_parent, CreateObjectType_TriangleCurve);
-        if (!PushAction(action))
+        if (ImGui::MenuItem("Triangle"))
         {
-            printf("Error Creating Object \n");
+            Action* action = new CreateObjectAction(this, a_parent, CreateObjectType_TriangleCurve);
+            if (!PushAction(action))
+            {
+                printf("Error Creating Curve Object(Triangle) \n");
 
-            delete action;
+                delete action;
+            }
         }
+
+        if (ImGui::MenuItem("Plane"))
+        {
+            Action* action = new CreateObjectAction(this, a_parent, CreateObjectType_PlaneCurve);
+            if (!PushAction(action))
+            {
+                printf("Error Creating Curve Object(Plane) \n");
+
+                delete action;
+            }
+        }
+
+        if (ImGui::MenuItem("Sphere"))
+        {
+            Action* action = new CreateObjectAction(this, a_parent, CreateObjectType_SphereCurve);
+            if (!PushAction(action))
+            {
+                printf("Error Creating Curve Object(Sphere) \n");
+
+                delete action;
+            }
+        }
+
+        if (ImGui::MenuItem("Cube"))
+        {
+            Action* action = new CreateObjectAction(this, a_parent, CreateObjectType_CubeCurve);
+            if (!PushAction(action))
+            {
+                printf("Error Creating Curve Object(Cube) \n");
+
+                delete action;
+            }
+        }
+
+        ImGui::EndMenu();
     }
-
-    if (ImGui::MenuItem("New Plane(Curve)"))
+}
+void Workspace::ImportObjectMenuList(Object* a_parent)
+{
+    if (ImGui::BeginMenu("New Reference Image"))
     {
-        Action* action = new CreateObjectAction(this, a_parent, CreateObjectType_PlaneCurve);
-        if (!PushAction(action))
+        if (ImGui::MenuItem("PNG"))
         {
-            printf("Error Creating Object \n");
+            char* home = GetHomePath();
 
-            delete action;
+            PushModal(new LoadReferenceImageModal(this, a_parent, home, ".png"));
+
+            delete[] home;
         }
-    }
 
-    if (ImGui::MenuItem("New Sphere(Curve)"))
-    {
-        Action* action = new CreateObjectAction(this, a_parent, CreateObjectType_SphereCurve);
-        if (!PushAction(action))
-        {
-            printf("Error Creating Object \n");
-
-            delete action;
-        }
-    }
-
-    if (ImGui::MenuItem("New Cube(Curve)"))
-    {
-        Action* action = new CreateObjectAction(this, a_parent, CreateObjectType_CubeCurve);
-        if (!PushAction(action))
-        {
-            printf("Error Creating Object \n");
-
-            delete action;
-        }
+        ImGui::EndMenu();
     }
 }
 
@@ -743,7 +774,11 @@ bool Workspace::ObjectHeirachyGUI(Object* a_object, bool* a_blockMenu)
 
         ImGui::Separator();
 
-        CreateObjectMenuList(a_object);
+        CreateCurveObjectMenuList(a_object);
+
+        ImGui::Separator();
+
+        ImportObjectMenuList(a_object);
 
         ImGui::Separator();
 
@@ -873,7 +908,10 @@ void Workspace::Update(double a_delta)
         }
         if (glfwGetKey(window, GLFW_KEY_S))
         {
-            m_toolMode = ToolMode_Scale;
+            if (!glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_MIDDLE))
+            {
+                m_toolMode = ToolMode_Scale;
+            }
         }
         if (glfwGetKey(window, GLFW_KEY_E))
         {
@@ -884,14 +922,17 @@ void Workspace::Update(double a_delta)
         {
             m_editModeDown = true;
 
-            if (m_editor->GetEditorMode() == EditorMode_Edit)
+            if (m_editor->IsEditorModeEnabled(EditorMode_Edit))
             {
-                m_editor->SetEditorMode(EditorMode_Object);
-            }
-            else
-            {
-                m_editor->SetEditorMode(EditorMode_Edit);
-            }
+                if (m_editor->GetEditorMode() == EditorMode_Edit)
+                {
+                    m_editor->SetEditorMode(EditorMode_Object);
+                }
+                else
+                {
+                    m_editor->SetEditorMode(EditorMode_Edit);
+                }
+            }   
         }
         else if (!glfwGetKey(window, GLFW_KEY_TAB))
         {
@@ -1163,7 +1204,11 @@ void Workspace::Update(double a_delta)
 
             ImGui::Separator();
 
-            CreateObjectMenuList(nullptr);
+            CreateCurveObjectMenuList(nullptr);
+
+            ImGui::Separator();
+
+            ImportObjectMenuList(nullptr);
 
             ImGui::EndPopup();
         }
@@ -1359,7 +1404,11 @@ void Workspace::Update(double a_delta)
             {
             case EditorMode_Object:
             {
-                CreateObjectMenuList(nullptr);
+                CreateCurveObjectMenuList(nullptr);
+
+                ImGui::Separator();
+
+                ImportObjectMenuList(nullptr);
 
                 break;
             }
