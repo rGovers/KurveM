@@ -10,6 +10,7 @@ class Action;
 class LongTask;
 class Modal;
 class Object;
+class Window;
 
 enum e_ToolMode
 {
@@ -20,13 +21,6 @@ enum e_ToolMode
     ToolMode_End
 };
 
-enum e_ObjectPropertiesTab
-{
-    ObjectPropertiesTab_Object,
-    ObjectPropertiesTab_Curve,
-    ObjectPropertiesTab_End,
-};
-
 class Workspace
 {
 private:
@@ -34,14 +28,14 @@ private:
                      
     ImGuiID                      m_centreDockNode;
                      
+    std::list<Window*>           m_windows;
+
     Editor*                      m_editor;
                      
     int                          m_barSize;
 
     bool                         m_init;
     bool                         m_reset;
-
-    e_ObjectPropertiesTab        m_propertiesMode;
 
     e_ToolMode                   m_toolMode;
 
@@ -86,14 +80,8 @@ private:
 
     void ClearBuffers();
 
-    void CreateCurveObjectMenuList(Object* a_parent);
-    void ImportObjectMenuList(Object* a_parent);
-
-    void EditorFaceButton(const char* a_text, e_EditorFaceCullingMode a_face);
-    void ToolbarButton(const char* a_text, e_ToolMode a_toolMode);
-    bool ObjectHeirachyGUI(Object* a_object, bool* a_blockMenu);
-
     char* GetHomePath() const;
+
 protected:
 
 public:
@@ -108,7 +96,10 @@ public:
     void ExportOBJ(const char* a_dir, bool a_selectedObjects, bool a_smartStep, int a_steps);
 
     bool Undo();
-    bool Redo();
+    bool Redo(); 
+
+    void CreateCurveObjectMenuList(Object* a_parent);
+    void ImportObjectMenuList(Object* a_parent);
 
     inline bool IsShutingDown() const
     {
@@ -130,6 +121,10 @@ public:
     }
     Object** GetSelectedObjectArray() const;
 
+    void ClearSelectedObjects();
+    void AddSelectedObject(Object* a_object);
+    void RemoveSelectedObject(Object* a_object);
+
     inline std::list<Object*> GetObjectList() const
     {
         return m_objectList;
@@ -138,6 +133,10 @@ public:
     inline e_ToolMode GetToolMode() const
     {
         return m_toolMode;
+    }
+    inline void SetToolMode(e_ToolMode a_toolMode)
+    {
+        m_toolMode = a_toolMode;
     }
 
     inline LongTask* GetCurrentTask() const
@@ -167,15 +166,23 @@ public:
     void PushModal(Modal* a_modal);
 
     bool PushAction(Action* a_action);
+    inline void ClearCurrentAction() 
+    {
+        m_curAction = nullptr;
+    }
+    inline Action* GetCurrentAction() const
+    {
+        return m_curAction;
+    }
+    inline void SetCurrentAction(Action* a_action)
+    {
+        m_curAction = a_action;
+    }
 
     void PushLongTask(LongTask* a_longTask);
 
     void AddObject(Object* a_object);
     void RemoveObject(Object* a_object);
-
-    void ClearSelectedObjects();
-    void AddSelectedObject(Object* a_object);
-    void RemoveSelectedObject(Object* a_object);
 
     void DefaultWindowConfig();
 

@@ -10,19 +10,12 @@
 #include "Actions/Action.h"
 #include "Actions/CreateObjectAction.h"
 #include "Actions/DeleteObjectAction.h"
-#include "Actions/FlipFaceAction.h"
-#include "Actions/InsertFaceAction.h"
-#include "Actions/RenameObjectAction.h"
-#include "Actions/ScaleObjectAction.h"
-#include "Actions/TranslateObjectAction.h"
 #include "Application.h"
-#include "CurveModel.h"
 #include "Datastore.h"
 #include "Gizmos.h"
 #include "ImGuiExt.h"
 #include "imgui_internal.h"
 #include "LongTasks/LongTask.h"
-#include "LongTasks/TriangulateCurveLongTask.h"
 #include "Modals/ErrorModal.h"
 #include "Modals/ExportOBJModal.h"
 #include "Modals/LoadFileModal.h"
@@ -30,11 +23,11 @@
 #include "Modals/SaveFileModal.h"
 #include "Model.h"
 #include "Object.h"
-#include "RenderTexture.h"
-#include "Texture.h"
-#include "Transform.h"
-
-const char* EditorMode_String[] = { "Object Mode", "Edit Mode" };
+#include "Windows/EditorWindow.h"
+#include "Windows/HierarchyWindow.h"
+#include "Windows/OptionsWindow.h"
+#include "Windows/PropertiesWindow.h"
+#include "Windows/ToolbarWindow.h"
 
 void RunTasks(Workspace* a_workspace)
 {
@@ -123,8 +116,6 @@ Workspace::Workspace()
     m_init = true;
     m_reset = false;
 
-    m_propertiesMode = ObjectPropertiesTab_Object;
-
     m_toolMode = ToolMode_Translate;
 
     m_shutDown = false;
@@ -142,9 +133,20 @@ Workspace::Workspace()
     New();
 
     m_editor = new Editor(this);
+
+    m_windows.emplace_back(new EditorWindow(this, m_editor));
+    m_windows.emplace_back(new HierarchyWindow(this, m_editor));
+    m_windows.emplace_back(new OptionsWindow(this, m_editor));
+    m_windows.emplace_back(new PropertiesWindow(this, m_editor));
+    m_windows.emplace_back(new ToolbarWindow(this, m_editor));
 }
 Workspace::~Workspace()
 {
+    for (auto iter = m_windows.begin(); iter != m_windows.end(); ++iter)
+    {
+        delete *iter;
+    }
+
     m_shutDown = true;
 
     while (!m_join)
@@ -688,160 +690,6 @@ void Workspace::ImportObjectMenuList(Object* a_parent)
     }
 }
 
-void Workspace::EditorFaceButton(const char* a_text, e_EditorFaceCullingMode a_face)
-{
-    if (ImGuiExt::ToggleButton(a_text, m_editor->GetEditorFaceCullingMode() == a_face, { 32, 32 }))
-    {
-        m_editor->SetEditorFaceCullingMode(a_face);
-    }
-}
-
-void Workspace::ToolbarButton(const char* a_text, e_ToolMode a_toolMode)
-{
-    if (ImGuiExt::ToggleButton(a_text, m_toolMode == a_toolMode, { 32, 32 }))
-    {
-        m_toolMode = a_toolMode;
-    }
-
-    ImGui::NextColumn();
-}
-
-bool Workspace::ObjectHeirachyGUI(Object* a_object, bool* a_blockMenu)
-{
-    int id = a_object->GetID();
-
-    bool selected = false;
-
-    *a_blockMenu = false;
-
-    for (auto iter = m_selectedObjects.begin(); iter != m_selectedObjects.end(); ++iter)
-    {
-        if ((*iter)->GetID() == a_object->GetID())
-        {
-            selected = true;
-
-            break;
-        }
-    }
-
-    bool open = ImGui::TreeNode((void*)&id, "");
-
-    ImGui::SameLine();
-
-    const char* name = a_object->GetName();
-    if (name == nullptr)
-    {
-        name = "NULL";
-    }
-
-    if (ImGui::Selectable(("[" + std::to_string(a_object->GetID()) + "] " + name).c_str(), selected))
-    {
-        m_curAction = nullptr;
-
-        ImGuiIO& io = ImGui::GetIO();
-
-        if (io.KeyCtrl)
-        {
-            bool found = false;
-
-            for (auto iter = m_selectedObjects.begin(); iter != m_selectedObjects.end(); ++iter)
-            {
-                if ((*iter)->GetID() == a_object->GetID())
-                {
-                    m_selectedObjects.erase(iter);
-
-                    found = true;
-
-                    break;
-                }
-            }
-
-            if (!found)
-            {
-                m_selectedObjects.emplace_back(a_object);
-            }
-        }
-        else
-        {
-            m_selectedObjects.clear();
-
-            m_selectedObjects.emplace_back(a_object);
-        }
-    }
-
-    if (selected)
-    {
-        ImGui::SetItemDefaultFocus();
-    }
-
-    bool ret = false;
-
-    if (ImGui::BeginPopupContextItem())
-    {
-        *a_blockMenu = true;
-
-        if (ImGui::MenuItem("New Object"))
-        {
-            Action* action = new CreateObjectAction(this, a_object);
-            if (!PushAction(action))
-            {
-                printf("Error Creating Object \n");
-
-                delete action;
-            }
-        }
-
-        ImGui::Separator();
-
-        CreateCurveObjectMenuList(a_object);
-
-        ImGui::Separator();
-
-        ImportObjectMenuList(a_object);
-
-        ImGui::Separator();
-
-        if (ImGui::MenuItem("Delete Object"))
-        {
-            Action* action = new DeleteObjectAction(this, a_object);
-            if (!PushAction(action))
-            {
-                printf("Error Deleting Object \n");
-
-                delete action;
-            }
-
-            ret = true;
-        }
-
-        ImGui::EndPopup();
-    }
-
-    if (open)
-    {
-        const std::list<Object*> children = a_object->GetChildren();
-
-        for (auto iter = children.begin(); iter != children.end(); ++iter)
-        {
-            bool val;
-
-            if (ObjectHeirachyGUI(*iter, &val))
-            {
-                ret = true;
-            }
-
-            if (val)
-            {
-                *a_blockMenu = true;
-            }
-        }
-
-        ImGui::TreePop();
-    }
-
-    return ret;
-}
-
 void Workspace::Resize(int a_width, int a_height)
 {
     m_reset = true;
@@ -1118,382 +966,10 @@ void Workspace::Update(double a_delta)
         ImGui::EndMainMenuBar();
     }
 
-    if (ImGui::Begin("Options"))
+    for (auto iter = m_windows.begin(); iter != m_windows.end(); ++iter)
     {
-        const e_EditorMode currentIndex = m_editor->GetEditorMode();
-
-        ImGui::PushItemWidth(128);
-        if (ImGui::BeginCombo("##combo", EditorMode_String[m_editor->GetEditorMode()]))
-        {
-            for (int i = 0; i < EditorMode_End; ++i)
-            {
-                if (m_editor->IsEditorModeEnabled((e_EditorMode)i))
-                {   
-                    bool selected = currentIndex == i;
-                    if (ImGui::Selectable(EditorMode_String[i], selected))
-                    {
-                        m_editor->SetEditorMode((e_EditorMode)i);
-                    }
-
-                    if (selected)
-                    {
-                        ImGui::SetItemDefaultFocus();
-                    }
-                }
-            }
-
-            ImGui::EndCombo();
-        }
-
-        ImGui::BeginGroup();
-
-        EditorFaceButton("Front Faces", EditorFaceCullingMode_Back);
-        ImGui::SameLine();
-        EditorFaceButton("Back Faces", EditorFaceCullingMode_Front);
-        ImGui::SameLine();
-        EditorFaceButton("Both Faces", EditorFaceCullingMode_None);
-        ImGui::SameLine();
-        EditorFaceButton("No Faces", EditorFaceCullingMode_All);
-
-        ImGui::EndGroup();
+        (*iter)->Update(a_delta);
     }
-    ImGui::End();
-
-    if (ImGui::Begin("Toolbar"))
-    {
-        const ImVec2 vMin = ImGui::GetWindowContentRegionMin();
-		const ImVec2 vMax = ImGui::GetWindowContentRegionMax();
-        const glm::vec2 size = { vMax.x - vMin.x, vMax.y - vMin.y };
-
-        const int columns = glm::max(1, (int)glm::floor(size.x / 36.0f));
-
-        ImGui::BeginGroup();
-        ImGui::Columns(columns, nullptr, false);
-        
-        ToolbarButton("Translate", ToolMode_Translate);
-        ToolbarButton("Rotate", ToolMode_Rotate);
-        ToolbarButton("Scale", ToolMode_Scale);
-
-        ImGui::Columns();
-        ImGui::EndGroup();
-
-        ImGui::Separator();
-
-        ImGui::BeginGroup();
-        ImGui::Columns(columns, nullptr, false);
-
-        ToolbarButton("Extrude", ToolMode_Extrude);
-
-        ImGui::Columns();
-        ImGui::EndGroup();
-    }
-    ImGui::End();
-
-    if (ImGui::Begin("Hierarchy"))
-    {
-        bool blk = false;
-
-        for (auto iter = m_objectList.begin(); iter != m_objectList.end(); ++iter)
-        {
-            bool val;
-
-            if (ObjectHeirachyGUI(*iter, &val))
-            {
-                break;
-            }
-
-            if (val)
-            {
-                blk = true;
-            }
-        }
-
-        if (!blk && ImGui::BeginPopupContextWindow())
-        {
-            if (ImGui::MenuItem("New Object"))
-            {
-                Action* action = new CreateObjectAction(this, nullptr);
-                if (!PushAction(action))
-                {
-                    printf("Error Creating Object \n");
-
-                    delete action;
-                }
-            }
-
-            ImGui::Separator();
-
-            CreateCurveObjectMenuList(nullptr);
-
-            ImGui::Separator();
-
-            ImportObjectMenuList(nullptr);
-
-            ImGui::EndPopup();
-        }
-    }
-    ImGui::End();
-
-    if (ImGui::Begin("Properties"))
-    {
-        const int size = m_selectedObjects.size();
-
-        if (size > 0)
-        {
-            Object* obj = *m_selectedObjects.begin();
-            Transform* transform = obj->GetTransform();
-
-            ImGui::BeginGroup();
-
-            if (ImGui::Button("Object"))
-            {
-                m_propertiesMode = ObjectPropertiesTab_Object;
-            }
-
-            if (ImGui::Button("Curve"))
-            {
-                m_propertiesMode = ObjectPropertiesTab_Curve;
-            }
-
-            ImGui::EndGroup();
-
-            ImGui::SameLine();
-
-            ImGui::BeginGroup();
-
-            const unsigned int objectCount = m_selectedObjects.size();
-
-            Object** objs = new Object*[objectCount];
-
-            unsigned int index = 0;
-            for (auto iter = m_selectedObjects.begin(); iter != m_selectedObjects.end(); ++iter)
-            {
-                objs[index++] = *iter;
-            }
-
-            switch (m_propertiesMode)
-            {
-            case ObjectPropertiesTab_Object:
-            {
-                if (m_selectedObjects.size() == 1)
-                {
-                    char* buff = new char[1024];
-                    const char* name = obj->GetName();
-
-                    if (name == nullptr)
-                    {
-                        name = "";
-                    }
-
-                    int size = strlen(name);
-
-                    for (int i = 0; i <= size; ++i)
-                    {
-                        buff[i] = name[i];
-                    }
-
-                    if (ImGui::InputText("Name", buff, 1000))
-                    {
-                        if (m_curAction != nullptr && m_curAction->GetActionType() == ActionType_RenameObject)
-                        {
-                            RenameObjectAction* action = (RenameObjectAction*)m_curAction;
-
-                            action->SetNewName(buff);
-                            action->Execute();
-                        }
-                        else
-                        {
-                            Action* action = new RenameObjectAction(name, buff, obj);
-
-                            if (!PushAction(action))
-                            {
-                                printf("Error Renaming Object \n");
-
-                                delete action;
-                            }
-                            else
-                            {
-                                m_curAction = action;
-                            }
-                        }
-                    }
-                }
-                
-
-                glm::vec3 pos = transform->Translation();
-                if (ImGui::DragFloat3("Position", (float*)&pos, 0.1f))
-                {
-                    if (m_curAction != nullptr && m_curAction->GetActionType() == ActionType_TranslateObject)
-                    {
-                        TranslateObjectAction* action = (TranslateObjectAction*)m_curAction;
-
-                        action->SetTranslation(pos);
-                        action->Execute();
-                    }
-                    else
-                    {
-                        Action* action = new TranslateObjectAction(pos, objs, objectCount);
-                        if (!PushAction(action))
-                        {
-                            printf("Error Renaming Object \n");
-
-                            delete action;
-                        }  
-                        else
-                        {
-                            m_curAction = action;
-                        }
-                    }
-                }
-
-                glm::vec3 scale = transform->Scale();
-                if (ImGui::DragFloat3("Scale", (float*)&scale, 0.1f))
-                {
-                    if (m_curAction != nullptr && m_curAction->GetActionType() == ActionType_ScaleObject)
-                    {
-                        ScaleObjectAction* action = (ScaleObjectAction*)m_curAction;
-
-                        action->SetScale(scale);
-                        action->Execute();
-                    }
-                    else
-                    {
-                        Action* action = new ScaleObjectAction(scale, objs, objectCount);
-                        if (!PushAction(action))
-                        {
-                            printf("Error Renaming Object \n");
-
-                            delete action;
-                        }  
-                        else
-                        {
-                            m_curAction = action;
-                        }
-                    }
-                }
-
-                break;
-            }
-            case ObjectPropertiesTab_Curve:
-            {
-                CurveModel* model = obj->GetCurveModel();
-                if (model != nullptr)
-                {
-                    int triSteps = model->GetSteps();
-                    if (ImGui::InputInt("Curve Resolution", &triSteps))
-                    {
-                        model->SetSteps(glm::max(triSteps, 1));
-                        PushLongTask(new TriangulateCurveLongTask(model));
-                    }
-
-                    bool stepAdjust = model->IsStepAdjusted();
-                    if (ImGui::Checkbox("Smart Step", &stepAdjust))
-                    {
-                        model->SetStepAdjust(stepAdjust);
-                        PushLongTask(new TriangulateCurveLongTask(model));
-                    }
-                }
-
-                break;
-            }
-            }
-
-            ImGui::EndGroup();
-        }
-    }
-    ImGui::End();
-
-    if (ImGui::Begin("Editor"))
-    {
-        const ImVec2 pos = ImGui::GetWindowPos();
-        const ImVec2 vMin = ImGui::GetWindowContentRegionMin();
-		const ImVec2 vMax = ImGui::GetWindowContentRegionMax();
-        const ImVec2 size = { vMax.x - vMin.x, vMax.y - vMin.y };
-
-        m_editor->Update(a_delta, { pos.x + vMin.x, pos.y + vMin.y }, { size.x, size.y });
-
-        const RenderTexture* renderTexture = m_editor->GetRenderTexture();
-        const Texture* texture = renderTexture->GetTexture();
-
-        ImGui::Image((ImTextureID)texture->GetHandle(), size);
-
-        if (ImGui::BeginPopupContextWindow())
-        {
-            switch (m_editor->GetEditorMode())
-            {
-            case EditorMode_Object:
-            {
-                CreateCurveObjectMenuList(nullptr);
-
-                ImGui::Separator();
-
-                ImportObjectMenuList(nullptr);
-
-                break;
-            }
-            case EditorMode_Edit:
-            {
-                if (m_editor->CanInsertFace() && ImGui::MenuItem("Insert Face"))
-                {
-                    const std::list<unsigned int> selectedNodes = m_editor->GetSelectedNodes();
-
-                    const unsigned int nodeCount = selectedNodes.size();
-
-                    unsigned int* nodes = new unsigned int[nodeCount];
-
-                    unsigned int index = 0;
-                    for (auto iter = selectedNodes.begin(); iter != selectedNodes.end(); ++iter)
-                    {
-                        nodes[index++] = *iter;
-                    }
-
-                    Action* action = new InsertFaceAction(this, nodes, nodeCount, GetSelectedObject()->GetCurveModel());
-                    if (!PushAction(action))
-                    {
-                        printf("Error creating face \n");
-
-                        delete action;
-                    }
-
-                    delete[] nodes;
-                }
-
-                if (m_editor->IsFaceSelected() && ImGui::MenuItem("Flip Face"))
-                {
-                    const std::list<unsigned int> selectedNodes = m_editor->GetSelectedNodes();
-
-                    const unsigned int nodeCount = selectedNodes.size();
-
-                    unsigned int* nodes = new unsigned int[nodeCount];
-
-                    unsigned int index = 0;
-                    for (auto iter = selectedNodes.begin(); iter != selectedNodes.end(); ++iter)
-                    {
-                        nodes[index++] = *iter;
-                    }
-
-                    Action* action = new FlipFaceAction(this, nodes, nodeCount, GetSelectedObject()->GetCurveModel());
-                    if (!PushAction(action))
-                    {
-                        printf("Error fliping face \n");
-
-                        delete action;
-                    }
-
-                    delete[] nodes;
-                }
-
-                ImGui::Separator();
-
-                break;
-            }
-            }
-            
-
-            ImGui::EndPopup();
-        }
-    }
-    ImGui::End();
 
     if (m_modalStack.size() > 0)
     {

@@ -12,6 +12,7 @@ enum e_ActionType
     ActionType_MoveNode,
     ActionType_MoveNodeHandle,
     ActionType_RenameObject,
+    ActionType_RotateObject,
     ActionType_ScaleObject,
     ActionType_TranslateObject,
     ActionType_TranslateObjectRelative,
