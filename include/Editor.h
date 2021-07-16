@@ -1,6 +1,7 @@
 #pragma once
 
 class Camera;
+class EditorInputController;
 class Object;
 class RenderTexture;
 class ShaderProgram;
@@ -33,6 +34,8 @@ enum e_EditorFaceCullingMode
 class Editor
 {
 private:
+    EditorInputController*   m_inputController;
+
     e_EditorFaceCullingMode  m_faceCullingMode;
     e_EditorMode             m_editorMode;
          
@@ -52,7 +55,6 @@ private:
     Action*                  m_curAction;
 
     bool                     m_orthoDown;
-    bool                     m_deleteDown;
 
     bool IsInteractingTransform(const glm::vec3& a_pos, const glm::vec3& a_axis, const glm::vec2& a_cursorPos, const glm::vec2& a_screenSize, const glm::mat4& a_viewProj);
     bool IsInteractingCurveNode(const glm::vec3& a_pos, const glm::vec3& a_axis, const glm::vec2& a_cursorPos, const glm::vec2& a_screenSize, CurveModel* a_model, const glm::mat4& a_viewProj);
@@ -75,6 +77,11 @@ public:
     inline std::list<unsigned int> GetSelectedNodes() const
     {
         return m_selectedNodes;
+    }
+    unsigned int* GetSelectedNodesArray() const;
+    inline unsigned int GetSelectedNodeCount() const
+    {
+        return m_selectedNodes.size();
     }
 
     inline e_EditorMode GetEditorMode() const
@@ -102,6 +109,10 @@ public:
     void AddNodeToSelection(unsigned int a_index);
 
     bool IsEditorModeEnabled(e_EditorMode a_editorMode) const;
+
+    void CurveDeleteDown(Object* a_object);
+    void CurveFDown(Object* a_object);
+    void CurveNDown(Object* a_object);
 
     void Update(double a_delta, const glm::vec2& a_winPos, const glm::vec2& a_winSize);
 

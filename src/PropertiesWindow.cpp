@@ -3,6 +3,9 @@
 #include "Actions/RenameObjectAction.h"
 #include "Actions/RotateObjectAction.h"
 #include "Actions/ScaleObjectAction.h"
+#include "Actions/SetCurveArmatureAction.h"
+#include "Actions/SetCurveSmartStepAction.h"
+#include "Actions/SetCurveStepsAction.h"
 #include "Actions/TranslateObjectAction.h"
 #include "imgui.h"
 #include "LongTasks/TriangulateCurveLongTask.h"
@@ -54,13 +57,43 @@ void PropertiesWindow::PushRotation(const glm::quat& a_quat)
     }
 }
 
+int GetArmatures(std::vector<Object*>* a_items, long long a_id, Object* a_object)
+{
+    int index = 0;
+
+    if (a_object->GetID() == a_id)
+    {
+        index = a_items->size();
+    }
+
+    const e_ObjectType objType = a_object->GetObjectType();
+    if (objType == ObjectType_Armature)
+    {
+        a_items->emplace_back(a_object);
+    }
+
+    const std::list<Object*> children = a_object->GetChildren();
+
+    for (auto iter = children.begin(); iter != children.end(); ++iter)
+    {
+        const int otherIndex = GetArmatures(a_items, a_id, *iter);
+
+        if (otherIndex != 0)
+        {
+            index = otherIndex;
+        }
+    }
+
+    return index;
+}
+
 void PropertiesWindow::Update(double a_delta)
 {
     if (ImGui::Begin("Properties"))
     {
-        const int size = m_workspace->GetSelectedObjectCount();
+        const int objectCount = m_workspace->GetSelectedObjectCount();
 
-        if (size > 0)
+        if (objectCount > 0)
         {
             Object* obj = m_workspace->GetSelectedObject();
             Transform* transform = obj->GetTransform();
@@ -72,9 +105,12 @@ void PropertiesWindow::Update(double a_delta)
                 m_propertiesMode = ObjectPropertiesTab_Object;
             }
 
-            if (ImGui::Button("Curve"))
+            if (obj->GetObjectType() == ObjectType_CurveModel)
             {
-                m_propertiesMode = ObjectPropertiesTab_Curve;
+                if (ImGui::Button("Curve"))
+                {
+                    m_propertiesMode = ObjectPropertiesTab_Curve;
+                }
             }
 
             ImGui::EndGroup();
@@ -91,7 +127,7 @@ void PropertiesWindow::Update(double a_delta)
             {
             case ObjectPropertiesTab_Object:
             {
-                if (size == 1)
+                if (objectCount == 1)
                 {
                     char* buff = new char[1024];
                     const char* name = obj->GetName();
@@ -133,8 +169,10 @@ void PropertiesWindow::Update(double a_delta)
                             }
                         }
                     }
+
+                    ImGui::Separator();
                 }
-                
+
                 glm::vec3 pos = transform->Translation();
                 if (ImGui::DragFloat3("Position", (float*)&pos, 0.01f))
                 {
@@ -147,7 +185,7 @@ void PropertiesWindow::Update(double a_delta)
                     }
                     else
                     {
-                        Action* action = new TranslateObjectAction(pos, objs, size);
+                        Action* action = new TranslateObjectAction(pos, objs, objectCount);
                         if (!m_workspace->PushAction(action))
                         {
                             printf("Error Renaming Object \n");
@@ -239,7 +277,7 @@ void PropertiesWindow::Update(double a_delta)
                     }
                     else
                     {
-                        Action* action = new ScaleObjectAction(scale, objs, size);
+                        Action* action = new ScaleObjectAction(scale, objs, objectCount);
                         if (!m_workspace->PushAction(action))
                         {
                             printf("Error Renaming Object \n");
@@ -260,19 +298,152 @@ void PropertiesWindow::Update(double a_delta)
                 CurveModel* model = obj->GetCurveModel();
                 if (model != nullptr)
                 {
+                    Object** curveObjects = new Object*[objectCount];
+                    int curveObjectCount = 0;
+                    for (int i = 0; i < objectCount; ++i)
+                    {
+                        if (objs[i]->GetObjectType() == ObjectType_CurveModel)
+                        {
+                            curveObjects[curveObjectCount++] = objs[i];
+                        }
+                    }
+
                     int triSteps = model->GetSteps();
                     if (ImGui::InputInt("Curve Resolution", &triSteps))
                     {
-                        model->SetSteps(glm::max(triSteps, 1));
-                        m_workspace->PushLongTask(new TriangulateCurveLongTask(model));
+                        const int steps = glm::max(triSteps, 1);
+
+                        if (curAction != nullptr && curAction->GetActionType() == ActionType_SetCurveStepsAction)
+                        {
+                            SetCurveStepsAction* action = (SetCurveStepsAction*)curAction;
+
+                            action->SetSteps(steps);
+                            action->Execute();
+                        }
+                        else
+                        {
+                            Action* action = new SetCurveStepsAction(m_workspace, curveObjects, curveObjectCount, steps);
+                            if (!m_workspace->PushAction(action))
+                            {
+                                printf("Error Setting Curve Steps \n");
+
+                                delete action;
+                            }  
+                            else
+                            {
+                                m_workspace->SetCurrentAction(action);
+                            }
+                        }
                     }
 
                     bool stepAdjust = model->IsStepAdjusted();
                     if (ImGui::Checkbox("Smart Step", &stepAdjust))
                     {
-                        model->SetStepAdjust(stepAdjust);
-                        m_workspace->PushLongTask(new TriangulateCurveLongTask(model));
+                        if (curAction != nullptr && curAction->GetActionType() == ActionType_SetCurveSmartStepAction)
+                        {
+                            SetCurveSmartStepAction* action = (SetCurveSmartStepAction*)curAction;
+
+                            action->SetValue(stepAdjust);
+                            action->Execute();
+                        }
+                        else
+                        {
+                            Action* action = new SetCurveSmartStepAction(m_workspace, curveObjects, curveObjectCount, stepAdjust);
+                            if (!m_workspace->PushAction(action))
+                            {
+                                printf("Error Setting Curve Smart Step \n");
+
+                                delete action;
+                            }  
+                            else
+                            {
+                                m_workspace->SetCurrentAction(action);
+                            }
+                        }
                     }
+
+                    int index = 0;
+                    std::vector<Object*> items;
+
+                    items.emplace_back(nullptr);
+
+                    const long long id = model->GetArmatureID();
+
+                    const std::list<Object*> objects = m_workspace->GetObjectList();
+                    for (auto iter = objects.begin(); iter != objects.end(); ++iter)
+                    {
+                        const int otherIndex = GetArmatures(&items, id, *iter);
+                        if (otherIndex != 0)
+                        {
+                            index = otherIndex;
+                        }
+                    }
+
+                    const Object* obj = items[index];
+
+                    const char* name = "Null";
+
+                    if (obj != nullptr)
+                    {
+                        name = obj->GetName();
+                    }
+
+                    if (ImGui::BeginCombo("Armature", name))
+                    {
+                        const int size = items.size();
+
+                        for (int i = 0; i < size; ++i)
+                        {
+                            name = "Null";
+
+                            obj = items[i];                            
+                            if (obj != nullptr)
+                            {
+                                name = obj->GetName();
+                            }
+
+                            long long curID = -1;
+                            if (obj != nullptr)
+                            {
+                                curID = obj->GetID();
+                            }
+
+                            const bool selected = i == index;
+                            if (ImGui::Selectable(name, selected))
+                            {
+                                if (curAction != nullptr && curAction->GetActionType() == ActionType_SetCurveArmatureAction)
+                                {
+                                    SetCurveArmatureAction* action = (SetCurveArmatureAction*)curAction;
+
+                                    action->SetID(curID);
+                                    action->Execute();
+                                }
+                                else
+                                {
+                                    Action* action = new SetCurveArmatureAction(m_workspace, curveObjects, curveObjectCount, curID);
+                                    if (!m_workspace->PushAction(action))
+                                    {
+                                        printf("Error Setting Armature \n");
+
+                                        delete action;
+                                    }  
+                                    else
+                                    {
+                                        m_workspace->SetCurrentAction(action);
+                                    }
+                                }
+                            }
+
+                            if (selected)
+                            {
+                                ImGui::SetItemDefaultFocus();
+                            }
+                        }
+
+                        ImGui::EndCombo();
+                    }
+
+                    delete[] curveObjects;
                 }
 
                 break;

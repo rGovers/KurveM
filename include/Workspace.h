@@ -118,6 +118,8 @@ public:
         return m_block;
     }
 
+    Object* GetObject(long long a_id) const;
+
     inline unsigned int GetSelectedObjectCount() const
     {
         return m_selectedObjects.size();

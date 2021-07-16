@@ -20,13 +20,17 @@
 
 long long Object::ObjectIDNum = 0;
 
-Object::Object(const char* a_name)
+Object::Object(const char* a_name, e_ObjectType a_objectType)
 {
+    m_visible = true;
+
     m_name = nullptr;
 
     m_transform = new Transform();
 
     m_parent = nullptr;
+
+    m_objectType = a_objectType;
 
     SetName(a_name);
 
@@ -34,6 +38,9 @@ Object::Object(const char* a_name)
 
     m_referencePath = nullptr;
     m_referenceImage = nullptr;
+
+    m_rootTransform = nullptr;
+    m_rootObject = nullptr;
 
     m_program = Datastore::GetShaderProgram("SHADER_EDITORSTANDARD");
     if (m_program == nullptr)
@@ -49,6 +56,19 @@ Object::Object(const char* a_name)
 
     // Not the best but it works
     m_id = ObjectIDNum++;
+
+    if (a_objectType == ObjectType_Armature)
+    {
+        Object* obj = new Object("Root", this, glm::vec3(0));
+    }
+}
+Object::Object(const char* a_name, Object* a_rootObject, const glm::vec3& a_rootPos) :
+    Object(a_name, ObjectType_ArmatureNode)
+{
+    m_rootTransform = new Transform();
+    m_rootObject = a_rootObject;
+
+    m_rootTransform->Translation() = a_rootPos;
 }
 Object::~Object()
 {
@@ -70,6 +90,16 @@ Object::~Object()
     {
         delete *iter;
     }
+}
+
+bool Object::IsGlobalVisible() const
+{
+    if (m_parent != nullptr)
+    {
+        return m_parent->IsGlobalVisible() && m_visible;
+    }
+
+    return m_visible;
 }
 
 void Object::SetName(const char* a_name)
@@ -153,59 +183,70 @@ glm::mat4 Object::GetGlobalMatrix() const
 
 void Object::Draw(Camera* a_camera, const glm::vec2& a_winSize)
 {
-    const glm::mat4 view = a_camera->GetView();
-    const glm::mat4 proj = a_camera->GetProjection((int)a_winSize.x, (int)a_winSize.y);
-
-    const glm::mat4 world = GetGlobalMatrix();
-
-    if (m_referencePath != nullptr)
+    if (IsGlobalVisible())
     {
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);  
+        const glm::mat4 view = a_camera->GetView();
+        const glm::mat4 proj = a_camera->GetProjection((int)a_winSize.x, (int)a_winSize.y);
 
-        const unsigned int programHandle = m_referenceProgram->GetHandle();
-        glUseProgram(programHandle);
+        const glm::mat4 world = GetGlobalMatrix();
 
-        const unsigned int vao = Model::GetEmpty()->GetVAO();
-        glBindVertexArray(vao);
-
-        glUniformMatrix4fv(0, 1, false, (float*)&view);
-        glUniformMatrix4fv(1, 1, false, (float*)&proj);
-        glUniformMatrix4fv(2, 1, false, (float*)&world);
-
-        const unsigned int texHandle = m_referenceImage->GetHandle();
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, texHandle);  
-        glUniform1i(4, 0);
-
-        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-
-        glDisable(GL_BLEND);
-    }
-    else
-    {
-        Model* model = nullptr;
-
-        if (m_curveModel != nullptr)
+        switch (m_objectType)
         {
-            model = m_curveModel->GetDisplayModel();
-        }
-
-        if (model != nullptr)
+        case ObjectType_ReferenceImage:
         {
-            const unsigned int programHandle = m_program->GetHandle();
-            glUseProgram(programHandle);
+            if (m_referenceImage != nullptr)
+            {
+                glEnable(GL_BLEND);
+                glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);  
 
-            const unsigned int vao = model->GetVAO();
-            glBindVertexArray(vao);
-            
-            glUniformMatrix4fv(0, 1, false, (float*)&view);
-            glUniformMatrix4fv(1, 1, false, (float*)&proj);
-            glUniformMatrix4fv(2, 1, false, (float*)&world);
+                const unsigned int programHandle = m_referenceProgram->GetHandle();
+                glUseProgram(programHandle);
 
-            glDrawElements(GL_TRIANGLES, model->GetIndexCount(), GL_UNSIGNED_INT, nullptr);
+                const unsigned int vao = Model::GetEmpty()->GetVAO();
+                glBindVertexArray(vao);
+
+                glUniformMatrix4fv(0, 1, false, (float*)&view);
+                glUniformMatrix4fv(1, 1, false, (float*)&proj);
+                glUniformMatrix4fv(2, 1, false, (float*)&world);
+
+                const unsigned int texHandle = m_referenceImage->GetHandle();
+                glActiveTexture(GL_TEXTURE0);
+                glBindTexture(GL_TEXTURE_2D, texHandle);  
+                glUniform1i(4, 0);
+
+                glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+                glDisable(GL_BLEND);
+            }
+
+            break;
         }
-    }
+        case ObjectType_CurveModel:
+        {
+            if (m_curveModel != nullptr)
+            {
+                const Model* model = m_curveModel->GetDisplayModel();
+
+                if (model != nullptr)
+                {   
+                    const unsigned int programHandle = m_program->GetHandle();
+                    glUseProgram(programHandle);
+
+                    const unsigned int vao = model->GetVAO();
+                    glBindVertexArray(vao);
+
+                    glUniformMatrix4fv(0, 1, false, (float*)&view);
+                    glUniformMatrix4fv(1, 1, false, (float*)&proj);
+                    glUniformMatrix4fv(2, 1, false, (float*)&world);
+
+                    glDrawElements(GL_TRIANGLES, model->GetIndexCount(), GL_UNSIGNED_INT, nullptr);
+                }
+            }
+
+            break;
+        }
+        }
+    }   
 }
 
 void Object::WriteOBJ(std::ofstream* a_file, bool a_smartStep, int a_steps) const
@@ -247,7 +288,7 @@ void Object::Serialize(tinyxml2::XMLDocument* a_doc, tinyxml2::XMLElement* a_ele
     }
 }
 
-Object* Object::ParseData(const tinyxml2::XMLElement* a_element, Object* a_parent)
+Object* Object::ParseData(Workspace* a_workspace, const tinyxml2::XMLElement* a_element, Object* a_parent)
 {
     const tinyxml2::XMLAttribute* nameAtt = a_element->FindAttribute("Name");
 
@@ -257,13 +298,24 @@ Object* Object::ParseData(const tinyxml2::XMLElement* a_element, Object* a_paren
         obj->SetParent(a_parent);
     }
 
+    if (strcmp(a_element->Value(), "ArmatureNode") == 0)
+    {
+        obj->m_objectType = ObjectType_ArmatureNode;
+    }
+
     for (const tinyxml2::XMLElement* iter = a_element->FirstChildElement(); iter != nullptr; iter = iter->NextSiblingElement())
     {
         const char* str = iter->Value();
 
         if (strcmp(str, "Object") == 0)
         {
-            ParseData(iter, obj);
+            ParseData(a_workspace, iter, obj);
+        }
+        else if (strcmp(str, "ArmatureNode") == 0)
+        {
+            obj->m_objectType = ObjectType_Armature;
+
+            ParseData(a_workspace, iter, obj);
         }
         else if (strcmp(str, "Transform") == 0)
         {
@@ -271,6 +323,8 @@ Object* Object::ParseData(const tinyxml2::XMLElement* a_element, Object* a_paren
         }
         else if (strcmp(str, "ReferenceImage") == 0)
         {
+            obj->m_objectType = ObjectType_ReferenceImage;
+
             const char* val = iter->Attribute("Path");
 
             if (val != nullptr)
@@ -289,7 +343,9 @@ Object* Object::ParseData(const tinyxml2::XMLElement* a_element, Object* a_paren
         }
         else if (strcmp(str, "CurveModel") == 0)
         {
-            obj->m_curveModel = new CurveModel();
+            obj->m_objectType = ObjectType_CurveModel;
+
+            obj->m_curveModel = new CurveModel(a_workspace);
             obj->m_curveModel->ParseData(iter);
             obj->m_curveModel->Triangulate();
         }

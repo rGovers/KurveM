@@ -27,9 +27,12 @@ void OptionsWindow::Update(double a_delta)
 {
     if (ImGui::Begin("Options"))
     {
+        const ImVec2 size = ImGui::GetWindowSize();
+
+        ImGui::Columns(size.x / 256, nullptr, false);
+
         const e_EditorMode currentIndex = m_editor->GetEditorMode();
 
-        ImGui::PushItemWidth(128);
         if (ImGui::BeginCombo("##combo", EditorMode_String[m_editor->GetEditorMode()]))
         {
             for (int i = 0; i < EditorMode_End; ++i)
@@ -52,6 +55,8 @@ void OptionsWindow::Update(double a_delta)
             ImGui::EndCombo();
         }
 
+        ImGui::NextColumn();
+
         ImGui::BeginGroup();
 
         EditorFaceButton("Front Faces", EditorFaceCullingMode_Back);
@@ -63,6 +68,8 @@ void OptionsWindow::Update(double a_delta)
         EditorFaceButton("No Faces", EditorFaceCullingMode_All);
 
         ImGui::EndGroup();
+
+        ImGui::Columns();
     }
 
     ImGui::End();

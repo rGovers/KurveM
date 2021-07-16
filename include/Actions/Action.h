@@ -15,6 +15,9 @@ enum e_ActionType
     ActionType_RenameObject,
     ActionType_RotateObject,
     ActionType_ScaleObject,
+    ActionType_SetCurveArmatureAction,
+    ActionType_SetCurveSmartStepAction,
+    ActionType_SetCurveStepsAction,
     ActionType_TranslateObject,
     ActionType_TranslateObjectRelative,
     ActionType_End

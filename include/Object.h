@@ -14,11 +14,23 @@ class Model;
 class ShaderProgram;
 class Texture;
 class Transform;
+class Workspace;
+
+enum e_ObjectType
+{
+    ObjectType_Empty,
+    ObjectType_CurveModel,
+    ObjectType_ReferenceImage,
+    ObjectType_Armature,
+    ObjectType_ArmatureNode
+};
 
 class Object
 {
 private:
     static long long ObjectIDNum;
+
+    bool               m_visible;
 
     long long          m_id;
         
@@ -27,10 +39,15 @@ private:
     char*              m_referencePath;
     Texture*           m_referenceImage;
 
+    e_ObjectType       m_objectType;
+
     Transform*         m_transform;
 
     Object*            m_parent;
     std::list<Object*> m_children;
+
+    Object*            m_rootObject;
+    Transform*         m_rootTransform;
 
     ShaderProgram*     m_program;
     ShaderProgram*     m_referenceProgram;
@@ -40,8 +57,19 @@ private:
 protected:
 
 public:
-    Object(const char* a_name);
+    Object(const char* a_name, e_ObjectType a_objectType = ObjectType_Empty);
+    Object(const char* a_name, Object* a_rootObject, const glm::vec3& a_rootPos);
     ~Object();
+
+    bool IsGlobalVisible() const;
+    inline bool IsVisible() const
+    {
+        return m_visible;
+    }
+    void SetVisible(bool a_value) 
+    {
+        m_visible = a_value;
+    }
 
     inline const char* GetName() const
     {
@@ -54,11 +82,19 @@ public:
         return m_id;
     }
 
+    inline Transform* GetRootTransform() const
+    {
+        return m_rootTransform;
+    }
     inline Transform* GetTransform() const
     {
         return m_transform;
     }
 
+    inline Object* GetRootObject() const
+    {
+        return m_rootObject;
+    }
     inline Object* GetParent() const
     {
         return m_parent;
@@ -68,6 +104,11 @@ public:
     inline std::list<Object*> GetChildren() const
     {
         return m_children;
+    }
+
+    inline e_ObjectType GetObjectType() const
+    {
+        return m_objectType;
     }
 
     inline CurveModel* GetCurveModel() const
@@ -88,5 +129,5 @@ public:
     void WriteOBJ(std::ofstream* a_file, bool a_smartStep, int a_steps) const;
     void Serialize(tinyxml2::XMLDocument* a_doc, tinyxml2::XMLElement* a_element) const;
 
-    static Object* ParseData(const tinyxml2::XMLElement* a_element, Object* a_parent);
+    static Object* ParseData(Workspace* a_workspace, const tinyxml2::XMLElement* a_element, Object* a_parent);
 };

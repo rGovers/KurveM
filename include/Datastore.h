@@ -1,5 +1,6 @@
 #pragma once
 
+#include <string>
 #include <unordered_map>
 
 class ShaderProgram;
@@ -10,8 +11,8 @@ class Datastore
 private:
     static Datastore* Instance;
 
-    std::unordered_map<const char*, ShaderProgram*> m_shaders;
-    std::unordered_map<const char*, Texture*>       m_textures;
+    std::unordered_map<std::string, ShaderProgram*> m_shaders;
+    std::unordered_map<std::string, Texture*>       m_textures;
 
     Datastore();
 protected:

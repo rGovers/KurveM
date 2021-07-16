@@ -1,12 +1,16 @@
 #include "CurveModel.h"
 
 #include "Model.h"
+#include "Object.h"
+#include "Workspace.h"
 #include "XMLIO.h"
 
 #include <string>
 
-CurveModel::CurveModel()
+CurveModel::CurveModel(Workspace* a_workspace)
 {
+    m_workspace = a_workspace;
+
     m_nodes = nullptr;
     m_faces = nullptr;
 
@@ -16,6 +20,8 @@ CurveModel::CurveModel()
     m_displayModel = nullptr;
 
     m_stepAdjust = false;
+
+    m_armature = -1;
 
     m_steps = 10;
 }
@@ -37,6 +43,31 @@ CurveModel::~CurveModel()
         delete m_displayModel;
         m_displayModel = nullptr;
     }
+}
+
+void CurveModel::SetArmature(long long a_id)
+{
+    const Object* obj = m_workspace->GetObject(a_id);
+
+    SetArmature(obj);
+}
+void CurveModel::SetArmature(const Object* a_armature)
+{
+    m_armature = -1;
+
+    if (a_armature != nullptr)
+    {
+        const e_ObjectType type = a_armature->GetObjectType();
+
+        if (type == ObjectType_Armature)
+        {
+            m_armature = a_armature->GetID();
+        }
+    }
+}
+Object* CurveModel::GetArmature() const
+{
+    return m_workspace->GetObject(m_armature);
 }
 
 float GetNodeDist(const BezierCurveNode3& a_nodeA, const BezierCurveNode3& a_nodeB)

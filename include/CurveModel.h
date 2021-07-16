@@ -9,6 +9,8 @@
 struct Vertex;
 
 class Model;
+class Object;
+class Workspace;
 
 enum e_FaceMode
 {
@@ -88,6 +90,10 @@ struct CurveFace
 class CurveModel
 {
 private:
+    Workspace*    m_workspace;
+
+    long long     m_armature;
+
     int           m_steps;
 
     bool          m_stepAdjust;
@@ -102,7 +108,7 @@ private:
 protected:
 
 public:
-    CurveModel();
+    CurveModel(Workspace* a_workspace);
     ~CurveModel();
 
     inline Model* GetDisplayModel() const
@@ -152,6 +158,14 @@ public:
     inline bool IsStepAdjusted() const
     {
         return m_stepAdjust;
+    }
+
+    void SetArmature(long long a_id);
+    void SetArmature(const Object* a_armature);
+    Object* GetArmature() const;
+    inline long long GetArmatureID() const
+    {
+        return m_armature;
     }
 
     unsigned int Get3PointFaceIndex(unsigned int a_indexA, unsigned int a_indexB, unsigned int a_indexC) const;

@@ -12,7 +12,8 @@ enum e_CreateObjectType
     CreateObjectType_PlaneCurve,
     CreateObjectType_SphereCurve,
     CreateObjectType_CubeCurve,
-    CreateObjectType_ReferenceImage
+    CreateObjectType_ReferenceImage,
+    CreateObjectType_Armature
 };
 
 class CreateObjectAction : public Action
@@ -26,6 +27,8 @@ private:
     const char*        m_texPath;
 
     e_CreateObjectType m_objectType;
+
+    const char* GetName() const;
 
 protected:
 

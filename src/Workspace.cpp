@@ -24,6 +24,7 @@
 #include "Model.h"
 #include "Object.h"
 #include "UVEditor.h"
+#include "Windows/AnimatorWindow.h"
 #include "Windows/EditorWindow.h"
 #include "Windows/HierarchyWindow.h"
 #include "Windows/OptionsWindow.h"
@@ -138,6 +139,7 @@ Workspace::Workspace()
     m_editor = new Editor(this);
     m_uvEditor = new UVEditor(this, m_editor);
 
+    m_windows.emplace_back(new AnimatorWindow(this, m_editor));
     m_windows.emplace_back(new EditorWindow(this, m_editor));
     m_windows.emplace_back(new HierarchyWindow(this, m_editor));
     m_windows.emplace_back(new OptionsWindow(this, m_editor));
@@ -264,7 +266,7 @@ void Workspace::Open(const char* a_dir)
             {   
                 for (const tinyxml2::XMLElement* iter = objectsElement->FirstChildElement(); iter != nullptr; iter = iter->NextSiblingElement())
                 {
-                    m_objectList.emplace_back(Object::ParseData(iter, nullptr));
+                    m_objectList.emplace_back(Object::ParseData(this, iter, nullptr));
                 }
             }   
             else
@@ -287,7 +289,22 @@ void SaveObject(tinyxml2::XMLDocument* a_doc, tinyxml2::XMLElement* a_parentElem
 {
     if (a_object != nullptr)
     {
-        tinyxml2::XMLElement* objectElement = a_doc->NewElement("Object");
+        tinyxml2::XMLElement* objectElement;
+        switch (a_object->GetObjectType())
+        {
+        case ObjectType_ArmatureNode:
+        {
+            objectElement = a_doc->NewElement("ArmatureNode");
+
+            break;
+        }
+        default:
+        {
+            objectElement = a_doc->NewElement("Object");
+
+            break;
+        }
+        }
         a_parentElement->InsertEndChild(objectElement);
 
         a_object->Serialize(a_doc, objectElement);
@@ -428,6 +445,43 @@ bool Workspace::Redo()
     }
 
     return false;
+}
+
+Object* GetObjects(Object* a_object, long long a_id)
+{
+    if (a_object->GetID() == a_id)
+    {
+        return a_object;
+    }
+
+    const std::list<Object*> children = a_object->GetChildren();
+
+    for (auto iter = children.begin(); iter != children.end(); ++iter)
+    {
+        Object* obj = GetObjects(*iter, a_id);
+
+        if (obj != nullptr)
+        {
+            return obj;
+        }
+    }
+
+    return nullptr;
+}
+
+Object* Workspace::GetObject(long long a_id) const
+{
+    for (auto iter = m_objectList.begin(); iter != m_objectList.end(); ++iter)
+    {
+        Object* obj = GetObjects(*iter, a_id);
+
+        if (obj != nullptr)
+        {
+            return obj;
+        }
+    }
+
+    return nullptr;
 }
 
 Object* Workspace::GetSelectedObject() const
@@ -612,9 +666,9 @@ void Workspace::DefaultWindowConfig()
     const float rightSideScale = 0.15f;
 
     ImGuiID dockMainID = id;
-    const ImGuiID dockBottom = ImGui::DockBuilderSplitNode(dockMainID, ImGuiDir_Down, 0.2f, nullptr, &dockMainID);
     ImGuiID dockRightTop = ImGui::DockBuilderSplitNode(dockMainID, ImGuiDir_Right, rightSideScale, nullptr, &dockMainID);
     const ImGuiID dockRightBottom = ImGui::DockBuilderSplitNode(dockRightTop, ImGuiDir_Down, 0.25f, nullptr, &dockRightTop);
+    const ImGuiID dockBottom = ImGui::DockBuilderSplitNode(dockMainID, ImGuiDir_Down, 0.2f, nullptr, &dockMainID);
     const ImGuiID dockTop = ImGui::DockBuilderSplitNode(dockMainID, ImGuiDir_Up, topSideScale, nullptr, &dockMainID);
     const ImGuiID dockLeft = ImGui::DockBuilderSplitNode(dockMainID, ImGuiDir_Left, leftSideScale, nullptr, &dockMainID);
 
@@ -627,6 +681,8 @@ void Workspace::DefaultWindowConfig()
     ImGui::DockBuilderDockWindow("Properties", dockRightBottom);
 
     ImGui::DockBuilderDockWindow("Toolbar", dockLeft);
+
+    ImGui::DockBuilderDockWindow("Animator", dockBottom);
 
     ImGui::DockBuilderFinish(id);
 }
@@ -666,6 +722,8 @@ void Workspace::UVWindowConfig()
     ImGui::DockBuilderDockWindow("Toolbar", dockLeft);
     ImGui::DockBuilderDockWindow("Hierarchy", dockLeft);
     ImGui::DockBuilderDockWindow("Properties", dockLeft);
+
+    ImGui::DockBuilderDockWindow("Animator", dockBottom);
 
     ImGui::DockBuilderFinish(id);
 }

@@ -18,7 +18,7 @@ HierarchyWindow::~HierarchyWindow()
 
 bool HierarchyWindow::ObjectHeirachyGUI(Object* a_object, bool* a_blockMenu)
 {
-    int id = a_object->GetID();
+    const long long id = a_object->GetID();
 
     bool selected = false;
 
@@ -28,7 +28,7 @@ bool HierarchyWindow::ObjectHeirachyGUI(Object* a_object, bool* a_blockMenu)
 
     for (auto iter = selectedObjects.begin(); iter != selectedObjects.end(); ++iter)
     {
-        if ((*iter)->GetID() == a_object->GetID())
+        if ((*iter)->GetID() == id)
         {
             selected = true;
 
@@ -36,17 +36,50 @@ bool HierarchyWindow::ObjectHeirachyGUI(Object* a_object, bool* a_blockMenu)
         }
     }
 
-    bool open = ImGui::TreeNode((void*)&id, "");
-
-    ImGui::SameLine();
-
     const char* name = a_object->GetName();
     if (name == nullptr)
     {
         name = "NULL";
     }
 
-    if (ImGui::Selectable(("[" + std::to_string(a_object->GetID()) + "] " + name).c_str(), selected))
+    const std::list<Object*> children = a_object->GetChildren();
+
+    const int childCount = children.size();
+
+    const std::string uString = std::string("##") + name + std::to_string(id);
+    
+    const e_ObjectType objectType = a_object->GetObjectType(); 
+
+    bool open = false;
+    if (childCount > 0)
+    {
+        open = ImGui::TreeNode((uString + "Node").c_str(), "");
+
+        ImGui::SameLine();
+    }
+    else 
+    {
+        ImGui::Indent(ImGui::GetTreeNodeToLabelSpacing());
+    }
+
+    if (objectType != ObjectType_ArmatureNode)
+    {
+        bool visible = a_object->IsVisible();
+        if (ImGui::Checkbox((uString + "Visible").c_str(), &visible))
+        {
+            a_object->SetVisible(visible);
+        }
+
+        ImGui::SameLine();
+    }
+
+    const ImGuiID guiID = ImGui::GetID((uString + "Name").c_str());
+
+    ImGui::PushID(guiID);
+    bool nameClick = ImGui::Selectable(name, selected);
+    ImGui::PopID();
+
+    if (nameClick)
     {
         m_workspace->ClearCurrentAction();
 
@@ -56,7 +89,9 @@ bool HierarchyWindow::ObjectHeirachyGUI(Object* a_object, bool* a_blockMenu)
         {
             bool found = false;
 
-            for (auto iter = m_workspace->GetSelectedObjects().begin(); iter != m_workspace->GetSelectedObjects().end(); ++iter)
+            const std::list<Object*> selectedObjects = m_workspace->GetSelectedObjects();
+
+            for (auto iter = selectedObjects.begin(); iter != selectedObjects.end(); ++iter)
             {
                 if ((*iter)->GetID() == a_object->GetID())
                 {
@@ -88,51 +123,65 @@ bool HierarchyWindow::ObjectHeirachyGUI(Object* a_object, bool* a_blockMenu)
 
     bool ret = false;
 
-    if (ImGui::BeginPopupContextItem())
+    if (objectType != ObjectType_ArmatureNode)
     {
-        *a_blockMenu = true;
-
-        if (ImGui::MenuItem("New Object"))
+        if (ImGui::BeginPopupContextItem())
         {
-            Action* action = new CreateObjectAction(m_workspace, a_object);
-            if (!m_workspace->PushAction(action))
+            *a_blockMenu = true;
+
+            if (ImGui::MenuItem("New Object"))
             {
-                printf("Error Creating Object \n");
+                Action* action = new CreateObjectAction(m_workspace, a_object);
+                if (!m_workspace->PushAction(action))
+                {
+                    printf("Error Creating Object \n");
 
-                delete action;
-            }
-        }
-
-        ImGui::Separator();
-
-        m_workspace->CreateCurveObjectMenuList(a_object);
-
-        ImGui::Separator();
-
-        m_workspace->ImportObjectMenuList(a_object);
-
-        ImGui::Separator();
-
-        if (ImGui::MenuItem("Delete Object"))
-        {
-            Action* action = new DeleteObjectAction(m_workspace, a_object);
-            if (!m_workspace->PushAction(action))
-            {
-                printf("Error Deleting Object \n");
-
-                delete action;
+                    delete action;
+                }
             }
 
-            ret = true;
-        }
+            ImGui::Separator();
 
-        ImGui::EndPopup();
+            m_workspace->CreateCurveObjectMenuList(a_object);
+
+            ImGui::Separator();
+
+            m_workspace->ImportObjectMenuList(a_object);
+
+            ImGui::Separator();
+
+            if (ImGui::MenuItem("New Armature"))
+            {
+                Action* action = new CreateObjectAction(m_workspace, a_object, CreateObjectType_Armature);
+                if (!m_workspace->PushAction(action))
+                {
+                    printf("Error Creating Armature \n");
+
+                    delete action;
+                }
+            }
+
+            ImGui::Separator();
+
+            if (ImGui::MenuItem("Delete Object"))
+            {
+                Action* action = new DeleteObjectAction(m_workspace, a_object);
+                if (!m_workspace->PushAction(action))
+                {
+                    printf("Error Deleting Object \n");
+
+                    delete action;
+                }
+
+                ret = true;
+            }
+
+            ImGui::EndPopup();
+        }
     }
-
+    
     if (open)
     {
-        const std::list<Object*> children = a_object->GetChildren();
-
         for (auto iter = children.begin(); iter != children.end(); ++iter)
         {
             bool val;
@@ -149,6 +198,11 @@ bool HierarchyWindow::ObjectHeirachyGUI(Object* a_object, bool* a_blockMenu)
         }
 
         ImGui::TreePop();
+    }
+
+    if (childCount <= 0)
+    {
+        ImGui::Unindent();
     }
 
     return ret;
@@ -196,6 +250,19 @@ void HierarchyWindow::Update(double a_delta)
             ImGui::Separator();
 
             m_workspace->ImportObjectMenuList(nullptr);
+
+            ImGui::Separator();
+
+            if (ImGui::MenuItem("New Armature"))
+            {
+                Action* action = new CreateObjectAction(m_workspace, nullptr, CreateObjectType_Armature);
+                if (!m_workspace->PushAction(action))
+                {
+                    printf("Error Creating Armature \n");
+
+                    delete action;
+                }
+            }
 
             ImGui::EndPopup();
         }

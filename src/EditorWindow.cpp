@@ -1,5 +1,6 @@
 #include "Windows/EditorWindow.h"
 
+#include "Actions/CreateObjectAction.h"
 #include "Actions/FlipFaceAction.h"
 #include "Actions/InsertFaceAction.h"
 #include "Editor.h"
@@ -46,6 +47,19 @@ void EditorWindow::Update(double a_delta)
                 ImGui::Separator();
 
                 m_workspace->ImportObjectMenuList(nullptr);
+
+                ImGui::Separator();
+
+                if (ImGui::MenuItem("New Armature"))
+                {
+                    Action* action = new CreateObjectAction(m_workspace, nullptr, CreateObjectType_Armature);
+                    if (!m_workspace->PushAction(action))
+                    {
+                        printf("Error Creating Armature \n");
+
+                        delete action;
+                    }
+                }
 
                 break;
             }
