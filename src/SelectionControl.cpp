@@ -1,5 +1,11 @@
 #include "SelectionControl.h"
 
+bool SelectionControl::PointInPoint(const glm::vec2& a_point, const glm::vec2& a_pos, float a_radius)
+{
+    const glm::vec2 diff = a_pos - a_point;
+
+    return glm::length(diff) <= a_radius;
+}
 bool SelectionControl::PointInPoint(const glm::mat4& a_viewProj, const glm::vec2& a_point, float a_radius, const glm::vec3 a_worldPoint)
 {
     const glm::vec4 pos = glm::vec4(a_worldPoint, 1);

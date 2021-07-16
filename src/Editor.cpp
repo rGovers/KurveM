@@ -588,7 +588,6 @@ void Editor::Update(double a_delta, const glm::vec2& a_winPos, const glm::vec2& 
                             }
                         }
 
-
                         const glm::mat4 transformMat = obj->GetGlobalMatrix();
 
                         switch (m_editorMode)
@@ -743,59 +742,62 @@ void Editor::Update(double a_delta, const glm::vec2& a_winPos, const glm::vec2& 
                     }
                     default:
                     {
-                        if (io.KeyShift)
+                        if (ImGui::IsWindowFocused())
                         {
-                            for (unsigned int i = 0; i < nodeCount; ++i)
+                            if (io.KeyShift)
                             {
-                                const Node3Cluster node = nodes[i];
-                                if (SelectionControl::NodeInSelection(viewProj, min, max, transformMat, node.Nodes[0].Node))
+                                for (unsigned int i = 0; i < nodeCount; ++i)
                                 {
-                                    m_selectedNodes.emplace_back(i);
+                                    const Node3Cluster node = nodes[i];
+                                    if (SelectionControl::NodeInSelection(viewProj, min, max, transformMat, node.Nodes[0].Node))
+                                    {
+                                        m_selectedNodes.emplace_back(i);
+                                    }
                                 }
                             }
-                        }
-                        else if (io.KeyCtrl)
-                        {
-                            for (unsigned int i = 0; i < nodeCount; ++i)
+                            else if (io.KeyCtrl)
                             {
-                                const Node3Cluster node = nodes[i];
-                                if (SelectionControl::NodeInSelection(viewProj, min, max, transformMat, node.Nodes[0].Node))
+                                for (unsigned int i = 0; i < nodeCount; ++i)
                                 {
-                                    bool found = false;
-
-                                    for (auto iter = m_selectedNodes.begin(); iter != m_selectedNodes.end(); ++iter)
+                                    const Node3Cluster node = nodes[i];
+                                    if (SelectionControl::NodeInSelection(viewProj, min, max, transformMat, node.Nodes[0].Node))
                                     {
-                                        if (*iter == i)
+                                        bool found = false;
+
+                                        for (auto iter = m_selectedNodes.begin(); iter != m_selectedNodes.end(); ++iter)
                                         {
-                                            found = true;
+                                            if (*iter == i)
+                                            {
+                                                found = true;
 
-                                            m_selectedNodes.erase(iter);
+                                                m_selectedNodes.erase(iter);
 
-                                            break;
+                                                break;
+                                            }
+                                        }
+
+                                        if (!found)
+                                        {
+                                            m_selectedNodes.emplace_back(i);
                                         }
                                     }
+                                }
+                            }
+                            else
+                            {
+                                m_selectedNodes.clear();
 
-                                    if (!found)
+                                for (unsigned int i = 0; i < nodeCount; ++i)
+                                {
+                                    const Node3Cluster node = nodes[i];
+                                    if (SelectionControl::NodeInSelection(viewProj, min, max, transformMat, node.Nodes[0].Node))
                                     {
                                         m_selectedNodes.emplace_back(i);
                                     }
                                 }
                             }
                         }
-                        else
-                        {
-                            m_selectedNodes.clear();
-
-                            for (unsigned int i = 0; i < nodeCount; ++i)
-                            {
-                                const Node3Cluster node = nodes[i];
-                                if (SelectionControl::NodeInSelection(viewProj, min, max, transformMat, node.Nodes[0].Node))
-                                {
-                                    m_selectedNodes.emplace_back(i);
-                                }
-                            }
-                        }
-
+                        
                         break;
                     }
                     }

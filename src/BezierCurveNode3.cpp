@@ -5,20 +5,37 @@ BezierCurveNode3::BezierCurveNode3()
     m_pos = glm::vec3(0);
     m_handle = glm::vec3(0, 1, 0);
 }
-BezierCurveNode3::BezierCurveNode3(const glm::vec3& a_pos, const glm::vec3& a_handlePos)
+BezierCurveNode3::BezierCurveNode3(const glm::vec3& a_pos, const glm::vec3& a_handlePos, const glm::vec2& a_uv)
 {
     m_pos = a_pos;
     m_handle = a_handlePos;
+
+    m_uv = a_uv;
 }
 BezierCurveNode3::~BezierCurveNode3()
 {
 
 }
 
+glm::vec2 BezierCurveNode3::GetUVLerp(const BezierCurveNode3& a_other, float a_lerp) const
+{
+    return GetUVLerp(*this, a_other, a_lerp);
+}
+
 glm::vec3 BezierCurveNode3::GetPoint(const BezierCurveNode3& a_other, float a_lerp) const
 {
     return BezierCurveNode3::GetPoint(*this, a_other, a_lerp);
 }
+glm::vec3 BezierCurveNode3::GetPointScaled(const BezierCurveNode3& a_other, float a_scale, float a_lerp) const
+{
+    return GetPointScaled(*this, a_other, a_scale, a_lerp);
+}
+
+glm::vec2 BezierCurveNode3::GetUVLerp(const BezierCurveNode3& a_pointA, const BezierCurveNode3& a_pointB, float a_lerp)
+{
+    return glm::mix(a_pointA.m_uv, a_pointB.m_uv, a_lerp);
+}
+
 glm::vec3 BezierCurveNode3::GetPoint(const BezierCurveNode3& a_pointA, const BezierCurveNode3& a_pointB, float a_lerp)
 {
     // I am confused by complex maths so I stared at the graph till it made sense

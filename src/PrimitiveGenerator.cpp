@@ -49,16 +49,16 @@ void PrimitiveGenerator::CreateCurveTriangle(Node3Cluster** a_nodePtr, unsigned 
     std::vector<CurveFace> faces;
 
     Node3Cluster t;
-    t.Nodes.emplace_back(BezierCurveNode3(glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)));
-    t.Nodes.emplace_back(BezierCurveNode3(glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)));
+    t.Nodes.emplace_back(BezierCurveNode3(glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f), glm::vec2(0.5f, 0)));
+    t.Nodes.emplace_back(BezierCurveNode3(glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f), glm::vec2(0.5f, 0)));
 
     Node3Cluster bL;
-    bL.Nodes.emplace_back(BezierCurveNode3(glm::vec3(-0.5f, 0.0f, 0.0f), glm::vec3(-0.5f, 0.0f, 0.0f)));
-    bL.Nodes.emplace_back(BezierCurveNode3(glm::vec3(-0.5f, 0.0f, 0.0f), glm::vec3(-0.5f, 0.0f, 0.0f)));
+    bL.Nodes.emplace_back(BezierCurveNode3(glm::vec3(-0.5f, 0.0f, 0.0f), glm::vec3(-0.5f, 0.0f, 0.0f), glm::vec2(0, 1)));
+    bL.Nodes.emplace_back(BezierCurveNode3(glm::vec3(-0.5f, 0.0f, 0.0f), glm::vec3(-0.5f, 0.0f, 0.0f), glm::vec2(0, 1)));
 
     Node3Cluster bR;
-    bR.Nodes.emplace_back(BezierCurveNode3(glm::vec3(0.5f, 0.0f, 0.0f), glm::vec3(0.5f, 0.0f, 0.0f)));
-    bR.Nodes.emplace_back(BezierCurveNode3(glm::vec3(0.5f, 0.0f, 0.0f), glm::vec3(0.5f, 0.0f, 0.0f)));
+    bR.Nodes.emplace_back(BezierCurveNode3(glm::vec3(0.5f, 0.0f, 0.0f), glm::vec3(0.5f, 0.0f, 0.0f), glm::vec2(1, 1)));
+    bR.Nodes.emplace_back(BezierCurveNode3(glm::vec3(0.5f, 0.0f, 0.0f), glm::vec3(0.5f, 0.0f, 0.0f), glm::vec2(1, 1)));
 
     nodes.emplace_back(t);
     nodes.emplace_back(bL);
@@ -92,20 +92,20 @@ void PrimitiveGenerator::CreateCurvePlane(Node3Cluster** a_nodePtr, unsigned int
     std::vector<CurveFace> faces;
 
     Node3Cluster tL;
-    tL.Nodes.emplace_back(BezierCurveNode3(glm::vec3(-1.0f, 0.0f, 1.0f), glm::vec3(-1.0f, 0.0f, 1.0f)));
-    tL.Nodes.emplace_back(BezierCurveNode3(glm::vec3(-1.0f, 0.0f, 1.0f), glm::vec3(-1.0f, 0.0f, 1.0f)));
+    tL.Nodes.emplace_back(BezierCurveNode3(glm::vec3(-1.0f, 0.0f, 1.0f), glm::vec3(-1.0f, 0.0f, 1.0f), glm::vec2(0, 1)));
+    tL.Nodes.emplace_back(BezierCurveNode3(glm::vec3(-1.0f, 0.0f, 1.0f), glm::vec3(-1.0f, 0.0f, 1.0f), glm::vec2(0, 1)));
 
     Node3Cluster tR;
-    tR.Nodes.emplace_back(BezierCurveNode3(glm::vec3(1.0f, 0.0f, 1.0f), glm::vec3(1.0f, 0.0f, 1.0f)));
-    tR.Nodes.emplace_back(BezierCurveNode3(glm::vec3(1.0f, 0.0f, 1.0f), glm::vec3(1.0f, 0.0f, 1.0f)));
+    tR.Nodes.emplace_back(BezierCurveNode3(glm::vec3(1.0f, 0.0f, 1.0f), glm::vec3(1.0f, 0.0f, 1.0f), glm::vec2(1, 1)));
+    tR.Nodes.emplace_back(BezierCurveNode3(glm::vec3(1.0f, 0.0f, 1.0f), glm::vec3(1.0f, 0.0f, 1.0f), glm::vec2(1, 1)));
 
     Node3Cluster bL;
-    bL.Nodes.emplace_back(BezierCurveNode3(glm::vec3(-1.0f, 0.0f, -1.0f), glm::vec3(-1.0f, 0.0f, -1.0f)));
-    bL.Nodes.emplace_back(BezierCurveNode3(glm::vec3(-1.0f, 0.0f, -1.0f), glm::vec3(-1.0f, 0.0f, -1.0f)));
+    bL.Nodes.emplace_back(BezierCurveNode3(glm::vec3(-1.0f, 0.0f, -1.0f), glm::vec3(-1.0f, 0.0f, -1.0f), glm::vec2(0, 0)));
+    bL.Nodes.emplace_back(BezierCurveNode3(glm::vec3(-1.0f, 0.0f, -1.0f), glm::vec3(-1.0f, 0.0f, -1.0f), glm::vec2(0, 0)));
 
     Node3Cluster bR;
-    bR.Nodes.emplace_back(BezierCurveNode3(glm::vec3(1.0f, 0.0f, -1.0f), glm::vec3(1.0f, 0.0f, -1.0f)));
-    bR.Nodes.emplace_back(BezierCurveNode3(glm::vec3(1.0f, 0.0f, -1.0f), glm::vec3(1.0f, 0.0f, -1.0f)));
+    bR.Nodes.emplace_back(BezierCurveNode3(glm::vec3(1.0f, 0.0f, -1.0f), glm::vec3(1.0f, 0.0f, -1.0f), glm::vec2(1, 0)));
+    bR.Nodes.emplace_back(BezierCurveNode3(glm::vec3(1.0f, 0.0f, -1.0f), glm::vec3(1.0f, 0.0f, -1.0f), glm::vec2(1, 0)));
 
     nodes.emplace_back(tL);
     nodes.emplace_back(tR);
@@ -145,45 +145,45 @@ void PrimitiveGenerator::CreateCurveSphere(Node3Cluster** a_nodePtr, unsigned in
 
     // 0
     Node3Cluster cTp;
-    cTp.Nodes.emplace_back(BezierCurveNode3(glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.5f, 1.0f, 0.0f)));
-    cTp.Nodes.emplace_back(BezierCurveNode3(glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(-0.5f, 1.0f, 0.0f)));
-    cTp.Nodes.emplace_back(BezierCurveNode3(glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.5f)));
-    cTp.Nodes.emplace_back(BezierCurveNode3(glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 1.0f, -0.5f)));
+    cTp.Nodes.emplace_back(BezierCurveNode3(glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.5f,  1.0f, 0.0f),  glm::vec2(1,     0)));
+    cTp.Nodes.emplace_back(BezierCurveNode3(glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(-0.5f, 1.0f, 0.0f),  glm::vec2(0.5f,  0)));
+    cTp.Nodes.emplace_back(BezierCurveNode3(glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f,  1.0f, 0.5f),  glm::vec2(0.25f, 0)));
+    cTp.Nodes.emplace_back(BezierCurveNode3(glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f,  1.0f, -0.5f), glm::vec2(0.75f, 0)));
 
     // 1
     Node3Cluster cFr;
-    cFr.Nodes.emplace_back(BezierCurveNode3(glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, 0.5f, 1.0f)));
-    cFr.Nodes.emplace_back(BezierCurveNode3(glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, -0.5f, 1.0f)));
-    cFr.Nodes.emplace_back(BezierCurveNode3(glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.5f, 0.0f, 1.0f)));
-    cFr.Nodes.emplace_back(BezierCurveNode3(glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(-0.5f, 0.0f, 1.0f)));
+    cFr.Nodes.emplace_back(BezierCurveNode3(glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f,  0.5f,  1.0f), glm::vec2(0, 0.5f)));
+    cFr.Nodes.emplace_back(BezierCurveNode3(glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f,  -0.5f, 1.0f), glm::vec2(0, 0.5f)));
+    cFr.Nodes.emplace_back(BezierCurveNode3(glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.5f,  0.0f,  1.0f), glm::vec2(1, 0.5f)));
+    cFr.Nodes.emplace_back(BezierCurveNode3(glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(-0.5f, 0.0f,  1.0f), glm::vec2(0, 0.5f)));
             
     // 2
     Node3Cluster cBk;
-    cBk.Nodes.emplace_back(BezierCurveNode3(glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 0.5f, -1.0f)));
-    cBk.Nodes.emplace_back(BezierCurveNode3(glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, -0.5f, -1.0f)));
-    cBk.Nodes.emplace_back(BezierCurveNode3(glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.5f, 0.0f, -1.0f)));
-    cBk.Nodes.emplace_back(BezierCurveNode3(glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(-0.5f, 0.0f, -1.0f)));
+    cBk.Nodes.emplace_back(BezierCurveNode3(glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 0.5f,  -1.0f), glm::vec2(0.5f, 0.5f)));
+    cBk.Nodes.emplace_back(BezierCurveNode3(glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, -0.5f, -1.0f), glm::vec2(0.5f, 0.5f)));
+    cBk.Nodes.emplace_back(BezierCurveNode3(glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.5f, 0.0f,  -1.0f), glm::vec2(0.5f, 0.5f)));
+    cBk.Nodes.emplace_back(BezierCurveNode3(glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(-0.5f, 0.0f, -1.0f), glm::vec2(0.5f, 0.5f)));
 
     // 3
     Node3Cluster cRg;
-    cRg.Nodes.emplace_back(BezierCurveNode3(glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.5f, 0.0f)));
-    cRg.Nodes.emplace_back(BezierCurveNode3(glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(1.0f, -0.5f, 0.0f)));
-    cRg.Nodes.emplace_back(BezierCurveNode3(glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.5f)));
-    cRg.Nodes.emplace_back(BezierCurveNode3(glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.0f, -0.5f)));
+    cRg.Nodes.emplace_back(BezierCurveNode3(glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.5f,  0.0f),  glm::vec2(0.75f, 0.5f)));
+    cRg.Nodes.emplace_back(BezierCurveNode3(glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(1.0f, -0.5f, 0.0f),  glm::vec2(0.75f, 0.5f)));
+    cRg.Nodes.emplace_back(BezierCurveNode3(glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.0f,  0.5f),  glm::vec2(0.75f, 0.5f)));
+    cRg.Nodes.emplace_back(BezierCurveNode3(glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.0f,  -0.5f), glm::vec2(0.75f, 0.5f)));
 
     // 4
     Node3Cluster cLf;
-    cLf.Nodes.emplace_back(BezierCurveNode3(glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec3(-1.0f, 0.5f, 0.0f)));
-    cLf.Nodes.emplace_back(BezierCurveNode3(glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec3(-1.0f, -0.5f, 0.0f)));
-    cLf.Nodes.emplace_back(BezierCurveNode3(glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec3(-1.0f, 0.0f, 0.5f)));
-    cLf.Nodes.emplace_back(BezierCurveNode3(glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec3(-1.0f, 0.0f, -0.5f)));
+    cLf.Nodes.emplace_back(BezierCurveNode3(glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec3(-1.0f, 0.5f,  0.0f),  glm::vec2(0.25f, 0.5f)));
+    cLf.Nodes.emplace_back(BezierCurveNode3(glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec3(-1.0f, -0.5f, 0.0f),  glm::vec2(0.25f, 0.5f)));
+    cLf.Nodes.emplace_back(BezierCurveNode3(glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec3(-1.0f, 0.0f,  0.5f),  glm::vec2(0.25f, 0.5f)));
+    cLf.Nodes.emplace_back(BezierCurveNode3(glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec3(-1.0f, 0.0f,  -0.5f), glm::vec2(0.25f, 0.5f)));
 
     // 5
     Node3Cluster cBt;
-    cBt.Nodes.emplace_back(BezierCurveNode3(glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.5f)));
-    cBt.Nodes.emplace_back(BezierCurveNode3(glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(0.0f, -1.0f, -0.5f)));
-    cBt.Nodes.emplace_back(BezierCurveNode3(glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(0.5f, -1.0f, 0.0f)));
-    cBt.Nodes.emplace_back(BezierCurveNode3(glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(-0.5f, -1.0f, 0.0f)));
+    cBt.Nodes.emplace_back(BezierCurveNode3(glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(0.0f,  -1.0f, 0.5f),  glm::vec2(0.25f, 1)));
+    cBt.Nodes.emplace_back(BezierCurveNode3(glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(0.0f,  -1.0f, -0.5f), glm::vec2(0.75f, 1)));
+    cBt.Nodes.emplace_back(BezierCurveNode3(glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(0.5f,  -1.0f, 0.0f),  glm::vec2(1,     1)));
+    cBt.Nodes.emplace_back(BezierCurveNode3(glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(-0.5f, -1.0f, 0.0f),  glm::vec2(0.5f,  1)));
 
     nodes.emplace_back(cTp);
     nodes.emplace_back(cFr);

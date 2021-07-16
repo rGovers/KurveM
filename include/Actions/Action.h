@@ -11,6 +11,7 @@ enum e_ActionType
     ActionType_InsertFace,
     ActionType_MoveNode,
     ActionType_MoveNodeHandle,
+    ActionType_MoveUVAction,
     ActionType_RenameObject,
     ActionType_RotateObject,
     ActionType_ScaleObject,

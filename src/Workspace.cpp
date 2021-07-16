@@ -23,11 +23,13 @@
 #include "Modals/SaveFileModal.h"
 #include "Model.h"
 #include "Object.h"
+#include "UVEditor.h"
 #include "Windows/EditorWindow.h"
 #include "Windows/HierarchyWindow.h"
 #include "Windows/OptionsWindow.h"
 #include "Windows/PropertiesWindow.h"
 #include "Windows/ToolbarWindow.h"
+#include "Windows/UVEditorWindow.h"
 
 void RunTasks(Workspace* a_workspace)
 {
@@ -113,6 +115,7 @@ Workspace::Workspace()
 
     m_curAction = nullptr;
 
+    m_dockMode = DockMode_Default;
     m_init = true;
     m_reset = false;
 
@@ -133,12 +136,14 @@ Workspace::Workspace()
     New();
 
     m_editor = new Editor(this);
+    m_uvEditor = new UVEditor(this, m_editor);
 
     m_windows.emplace_back(new EditorWindow(this, m_editor));
     m_windows.emplace_back(new HierarchyWindow(this, m_editor));
     m_windows.emplace_back(new OptionsWindow(this, m_editor));
     m_windows.emplace_back(new PropertiesWindow(this, m_editor));
     m_windows.emplace_back(new ToolbarWindow(this, m_editor));
+    m_windows.emplace_back(new UVEditorWindow(this, m_editor, m_uvEditor));
 }
 Workspace::~Workspace()
 {
@@ -168,6 +173,9 @@ Workspace::~Workspace()
     m_modalStack.clear();
 
     Model::Destroy();
+
+    delete m_editor;
+    delete m_uvEditor;
 }
 
 void Workspace::ClearBuffers()
@@ -613,11 +621,51 @@ void Workspace::DefaultWindowConfig()
     ImGui::DockBuilderDockWindow("Options", dockTop);
 
     ImGui::DockBuilderDockWindow("Editor", dockMainID);
+    ImGui::DockBuilderDockWindow("UV Editor", dockMainID);
 
     ImGui::DockBuilderDockWindow("Hierarchy", dockRightTop);
     ImGui::DockBuilderDockWindow("Properties", dockRightBottom);
 
     ImGui::DockBuilderDockWindow("Toolbar", dockLeft);
+
+    ImGui::DockBuilderFinish(id);
+}
+void Workspace::UVWindowConfig()
+{
+    const Application* app = Application::GetInstance();
+
+    const int windowXPos = app->GetXPos();
+    const int windowYPos = app->GetYPos();
+
+    const int windowWidth = app->GetWidth();
+    const int windowHeight = app->GetHeight();
+
+    const ImGuiID id = ImGui::GetID("Dock Main");
+
+    ImGui::DockBuilderRemoveNode(id);
+    ImGui::DockBuilderAddNode(id, ImGuiDockNodeFlags_CentralNode);
+
+    ImGui::DockBuilderSetNodePos(id, { (float)windowXPos, (float)windowYPos + m_barSize });
+    ImGui::DockBuilderSetNodeSize(id, { (float)windowWidth, (float)windowHeight - m_barSize});
+
+    const float topSideScale = 0.125f;
+    const float leftSideScale = 0.1f;
+    const float rightSideScale = 0.5f;
+
+    ImGuiID dockMainID = id;
+    const ImGuiID dockTop = ImGui::DockBuilderSplitNode(dockMainID, ImGuiDir_Up, topSideScale, nullptr, &dockMainID);
+    const ImGuiID dockBottom = ImGui::DockBuilderSplitNode(dockMainID, ImGuiDir_Down, 0.2f, nullptr, &dockMainID);
+    const ImGuiID dockRight = ImGui::DockBuilderSplitNode(dockMainID, ImGuiDir_Right, rightSideScale, nullptr, &dockMainID);
+    const ImGuiID dockLeft = ImGui::DockBuilderSplitNode(dockMainID, ImGuiDir_Left, leftSideScale, nullptr, &dockMainID);
+
+    ImGui::DockBuilderDockWindow("Options", dockTop);
+
+    ImGui::DockBuilderDockWindow("Editor", dockMainID);
+    ImGui::DockBuilderDockWindow("UV Editor", dockRight);
+
+    ImGui::DockBuilderDockWindow("Toolbar", dockLeft);
+    ImGui::DockBuilderDockWindow("Hierarchy", dockLeft);
+    ImGui::DockBuilderDockWindow("Properties", dockLeft);
 
     ImGui::DockBuilderFinish(id);
 }
@@ -945,6 +993,13 @@ void Workspace::Update(double a_delta)
             {
                 if (ImGui::MenuItem("Default"))
                 {
+                    m_dockMode = DockMode_Default;
+                    m_init = true;
+                }
+                
+                if (ImGui::MenuItem("UV Editing"))
+                {
+                    m_dockMode = DockMode_UVEditing;
                     m_init = true;
                 }
 
@@ -987,7 +1042,21 @@ void Workspace::Update(double a_delta)
     {
         m_init = false;
 
-        DefaultWindowConfig();
+        switch (m_dockMode)
+        {
+        case DockMode_UVEditing:
+        {
+            UVWindowConfig();
+
+            break;
+        }
+        default:
+        {   
+            DefaultWindowConfig();
+
+            break;
+        }
+        }
     }
     if (m_reset)
     {

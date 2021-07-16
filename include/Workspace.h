@@ -10,8 +10,14 @@ class Action;
 class LongTask;
 class Modal;
 class Object;
+class UVEditor;
 class Window;
 
+enum e_DockMode
+{
+    DockMode_Default,
+    DockMode_UVEditing
+};
 enum e_ToolMode
 {
     ToolMode_Translate,
@@ -31,9 +37,11 @@ private:
     std::list<Window*>           m_windows;
 
     Editor*                      m_editor;
+    UVEditor*                    m_uvEditor;
                      
     int                          m_barSize;
 
+    e_DockMode                   m_dockMode;
     bool                         m_init;
     bool                         m_reset;
 
@@ -185,6 +193,7 @@ public:
     void RemoveObject(Object* a_object);
 
     void DefaultWindowConfig();
+    void UVWindowConfig();
 
     void Resize(int a_width, int a_height);
 

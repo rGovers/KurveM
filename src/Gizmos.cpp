@@ -72,6 +72,33 @@ void Gizmos::Clear()
     Instance->m_vertices.clear();
     Instance->m_indices.clear();
 }
+void Gizmos::DrawAll()
+{
+    const unsigned int indexCount = Instance->m_indices.size();
+    const unsigned int vertexCount = Instance->m_vertices.size();
+    if (indexCount > 0 && vertexCount > 0)
+    {
+        glDisable(GL_CULL_FACE);  
+        glDisable(GL_DEPTH_TEST);
+    
+        const unsigned int programHandle = Instance->m_program->GetHandle();
+        glUseProgram(programHandle);
+    
+        glBindVertexArray(Instance->m_vao);
+        
+        glBindBuffer(GL_ARRAY_BUFFER, Instance->m_vbo);
+        glBufferData(GL_ARRAY_BUFFER, vertexCount * sizeof(GizmoVertex), &Instance->m_vertices[0], GL_STATIC_DRAW);
+        
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, Instance->m_ibo);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexCount * sizeof(unsigned int), &Instance->m_indices[0], GL_STATIC_DRAW);
+    
+        const glm::mat4 proj = glm::ortho(-1, 1, -1, 1);
+    
+        glUniformMatrix4fv(0, 1, false, (float*)&proj);
+    
+        glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, nullptr);
+    }
+}
 void Gizmos::DrawAll(Camera* a_camera, const glm::vec2& a_winSize)
 {
     const unsigned int indexCount = Instance->m_indices.size();

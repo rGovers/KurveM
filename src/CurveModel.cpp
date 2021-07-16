@@ -424,7 +424,8 @@ void CurveModel::GetModelData(bool a_smartStep, int a_steps, unsigned int** a_in
                         nodes[i] = m_nodes[face.Index[i]].Nodes[face.ClusterIndex[i]].Node;
                     } 
 
-                    const glm::vec3 tpV = nodes[FaceIndex_3Point_AB].GetPosition();
+                    const glm::vec3 tpL = BezierCurveNode3::GetPoint(nodes[FaceIndex_3Point_AB], nodes[FaceIndex_3Point_BA], 1.0f);
+                    const glm::vec3 tpR = BezierCurveNode3::GetPoint(nodes[FaceIndex_3Point_AC], nodes[FaceIndex_3Point_CA], 1.0f);
 
                     // I am not good at maths so I could be wrong but I am sensing a coastline problem here therefore I am just doing
                     // an approximation based on the points instead of the curve
@@ -439,20 +440,25 @@ void CurveModel::GetModelData(bool a_smartStep, int a_steps, unsigned int** a_in
                         step = (int)glm::ceil(m * a_steps * 0.5f);
                     }
 
-                    // Still not 100% and I suspect I went down the wrong path trying to triangulate it 
-                    // Should be close enough for demo purposes however will need to fix down the line
                     for (int i = 0; i < step; ++i)
                     {
                         const float iStep = (float)i / step;
                         const float nIStep = (float)(i + 1) / step;
                         const float bIStep = (float)(i + 2) / step;
 
-                        const glm::vec3 tL = BezierCurveNode3::GetPointScaled(nodes[FaceIndex_3Point_AB], nodes[FaceIndex_3Point_BA], 2.0f, iStep);
-                        const glm::vec3 tR = BezierCurveNode3::GetPointScaled(nodes[FaceIndex_3Point_AC], nodes[FaceIndex_3Point_CA], 2.0f, iStep);
-                        const glm::vec3 mL = BezierCurveNode3::GetPointScaled(nodes[FaceIndex_3Point_AB], nodes[FaceIndex_3Point_BA], 2.0f, nIStep);
-                        const glm::vec3 mR = BezierCurveNode3::GetPointScaled(nodes[FaceIndex_3Point_AC], nodes[FaceIndex_3Point_CA], 2.0f, nIStep);
-                        const glm::vec3 bL = BezierCurveNode3::GetPointScaled(nodes[FaceIndex_3Point_AB], nodes[FaceIndex_3Point_BA], 2.0f, bIStep);
-                        const glm::vec3 bR = BezierCurveNode3::GetPointScaled(nodes[FaceIndex_3Point_AC], nodes[FaceIndex_3Point_CA], 2.0f, bIStep);
+                        const glm::vec3 tL = BezierCurveNode3::GetPoint(nodes[FaceIndex_3Point_AB], nodes[FaceIndex_3Point_BA], iStep);
+                        const glm::vec3 tR = BezierCurveNode3::GetPoint(nodes[FaceIndex_3Point_AC], nodes[FaceIndex_3Point_CA], iStep);
+                        const glm::vec3 mL = BezierCurveNode3::GetPoint(nodes[FaceIndex_3Point_AB], nodes[FaceIndex_3Point_BA], nIStep);
+                        const glm::vec3 mR = BezierCurveNode3::GetPoint(nodes[FaceIndex_3Point_AC], nodes[FaceIndex_3Point_CA], nIStep);
+                        const glm::vec3 bL = BezierCurveNode3::GetPoint(nodes[FaceIndex_3Point_AB], nodes[FaceIndex_3Point_BA], bIStep);
+                        const glm::vec3 bR = BezierCurveNode3::GetPoint(nodes[FaceIndex_3Point_AC], nodes[FaceIndex_3Point_CA], bIStep);
+
+                        const glm::vec2 tLUV = BezierCurveNode3::GetUVLerp(nodes[FaceIndex_3Point_AB], nodes[FaceIndex_3Point_BA], iStep);
+                        const glm::vec2 tRUV = BezierCurveNode3::GetUVLerp(nodes[FaceIndex_3Point_AC], nodes[FaceIndex_3Point_CA], iStep);
+                        const glm::vec2 mLUV = BezierCurveNode3::GetUVLerp(nodes[FaceIndex_3Point_AB], nodes[FaceIndex_3Point_BA], nIStep);
+                        const glm::vec2 mRUV = BezierCurveNode3::GetUVLerp(nodes[FaceIndex_3Point_AC], nodes[FaceIndex_3Point_CA], nIStep);
+                        const glm::vec2 bLUV = BezierCurveNode3::GetUVLerp(nodes[FaceIndex_3Point_AB], nodes[FaceIndex_3Point_BA], bIStep);
+                        const glm::vec2 bRUV = BezierCurveNode3::GetUVLerp(nodes[FaceIndex_3Point_AC], nodes[FaceIndex_3Point_CA], bIStep);
 
                         for (int j = 0; j <= i; ++j)
                         {
@@ -465,51 +471,57 @@ void CurveModel::GetModelData(bool a_smartStep, int a_steps, unsigned int** a_in
                             const float aSMA = j / (float)(i + 1);
                             const float aSMB = (j + 1) / (float)(i + 1);
                             
-                            const glm::vec3 tB = BezierCurveNode3::GetPointScaled(nodes[FaceIndex_3Point_BC], nodes[FaceIndex_3Point_CB], 2.0f, aS);
-                            const glm::vec3 mLB = BezierCurveNode3::GetPointScaled(nodes[FaceIndex_3Point_BC], nodes[FaceIndex_3Point_CB], 2.0f, aSMA);
-                            const glm::vec3 mRB = BezierCurveNode3::GetPointScaled(nodes[FaceIndex_3Point_BC], nodes[FaceIndex_3Point_CB], 2.0f, aSMB);
+                            const glm::vec3 tB = BezierCurveNode3::GetPoint(nodes[FaceIndex_3Point_BC], nodes[FaceIndex_3Point_CB], aS);
+                            const glm::vec3 mLB = BezierCurveNode3::GetPoint(nodes[FaceIndex_3Point_BC], nodes[FaceIndex_3Point_CB], aSMA);
+                            const glm::vec3 mRB = BezierCurveNode3::GetPoint(nodes[FaceIndex_3Point_BC], nodes[FaceIndex_3Point_CB], aSMB);
                             
                             const glm::vec3 t = glm::mix(tL, tR, aS);
                             const glm::vec3 mA = glm::mix(mL, mR, aSMA);
                             const glm::vec3 mB = glm::mix(mL, mR, aSMB); 
 
-                            const glm::vec3 tS = glm::mix(tpV, tB, iStep);
-                            const glm::vec3 mSA = glm::mix(tpV, mLB, nIStep);
-                            const glm::vec3 mSB = glm::mix(tpV, mRB, nIStep);
+                            const glm::vec3 tS = tB - glm::mix(tpL, tpR, aS);
+                            const glm::vec3 mSA = mLB - glm::mix(tpL, tpR, aSMA);
+                            const glm::vec3 mSB = mRB - glm::mix(tpL, tpR, aSMB);
 
-                            const glm::vec3 tF = (t + tS) * 0.5f;
-                            const glm::vec3 mLF = (mA + mSA) * 0.5f;
-                            const glm::vec3 mRF = (mB + mSB) * 0.5f;
+                            const glm::vec3 tF = t + (tS * iStep);
+                            const glm::vec3 mLF = mA + (mSA * nIStep);
+                            const glm::vec3 mRF = mB + (mSB * nIStep);
+
+                            const glm::vec2 tFUV = glm::mix(tLUV, tRUV, aS);
+                            const glm::vec2 mLFUV = glm::mix(mLUV, mRUV, aSMA);
+                            const glm::vec2 mRFUV = glm::mix(mLUV, mRUV, aSMB);
 
                             glm::vec3 v1 = mLF - tF;
                             glm::vec3 v2 = mRF - tF;
 
                             glm::vec3 normal = glm::cross(v2, v1);
 
-                            dirtyVertices.emplace_back(Vertex{ { tF, 1.0f }, normal, { 0.0f, 0.0f }});
-                            dirtyVertices.emplace_back(Vertex{ { mLF, 1.0f }, normal, { 0.0f, 0.0f }});
-                            dirtyVertices.emplace_back(Vertex{ { mRF, 1.0f }, normal, { 0.0f, 0.0f }});
+                            dirtyVertices.emplace_back(Vertex{ { tF, 1.0f }, normal, tFUV });
+                            dirtyVertices.emplace_back(Vertex{ { mLF, 1.0f }, normal, mLFUV });
+                            dirtyVertices.emplace_back(Vertex{ { mRF, 1.0f }, normal, mRFUV });
 
                             if (i < step - 1)
                             {
                                 const float aSL = (j + 1) / (float)(i + 2);
 
-                                const glm::vec3 bB = BezierCurveNode3::GetPointScaled(nodes[FaceIndex_3Point_BC], nodes[FaceIndex_3Point_CB], 2.0f, aSL);
+                                const glm::vec3 bB = BezierCurveNode3::GetPoint(nodes[FaceIndex_3Point_BC], nodes[FaceIndex_3Point_CB], aSL);
 
                                 const glm::vec3 b = glm::mix(bL, bR, aSL);
 
-                                const glm::vec3 bS = glm::mix(tpV, bB, bIStep);
+                                const glm::vec3 bS = bB - glm::mix(tpL, tpR, aSL);
 
-                                const glm::vec3 bF = (b + bS) * 0.5f;
+                                const glm::vec3 bF = b + (bS * bIStep);
+
+                                const glm::vec2 bFUV = glm::mix(bLUV, bRUV, aSL);
 
                                 v1 = mLF - bF;
                                 v2 = mRF - bF;
 
                                 normal = glm::cross(v1, v2);
 
-                                dirtyVertices.emplace_back(Vertex{ { bF, 1.0f }, normal, { 0.0f, 0.0f }});
-                                dirtyVertices.emplace_back(Vertex{ { mRF, 1.0f }, normal, { 0.0f, 0.0f }});
-                                dirtyVertices.emplace_back(Vertex{ { mLF, 1.0f }, normal, { 0.0f, 0.0f }});
+                                dirtyVertices.emplace_back(Vertex{ { bF, 1.0f }, normal, bFUV });
+                                dirtyVertices.emplace_back(Vertex{ { mRF, 1.0f }, normal, mRFUV });
+                                dirtyVertices.emplace_back(Vertex{ { mLF, 1.0f }, normal, mLFUV });
                             }
                         }
                     }
@@ -546,48 +558,75 @@ void CurveModel::GetModelData(bool a_smartStep, int a_steps, unsigned int** a_in
                         const float iStep = (float)i / xStep;
                         const float nIStep = (float)(i + 1) / xStep;
 
-                        const glm::vec3 pointABLeft = BezierCurveNode3::GetPointScaled(nodes[FaceIndex_4Point_AB], nodes[FaceIndex_4Point_BA], 2.0f, iStep);
+                        const glm::vec3 pointABLeft =  BezierCurveNode3::GetPointScaled(nodes[FaceIndex_4Point_AB], nodes[FaceIndex_4Point_BA], 2.0f, iStep);
                         const glm::vec3 pointABRight = BezierCurveNode3::GetPointScaled(nodes[FaceIndex_4Point_AB], nodes[FaceIndex_4Point_BA], 2.0f, nIStep);
-                        const glm::vec3 pointCDLeft = BezierCurveNode3::GetPointScaled(nodes[FaceIndex_4Point_CD], nodes[FaceIndex_4Point_DC], 2.0f, iStep);
+                        const glm::vec3 pointCDLeft =  BezierCurveNode3::GetPointScaled(nodes[FaceIndex_4Point_CD], nodes[FaceIndex_4Point_DC], 2.0f, iStep);
                         const glm::vec3 pointCDRight = BezierCurveNode3::GetPointScaled(nodes[FaceIndex_4Point_CD], nodes[FaceIndex_4Point_DC], 2.0f, nIStep);
+
+                        const glm::vec2 pointABLeftUV =  BezierCurveNode3::GetUVLerp(nodes[FaceIndex_4Point_AB], nodes[FaceIndex_4Point_BA], iStep);
+                        const glm::vec2 pointABRightUV = BezierCurveNode3::GetUVLerp(nodes[FaceIndex_4Point_AB], nodes[FaceIndex_4Point_BA], nIStep);
+                        const glm::vec2 pointCDLeftUV =  BezierCurveNode3::GetUVLerp(nodes[FaceIndex_4Point_CD], nodes[FaceIndex_4Point_DC], iStep);
+                        const glm::vec2 pointCDRightUV = BezierCurveNode3::GetUVLerp(nodes[FaceIndex_4Point_CD], nodes[FaceIndex_4Point_DC], nIStep);
 
                         for (int j = 0; j < yStep; ++j)
                         {
                             const float jStep = (float)j / yStep;
                             const float nJStep = (float)(j + 1) / yStep;
 
-                            const glm::vec3 pointACLeft = BezierCurveNode3::GetPointScaled(nodes[FaceIndex_4Point_AC], nodes[FaceIndex_4Point_CA], 2.0f, jStep);
+                            const glm::vec3 pointACLeft =  BezierCurveNode3::GetPointScaled(nodes[FaceIndex_4Point_AC], nodes[FaceIndex_4Point_CA], 2.0f, jStep);
                             const glm::vec3 pointACRight = BezierCurveNode3::GetPointScaled(nodes[FaceIndex_4Point_AC], nodes[FaceIndex_4Point_CA], 2.0f, nJStep);
-                            const glm::vec3 pointDBLeft = BezierCurveNode3::GetPointScaled(nodes[FaceIndex_4Point_BD], nodes[FaceIndex_4Point_DB], 2.0f, jStep);
-                            const glm::vec3 pointDBRight = BezierCurveNode3::GetPointScaled(nodes[FaceIndex_4Point_BD], nodes[FaceIndex_4Point_DB], 2.0f, nJStep);
+                            const glm::vec3 pointBDLeft =  BezierCurveNode3::GetPointScaled(nodes[FaceIndex_4Point_BD], nodes[FaceIndex_4Point_DB], 2.0f, jStep);
+                            const glm::vec3 pointBDRight = BezierCurveNode3::GetPointScaled(nodes[FaceIndex_4Point_BD], nodes[FaceIndex_4Point_DB], 2.0f, nJStep);
 
-                            const glm::vec3 LLA = glm::mix(pointABLeft, pointCDLeft, jStep);
-                            const glm::vec3 LHA = glm::mix(pointABLeft, pointCDLeft, nJStep);
+                            const glm::vec2 pointACLeftUV =  BezierCurveNode3::GetUVLerp(nodes[FaceIndex_4Point_AC], nodes[FaceIndex_4Point_CA], jStep);
+                            const glm::vec2 pointACRightUV = BezierCurveNode3::GetUVLerp(nodes[FaceIndex_4Point_AC], nodes[FaceIndex_4Point_CA], nJStep);
+                            const glm::vec2 pointBDLeftUV =  BezierCurveNode3::GetUVLerp(nodes[FaceIndex_4Point_BD], nodes[FaceIndex_4Point_DB], jStep);
+                            const glm::vec2 pointBDRightUV = BezierCurveNode3::GetUVLerp(nodes[FaceIndex_4Point_BD], nodes[FaceIndex_4Point_DB], nJStep);
+
+                            const glm::vec3 LLA = glm::mix(pointABLeft,  pointCDLeft, jStep);
+                            const glm::vec3 LHA = glm::mix(pointABLeft,  pointCDLeft, nJStep);
                             const glm::vec3 HLA = glm::mix(pointABRight, pointCDRight, jStep);
                             const glm::vec3 HHA = glm::mix(pointABRight, pointCDRight, nJStep);
 
-                            const glm::vec3 LLB = glm::mix(pointACLeft, pointDBLeft, iStep);
-                            const glm::vec3 LHB = glm::mix(pointACLeft, pointDBLeft, nIStep);
-                            const glm::vec3 HLB = glm::mix(pointACRight, pointDBRight, iStep);
-                            const glm::vec3 HHB = glm::mix(pointACRight, pointDBRight, nIStep);
+                            const glm::vec3 LLB = glm::mix(pointACLeft,  pointBDLeft, iStep);
+                            const glm::vec3 LHB = glm::mix(pointACLeft,  pointBDLeft, nIStep);
+                            const glm::vec3 HLB = glm::mix(pointACRight, pointBDRight, iStep);
+                            const glm::vec3 HHB = glm::mix(pointACRight, pointBDRight, nIStep);
+
+                            const glm::vec2 LLAUV = glm::mix(pointABLeftUV,  pointCDLeftUV, jStep);
+                            const glm::vec2 LHAUV = glm::mix(pointABLeftUV,  pointCDLeftUV, nJStep);
+                            const glm::vec2 HLAUV = glm::mix(pointABRightUV, pointCDRightUV, jStep);
+                            const glm::vec2 HHAUV = glm::mix(pointABRightUV, pointCDRightUV, nJStep);
+
+                            const glm::vec2 LLBUV = glm::mix(pointACLeftUV,  pointBDLeftUV, iStep);
+                            const glm::vec2 LHBUV = glm::mix(pointACLeftUV,  pointBDLeftUV, nIStep);
+                            const glm::vec2 HLBUV = glm::mix(pointACRightUV, pointBDRightUV, iStep);
+                            const glm::vec2 HHBUV = glm::mix(pointACRightUV, pointBDRightUV, nIStep);
 
                             const glm::vec3 posA = (LLA + LLB) * 0.5f;
                             const glm::vec3 posB = (HLA + LHB) * 0.5f;
                             const glm::vec3 posC = (LHA + HLB) * 0.5f;
                             const glm::vec3 posD = (HHA + HHB) * 0.5f;
 
+                            const glm::vec2 uvA = (LLAUV + LLBUV) * 0.5f;
+                            const glm::vec2 uvB = (HLAUV + LHBUV) * 0.5f;
+                            const glm::vec2 uvC = (LHAUV + HLBUV) * 0.5f;
+                            const glm::vec2 uvD = (HHAUV + HHBUV) * 0.5f;
+
                             glm::vec3 v1 = posB - posA;
                             glm::vec3 v2 = posC - posA;
 
                             glm::vec3 normal = glm::cross(v2, v1);
 
-                            dirtyVertices.emplace_back(Vertex{ { posA, 1.0f }, normal, { 0.0f, 0.0f }});
-                            dirtyVertices.emplace_back(Vertex{ { posB, 1.0f }, normal, { 0.0f, 0.0f }});
-                            dirtyVertices.emplace_back(Vertex{ { posC, 1.0f }, normal, { 0.0f, 0.0f }});
+                            const glm::vec2 bLLerp = glm::vec2(iStep,  jStep);
 
-                            dirtyVertices.emplace_back(Vertex{ { posB, 1.0f }, normal, { 0.0f, 0.0f }});
-                            dirtyVertices.emplace_back(Vertex{ { posD, 1.0f }, normal, { 0.0f, 0.0f }});
-                            dirtyVertices.emplace_back(Vertex{ { posC, 1.0f }, normal, { 0.0f, 0.0f }});
+                            dirtyVertices.emplace_back(Vertex{ { posA, 1.0f }, normal, uvA });
+                            dirtyVertices.emplace_back(Vertex{ { posB, 1.0f }, normal, uvB });
+                            dirtyVertices.emplace_back(Vertex{ { posC, 1.0f }, normal, uvC });
+
+                            dirtyVertices.emplace_back(Vertex{ { posB, 1.0f }, normal, uvB });
+                            dirtyVertices.emplace_back(Vertex{ { posD, 1.0f }, normal, uvD });
+                            dirtyVertices.emplace_back(Vertex{ { posC, 1.0f }, normal, uvC });
                         }
                     }
 
@@ -606,7 +645,7 @@ void CurveModel::GetModelData(bool a_smartStep, int a_steps, unsigned int** a_in
 
         if (a_smartStep)
         {
-            const double cDist = 1.0f / a_steps * 0.75f;
+            const double cDist = 1.0f / a_steps * 0.5f;
             const double cDSqr = cDist * cDist;
 
             for (unsigned int i = 0; i < *a_indexCount; ++i)
@@ -621,7 +660,7 @@ void CurveModel::GetModelData(bool a_smartStep, int a_steps, unsigned int** a_in
 
                     const glm::vec3 diff = vert.Position - cVert.Position;
 
-                    if (glm::dot(diff, diff) < cDSqr)
+                    if (glm::dot(diff, diff) < cDSqr && vert.UV == cVert.UV)
                     {
                         found = true;
                         
@@ -649,7 +688,8 @@ void CurveModel::GetModelData(bool a_smartStep, int a_steps, unsigned int** a_in
 
                 for (unsigned int j = 0; j < vertexIndex; ++j)
                 {
-                    if ((*a_vertices)[j].Position == vert.Position)
+                    const Vertex otherVert = (*a_vertices)[j];
+                    if (otherVert.Position == vert.Position && otherVert.UV == otherVert.UV)
                     {
                         found = true;
 
@@ -778,6 +818,7 @@ void CurveModel::Serialize(tinyxml2::XMLDocument* a_doc, tinyxml2::XMLElement* a
                 nElement->InsertEndChild(cNodeElement);
 
                 XMLIO::WriteVec3(a_doc, cNodeElement, "HandlePosition", g.Node.GetHandlePosition());
+                XMLIO::WriteVec2(a_doc, cNodeElement, "UV", g.Node.GetUV());
             }
         }
     }
@@ -891,6 +932,14 @@ void CurveModel::ParseData(const tinyxml2::XMLElement* a_element)
                                     XMLIO::ReadVec3(cIter, &hPos);
 
                                     n.Node.SetHandlePosition(hPos);
+                                }
+                                else if (strcmp(cStr, "UV") == 0)
+                                {
+                                    glm::vec2 uv = glm::vec2(0);
+
+                                    XMLIO::ReadVec2(cIter, &uv);
+
+                                    n.Node.SetUV(uv);
                                 }
                                 else
                                 {
@@ -1013,6 +1062,14 @@ void CurveModel::WriteOBJ(std::ofstream* a_file, bool a_stepAdjust, int a_steps)
             a_file->write(str.c_str(), str.length());
         }    
         a_file->write("\n", 1);
+
+        a_file->write("vt", 2);
+        for (int j = 0; j < 2; ++j)
+        {
+            const std::string str = " " + std::to_string(vert.UV[j]);
+            a_file->write(str.c_str(), str.length());
+        }
+        a_file->write("\n", 1);
     }
 
     a_file->write("\n", 1);
@@ -1027,7 +1084,7 @@ void CurveModel::WriteOBJ(std::ofstream* a_file, bool a_stepAdjust, int a_steps)
         for (int j = 0; j < 3; ++j)
         {
             const std::string strVal = std::to_string(indices[i + j] + 1);
-            const std::string str = " " + strVal + "//" + strVal;
+            const std::string str = " " + strVal + "/" + strVal + '/' + strVal;
             a_file->write(str.c_str(), str.length());
         }
 

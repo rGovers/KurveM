@@ -38,6 +38,7 @@ public:
     static void Destroy();
 
     static void Clear();
+    static void DrawAll();
     static void DrawAll(Camera* a_camera, const glm::vec2& a_winSize); 
 
     static void DrawLine(const glm::vec3& a_start, const glm::vec3& a_end, float a_width, const glm::vec4& a_color);
