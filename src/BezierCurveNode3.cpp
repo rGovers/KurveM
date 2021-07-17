@@ -4,6 +4,8 @@ BezierCurveNode3::BezierCurveNode3()
 {
     m_pos = glm::vec3(0);
     m_handle = glm::vec3(0, 1, 0);
+
+    m_uv = glm::vec2(0);
 }
 BezierCurveNode3::BezierCurveNode3(const glm::vec3& a_pos, const glm::vec3& a_handlePos, const glm::vec2& a_uv)
 {

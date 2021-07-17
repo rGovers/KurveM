@@ -60,6 +60,7 @@ Object::Object(const char* a_name, e_ObjectType a_objectType)
     if (a_objectType == ObjectType_Armature)
     {
         Object* obj = new Object("Root", this, glm::vec3(0));
+        obj->SetParent(this);
     }
 }
 Object::Object(const char* a_name, Object* a_rootObject, const glm::vec3& a_rootPos) :
@@ -179,6 +180,21 @@ glm::mat4 Object::GetGlobalMatrix() const
     }
 
     return m_transform->ToMatrix();
+}
+glm::vec3 Object::GetGlobalTranslation() const
+{
+    return GetGlobalMatrix()[3].xyz();
+}
+void Object::SetGlobalTranslation(const glm::vec3& a_pos)
+{
+    glm::mat4 inv = glm::mat4(1);
+    if (m_parent != nullptr)
+    {
+        inv = glm::inverse(m_parent->GetGlobalMatrix());
+    }
+
+    const glm::vec4 pos = inv * glm::vec4(a_pos, 1);
+    m_transform->Translation() = pos.xyz() / pos.w;
 }
 
 void Object::Draw(Camera* a_camera, const glm::vec2& a_winSize)

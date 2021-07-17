@@ -649,8 +649,6 @@ void CurveModel::GetModelData(bool a_smartStep, int a_steps, unsigned int** a_in
 
                             glm::vec3 normal = glm::cross(v2, v1);
 
-                            const glm::vec2 bLLerp = glm::vec2(iStep,  jStep);
-
                             dirtyVertices.emplace_back(Vertex{ { posA, 1.0f }, normal, uvA });
                             dirtyVertices.emplace_back(Vertex{ { posB, 1.0f }, normal, uvB });
                             dirtyVertices.emplace_back(Vertex{ { posC, 1.0f }, normal, uvC });

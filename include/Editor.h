@@ -1,6 +1,8 @@
 #pragma once
 
 class Camera;
+class CameraController;
+class ControlEditor;
 class EditorInputController;
 class Object;
 class RenderTexture;
@@ -19,6 +21,7 @@ enum e_EditorMode
 {
     EditorMode_Object,
     EditorMode_Edit,
+    EditorMode_WeightPainting,
     EditorMode_End
 };
 
@@ -34,34 +37,31 @@ enum e_EditorFaceCullingMode
 class Editor
 {
 private:
-    EditorInputController*   m_inputController;
+    EditorInputController*    m_inputController;
 
-    e_EditorFaceCullingMode  m_faceCullingMode;
-    e_EditorMode             m_editorMode;
+    e_EditorFaceCullingMode   m_faceCullingMode;
+    e_EditorMode              m_editorMode;
          
-    ShaderProgram*           m_gridShader;
+    ShaderProgram*            m_gridShader;
 
-    Camera*                  m_camera;
+    Camera*                   m_camera;
+    CameraController*         m_cameraController;
          
-    Workspace*               m_workspace;
+    Workspace*                m_workspace;
          
-    RenderTexture*           m_renderTexture;
+    RenderTexture*            m_renderTexture;
          
-    unsigned char            m_mouseDown;
-    glm::vec2                m_startPos;
+    unsigned char             m_mouseDown;
+    glm::vec2                 m_startPos;
 
-    std::list<unsigned int>  m_selectedNodes;
+    std::list<ControlEditor*> m_editorControls;
 
-    Action*                  m_curAction;
+    std::list<unsigned int>   m_selectedNodes;
+    std::list<long long>      m_selectedArmNodes;
 
-    bool                     m_orthoDown;
+    Action*                   m_curAction;
 
-    bool IsInteractingTransform(const glm::vec3& a_pos, const glm::vec3& a_axis, const glm::vec2& a_cursorPos, const glm::vec2& a_screenSize, const glm::mat4& a_viewProj);
-    bool IsInteractingCurveNode(const glm::vec3& a_pos, const glm::vec3& a_axis, const glm::vec2& a_cursorPos, const glm::vec2& a_screenSize, CurveModel* a_model, const glm::mat4& a_viewProj);
-    bool IsInteractingCurveNodeHandle(const Node3Cluster& a_node, unsigned int a_nodeIndex, CurveModel* a_model, const glm::mat4& a_viewProj, const glm::vec2& a_cursorPos, const glm::mat4& a_transform, const glm::vec3& a_up, const glm::vec3& a_right);
     void DrawObject(Object* a_object, const glm::vec2& a_winSize);
-
-    e_ActionType GetCurrentAction() const;
 
 protected:
 
@@ -69,10 +69,32 @@ public:
     Editor(Workspace* a_workspace);
     ~Editor();
 
+    e_ActionType GetCurrentActionType() const;
+    inline Action* GetCurrentAction() const
+    {
+        return m_curAction;
+    }
+    void SetCurrentAction(Action* a_action)
+    {
+        m_curAction = a_action;
+    }
+
     void Init();
 
     bool IsFaceSelected() const;
     bool CanInsertFace() const;
+
+    inline std::list<long long> GetSelectedArmatureNodes() const
+    {
+        return m_selectedArmNodes;
+    }
+    long long* GetSelectedArmatureNodesArray() const;
+    inline int GetSelectedArmatureNodesCount() const
+    {
+        return m_selectedArmNodes.size();
+    }
+    Object** GetSelectedArmatureObjectsArray() const;
+    int GetSelectedArmatureObjectsCount() const;
 
     inline std::list<unsigned int> GetSelectedNodes() const
     {
@@ -102,11 +124,15 @@ public:
         m_faceCullingMode = a_cullingMode;
     }
 
-    inline void ClearSelectedNodes()
-    {
-        m_selectedNodes.clear();
-    }
+    void ClearSelectedNodes();
+    
     void AddNodeToSelection(unsigned int a_index);
+    void RemoveNodeFromSelection(unsigned int a_index);
+
+    void AddArmatureNodeToSelection(long long a_id);
+    void AddArmatureNodeToSelection(Object* a_object);
+    void RemoveArmatureNodeFromSelection(long long a_id);
+    void RemoveArmatureNodeFromSelection(Object* a_object);
 
     bool IsEditorModeEnabled(e_EditorMode a_editorMode) const;
 

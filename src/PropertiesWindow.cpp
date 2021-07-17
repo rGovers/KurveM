@@ -240,7 +240,14 @@ void PropertiesWindow::Update(double a_delta)
                 {
                     if (ImGui::DragFloat4("Axis Angle", (float*)&m_axisAngle, 0.01f))
                     {
-                        PushRotation(glm::angleAxis(m_axisAngle.w, glm::normalize(m_axisAngle.xyz())));
+                        const float len = glm::length(m_axisAngle.xyz()); 
+                        glm::vec3 axis = m_axisAngle.xyz() / len;
+                        if (len <= 0)
+                        {
+                            axis = glm::vec3(0, 1, 0);
+                        }
+
+                        PushRotation(glm::angleAxis(m_axisAngle.w, axis));
                     }
 
                     break;

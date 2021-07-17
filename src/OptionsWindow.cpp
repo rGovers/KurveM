@@ -4,7 +4,12 @@
 #include "ImGuiExt.h"
 #include "Workspace.h"
 
-const char* EditorMode_String[] = { "Object Mode", "Edit Mode" };
+const char* EditorMode_String[] = 
+{ 
+    "Object Mode", 
+    "Edit Mode", 
+    "Weight Mode" 
+};
 
 OptionsWindow::OptionsWindow(Workspace* a_workspace, Editor* a_editor)
 {

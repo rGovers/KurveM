@@ -48,4 +48,8 @@ public:
     static void DrawCircleFilled(const glm::vec3& a_position, const glm::vec3& a_dir, float a_radius, int a_steps, const glm::vec4& a_color);
 
     static void DrawTriangle(const glm::vec3& a_position, const glm::vec3& a_dir, float a_size, const glm::vec4& a_color);
+    static void DrawTriangle(const glm::vec3& a_position, const glm::vec3& a_dir, const glm::vec3& a_up, float a_size, const glm::vec4& a_color);
+
+    static void DrawTranslation(const glm::vec3& a_position, const glm::vec3& a_dir, float a_scale);
+    static void DrawScale(const glm::vec3& a_position, const glm::vec3& a_dir, float a_scale);
 };

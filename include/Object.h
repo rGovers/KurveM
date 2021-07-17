@@ -124,6 +124,9 @@ public:
 
     glm::mat4 GetGlobalMatrix() const;
 
+    glm::vec3 GetGlobalTranslation() const;
+    void SetGlobalTranslation(const glm::vec3& a_pos);
+
     void Draw(Camera* a_camera, const glm::vec2& a_winSize);
 
     void WriteOBJ(std::ofstream* a_file, bool a_smartStep, int a_steps) const;

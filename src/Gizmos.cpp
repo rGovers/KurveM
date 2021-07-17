@@ -256,3 +256,49 @@ void Gizmos::DrawTriangle(const glm::vec3& a_position, const glm::vec3& a_dir, f
     Instance->m_indices.emplace_back(indexB);
     Instance->m_indices.emplace_back(indexC);
 }
+void Gizmos::DrawTriangle(const glm::vec3& a_position, const glm::vec3& a_dir, const glm::vec3& a_up, float a_size, const glm::vec4& a_color)
+{
+    const glm::vec3 right = glm::cross(a_up, a_dir);
+
+    const float halfSize = a_size * 0.5f;
+
+    const unsigned int indexA = Instance->m_vertices.size();
+    Instance->m_vertices.emplace_back(GizmoVertex{ glm::vec4(a_position + right * halfSize, 1.0f), a_color });
+    const unsigned int indexB = Instance->m_vertices.size();
+    Instance->m_vertices.emplace_back(GizmoVertex{ glm::vec4(a_position - right * halfSize, 1.0f), a_color });
+    const unsigned int indexC = Instance->m_vertices.size();
+    Instance->m_vertices.emplace_back(GizmoVertex{ glm::vec4(a_position + a_dir * a_size, 1.0f), a_color });
+
+    Instance->m_indices.emplace_back(indexA);
+    Instance->m_indices.emplace_back(indexB);
+    Instance->m_indices.emplace_back(indexC);
+}
+void Gizmos::DrawTranslation(const glm::vec3& a_position, const glm::vec3& a_dir, float a_scale)
+{
+    const glm::vec3 endX = a_position + glm::vec3(a_scale, 0, 0);
+    const glm::vec3 endY = a_position + glm::vec3(0, a_scale, 0);
+    const glm::vec3 endZ = a_position + glm::vec3(0, 0, a_scale);
+
+    Gizmos::DrawLine(a_position, endX, a_dir, 0.01f, glm::vec4(1, 0, 0, 1));
+    Gizmos::DrawLine(a_position, endY, a_dir, 0.01f, glm::vec4(0, 1, 0, 1));
+    Gizmos::DrawLine(a_position, endZ, a_dir, 0.01f, glm::vec4(0, 0, 1, 1));
+
+    Gizmos::DrawTriangle(endX, glm::vec3(1, 0, 0), a_dir, a_scale * 0.5f, glm::vec4(1, 0, 0, 1));
+    Gizmos::DrawTriangle(endY, glm::vec3(0, 1, 0), a_dir, a_scale * 0.5f, glm::vec4(0, 1, 0, 1));
+    Gizmos::DrawTriangle(endZ, glm::vec3(0, 0, 1), a_dir, a_scale * 0.5f, glm::vec4(0, 0, 1, 1));
+}
+
+void Gizmos::DrawScale(const glm::vec3& a_position, const glm::vec3& a_dir, float a_scale)
+{
+    const glm::vec3 endX = a_position + glm::vec3(a_scale, 0, 0);
+    const glm::vec3 endY = a_position + glm::vec3(0, a_scale, 0);
+    const glm::vec3 endZ = a_position + glm::vec3(0, 0, a_scale);
+
+    Gizmos::DrawLine(a_position, endX, a_dir, 0.01f, glm::vec4(1, 0, 0, 1));
+    Gizmos::DrawLine(a_position, endY, a_dir, 0.01f, glm::vec4(0, 1, 0, 1));
+    Gizmos::DrawLine(a_position, endZ, a_dir, 0.01f, glm::vec4(0, 0, 1, 1));
+
+    Gizmos::DrawCircleFilled(endX, a_dir, a_scale * 0.25f, 15, glm::vec4(1, 0, 0, 1));
+    Gizmos::DrawCircleFilled(endY, a_dir, a_scale * 0.25f, 15, glm::vec4(0, 1, 0, 1));
+    Gizmos::DrawCircleFilled(endZ, a_dir, a_scale * 0.25f, 15, glm::vec4(0, 0, 1, 1));
+}

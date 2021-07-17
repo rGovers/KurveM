@@ -1,5 +1,7 @@
 #include "SelectionControl.h"
 
+#include "Object.h"
+
 bool SelectionControl::PointInPoint(const glm::vec2& a_point, const glm::vec2& a_pos, float a_radius)
 {
     const glm::vec2 diff = a_pos - a_point;
@@ -61,6 +63,24 @@ bool SelectionControl::NodeInSelection(const glm::mat4& a_viewProj, const glm::v
     const glm::vec4 nodePos = glm::vec4(a_node.GetPosition(), 1);
 
     glm::vec4 fPos = a_viewProj * a_world * nodePos; 
+    fPos /= fPos.w;
+
+    if (fPos.x >= a_start.x && fPos.y >= a_start.y &&
+    fPos.x <= a_end.x && fPos.y <= a_end.y)
+    {
+        return true;
+    }
+
+    return false;
+}
+
+bool SelectionControl::ObjectPointInSelection(Object* a_object, const glm::mat4& a_viewProj, const glm::vec2& a_start, const glm::vec2& a_end)
+{
+    const glm::mat4 mat = a_object->GetGlobalMatrix();
+
+    const glm::vec4 pos = mat[3];
+
+    glm::vec4 fPos = a_viewProj * pos;
     fPos /= fPos.w;
 
     if (fPos.x >= a_start.x && fPos.y >= a_start.y &&
