@@ -3,12 +3,23 @@
 #define GLM_FORCE_SWIZZLE 
 #include <glm/glm.hpp>
 
+#include <vector>
+
+struct BoneCluster
+{
+    long long ID;
+    float Weight;
+};
+
 class BezierCurveNode3
 {
 private:
-    glm::vec3 m_pos;
-    glm::vec3 m_handle;
-    glm::vec2 m_uv;
+    glm::vec3                m_pos;
+    glm::vec3                m_handle;
+                     
+    glm::vec2                m_uv;
+
+    std::vector<BoneCluster> m_bones;
 
 protected:
 
@@ -44,10 +55,19 @@ public:
         m_uv = a_uv;
     }
 
+    std::vector<BoneCluster> GetBones() const
+    {
+        return m_bones;
+    }
+
+    BoneCluster* GetBonesLerp(const BezierCurveNode3& a_other, float a_lerp, unsigned int* a_count) const;
+
     glm::vec2 GetUVLerp(const BezierCurveNode3& a_other, float a_lerp) const;
 
     glm::vec3 GetPoint(const BezierCurveNode3& a_other, float a_lerp) const;
     glm::vec3 GetPointScaled(const BezierCurveNode3& a_other, float a_scale, float a_lero) const;
+
+    static BoneCluster* GetBonesLerp(const BezierCurveNode3& a_pointA, const BezierCurveNode3& a_pointB, float a_lerp, unsigned int* a_count);
 
     static glm::vec2 GetUVLerp(const BezierCurveNode3& a_pointA, const BezierCurveNode3& a_pointB, float a_lerp);
 

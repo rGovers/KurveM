@@ -14,6 +14,8 @@
 #include "Shaders/EditorStandardVertex.h"
 #include "Shaders/ReferenceImagePixel.h"
 #include "Shaders/ReferenceImageVertex.h"
+#include "Shaders/WeightStandardPixel.h"
+#include "Shaders/WeightStandardVertex.h"
 #include "ShaderVertex.h"
 #include "Texture.h"
 #include "Transform.h"
@@ -39,13 +41,18 @@ Object::Object(const char* a_name, e_ObjectType a_objectType)
     m_referencePath = nullptr;
     m_referenceImage = nullptr;
 
-    m_rootTransform = nullptr;
     m_rootObject = nullptr;
 
     m_program = Datastore::GetShaderProgram("SHADER_EDITORSTANDARD");
     if (m_program == nullptr)
     {
         m_program = ShaderProgram::InitProgram("SHADER_EDITORSTANDARD", EDITORSTANDARDVERTEX, EDITORSTANDARDPIXEL);
+    }
+
+    m_weightProgram = Datastore::GetShaderProgram("SHADER_WEIGHTSTANDARD");
+    if (m_weightProgram == nullptr)
+    {
+        m_weightProgram = ShaderProgram::InitProgram("SHADER_WEIGHTSTANDARD", WEIGHTSTANDARDVERTEX, WEIGHTSTANDARDPIXEL);
     }
 
     m_referenceProgram = Datastore::GetShaderProgram("SHADER_REFERENCEIMAGE");
@@ -59,17 +66,14 @@ Object::Object(const char* a_name, e_ObjectType a_objectType)
 
     if (a_objectType == ObjectType_Armature)
     {
-        Object* obj = new Object("Root", this, glm::vec3(0));
+        Object* obj = new Object("Root", this);
         obj->SetParent(this);
     }
 }
-Object::Object(const char* a_name, Object* a_rootObject, const glm::vec3& a_rootPos) :
+Object::Object(const char* a_name, Object* a_rootObject) :
     Object(a_name, ObjectType_ArmatureNode)
 {
-    m_rootTransform = new Transform();
     m_rootObject = a_rootObject;
-
-    m_rootTransform->Translation() = a_rootPos;
 }
 Object::~Object()
 {
@@ -197,7 +201,7 @@ void Object::SetGlobalTranslation(const glm::vec3& a_pos)
     m_transform->Translation() = pos.xyz() / pos.w;
 }
 
-void Object::Draw(Camera* a_camera, const glm::vec2& a_winSize)
+void Object::DrawBase(Camera* a_camera, const glm::vec2& a_winSize)
 {
     if (IsGlobalVisible())
     {
@@ -263,6 +267,47 @@ void Object::Draw(Camera* a_camera, const glm::vec2& a_winSize)
         }
         }
     }   
+}
+void Object::DrawWeight(Camera* a_camera, const glm::vec2& a_winSize, unsigned int a_bone, unsigned int a_boneCount)
+{
+    if (IsGlobalVisible())
+    {
+        const glm::mat4 view = a_camera->GetView();
+        const glm::mat4 proj = a_camera->GetProjection((int)a_winSize.x, (int)a_winSize.y);
+
+        const glm::mat4 world = GetGlobalMatrix();
+
+        switch (m_objectType)
+        {
+        case ObjectType_CurveModel:
+        {
+            if (m_curveModel != nullptr)
+            {
+                const Model* model = m_curveModel->GetDisplayModel();
+                const Object* arm = m_curveModel->GetArmature();
+
+                if (arm != nullptr && model != nullptr)
+                {
+                    const unsigned int programHandle = m_weightProgram->GetHandle();
+                    glUseProgram(programHandle);
+
+                    const unsigned int vao = model->GetVAO();
+                    glBindVertexArray(vao);
+
+                    glUniformMatrix4fv(0, 1, false, (float*)&view);
+                    glUniformMatrix4fv(1, 1, false, (float*)&proj);
+                    glUniformMatrix4fv(2, 1, false, (float*)&world);
+                    glUniform1ui(5, a_boneCount);
+                    glUniform1ui(6, a_bone);
+
+                    glDrawElements(GL_TRIANGLES, model->GetIndexCount(), GL_UNSIGNED_INT, nullptr);
+                }
+            }
+
+            break;
+        }
+        }
+    }
 }
 
 void Object::WriteOBJ(std::ofstream* a_file, bool a_smartStep, int a_steps) const

@@ -168,6 +168,16 @@ bool Editor::CanInsertFace() const
     return false;
 }
 
+void Editor::SetSelectedWeightNode(Object* a_value)
+{
+    m_selectedWeightNode = -1;
+
+    if (a_value != nullptr && a_value->GetObjectType() == ObjectType_ArmatureNode)
+    {
+        m_selectedWeightNode = a_value->GetID();
+    }
+}
+
 long long* Editor::GetSelectedArmatureNodesArray() const
 {
     const int size = m_selectedArmNodes.size();

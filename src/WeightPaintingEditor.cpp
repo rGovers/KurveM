@@ -1,6 +1,7 @@
 #include "Editors/WeightPaintingEditor.h"
 
 #include "Object.h"
+#include "Workspace.h"
 
 WeightPaintingEditor::WeightPaintingEditor(Editor* a_editor, Workspace* a_workspace)
 {
@@ -20,7 +21,42 @@ e_EditorMode WeightPaintingEditor::GetEditorMode()
 
 void WeightPaintingEditor::DrawObject(Camera* a_camera, Object* a_object, const glm::vec2& a_winSize)
 {
-    a_object->Draw(a_camera, a_winSize);
+    if (a_object == m_workspace->GetSelectedObject())
+    {
+        const e_ObjectType objectType = a_object->GetObjectType();
+
+        unsigned int index = 0;
+        unsigned int size = 0;
+
+        switch (objectType)
+        {
+        case ObjectType_CurveModel:
+        {
+            const CurveModel* model = a_object->GetCurveModel();
+
+            const std::list<Object*> nodes = model->GetArmatureNodes();
+            size = nodes.size();
+
+            const long long selectedID = m_editor->GetSelectedWeightNode();
+
+            unsigned int iterIndex = 0;
+            for (auto iter = nodes.begin(); iter != nodes.end(); ++iter)
+            {
+                const Object* obj = *iter;
+                if (obj->GetID() == selectedID)
+                {
+                    index = iterIndex;
+
+                    break;
+                }
+
+                ++iterIndex;
+            }
+        }
+        }
+
+        a_object->DrawWeight(a_camera, a_winSize, index, size);
+    }
 }
 
 void WeightPaintingEditor::LeftClicked(Camera* a_camera, const glm::vec2& a_cursorPos, const glm::vec2& a_winSize)

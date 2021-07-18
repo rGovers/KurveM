@@ -68,7 +68,7 @@ bool ExtrudeArmatureNodeAction::Execute()
 
         for (unsigned int i = 0; i < m_nodeCount; ++i)
         {
-            m_cNodes[i] = new Object("Node", m_nodes[i]->GetRootObject(), glm::vec3(0));
+            m_cNodes[i] = new Object("Node", m_nodes[i]->GetRootObject());
             m_cNodes[i]->SetParent(m_nodes[i]);
         }
     }

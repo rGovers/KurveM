@@ -25,6 +25,14 @@ FileToHeader(
     SOURCE_FILE "shaders/editorStandard.frag"
     HEADER_FILE "include/Shaders/EditorStandardPixel.h"
     VARIABLE_NAME "EditorStandardPixel")
+FileToHeader(
+    SOURCE_FILE "shaders/weightStandard.vert"
+    HEADER_FILE "include/Shaders/WeightStandardVertex.h"
+    VARIABLE_NAME "WeightStandardVertex")
+FileToHeader(
+    SOURCE_FILE "shaders/weightStandard.frag"
+    HEADER_FILE "include/Shaders/WeightStandardPixel.h"
+    VARIABLE_NAME "WeightStandardPixel")
 
 FileToHeader(
     SOURCE_FILE "shaders/gizmos.vert"

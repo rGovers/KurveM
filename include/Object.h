@@ -25,6 +25,8 @@ enum e_ObjectType
     ObjectType_ArmatureNode
 };
 
+// Master Object class used for all objects in the heirarchy 
+// Decided again polymorphism and component systems for easy access and just using an internal type to dictate usage
 class Object
 {
 private:
@@ -47,9 +49,10 @@ private:
     std::list<Object*> m_children;
 
     Object*            m_rootObject;
-    Transform*         m_rootTransform;
 
     ShaderProgram*     m_program;
+    ShaderProgram*     m_weightProgram;
+
     ShaderProgram*     m_referenceProgram;
 
     CurveModel*        m_curveModel;
@@ -58,7 +61,7 @@ protected:
 
 public:
     Object(const char* a_name, e_ObjectType a_objectType = ObjectType_Empty);
-    Object(const char* a_name, Object* a_rootObject, const glm::vec3& a_rootPos);
+    Object(const char* a_name, Object* a_rootObject);
     ~Object();
 
     bool IsGlobalVisible() const;
@@ -82,10 +85,6 @@ public:
         return m_id;
     }
 
-    inline Transform* GetRootTransform() const
-    {
-        return m_rootTransform;
-    }
     inline Transform* GetTransform() const
     {
         return m_transform;
@@ -127,7 +126,8 @@ public:
     glm::vec3 GetGlobalTranslation() const;
     void SetGlobalTranslation(const glm::vec3& a_pos);
 
-    void Draw(Camera* a_camera, const glm::vec2& a_winSize);
+    void DrawBase(Camera* a_camera, const glm::vec2& a_winSize);
+    void DrawWeight(Camera* a_camera, const glm::vec2& a_winSize, unsigned int a_bone, unsigned int a_boneCount);
 
     void WriteOBJ(std::ofstream* a_file, bool a_smartStep, int a_steps) const;
     void Serialize(tinyxml2::XMLDocument* a_doc, tinyxml2::XMLElement* a_element) const;

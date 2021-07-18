@@ -59,6 +59,8 @@ private:
     std::list<unsigned int>   m_selectedNodes;
     std::list<long long>      m_selectedArmNodes;
 
+    long long                 m_selectedWeightNode;
+
     Action*                   m_curAction;
 
     void DrawObject(Object* a_object, const glm::vec2& a_winSize);
@@ -74,7 +76,7 @@ public:
     {
         return m_curAction;
     }
-    void SetCurrentAction(Action* a_action)
+    inline void SetCurrentAction(Action* a_action)
     {
         m_curAction = a_action;
     }
@@ -83,6 +85,16 @@ public:
 
     bool IsFaceSelected() const;
     bool CanInsertFace() const;
+
+    inline long long GetSelectedWeightNode() const
+    {
+        return m_selectedWeightNode;
+    }
+    void SetSelectedWeightNode(Object* a_value);
+    inline void SetSelectedWeightNode(long long a_value)
+    {
+        m_selectedWeightNode = a_value;
+    }
 
     inline std::list<long long> GetSelectedArmatureNodes() const
     {

@@ -1,7 +1,10 @@
 #include "Windows/OptionsWindow.h"
 
+#include <string>
+
 #include "imgui.h"
 #include "ImGuiExt.h"
+#include "Object.h"
 #include "Workspace.h"
 
 const char* EditorMode_String[] = 
@@ -73,6 +76,88 @@ void OptionsWindow::Update(double a_delta)
         EditorFaceButton("No Faces", EditorFaceCullingMode_All);
 
         ImGui::EndGroup();
+
+        if (currentIndex == EditorMode_WeightPainting)
+        {
+            std::list<Object*> nodes;
+
+            const Object* obj = m_workspace->GetSelectedObject();
+            if (obj != nullptr)
+            {
+                const e_ObjectType type = obj->GetObjectType();
+                switch (type)
+                {
+                case ObjectType_CurveModel:
+                {
+                    const CurveModel* model = obj->GetCurveModel();
+                    if (model != nullptr)
+                    {
+                        nodes = model->GetArmatureNodes();
+                    }
+
+                    break;
+                }
+                }
+            }
+
+            const unsigned int size = nodes.size();
+            if (size > 0)
+            {
+                ImGui::NextColumn();
+
+                const long long currNode = m_editor->GetSelectedWeightNode();
+
+                const char* selectedVal = (*nodes.begin())->GetName();
+                long long selectedID = 0;
+
+                for (auto iter = nodes.begin(); iter != nodes.end(); ++iter)
+                {
+                    const Object* obj = *iter;
+
+                    if (obj->GetID() == currNode)
+                    {
+                        selectedVal = obj->GetName();
+                        selectedID = obj->GetID();
+
+                        break;
+                    }
+                }
+
+                if (ImGui::BeginCombo("Bone", selectedVal))
+                {
+                    for (auto iter = nodes.begin(); iter != nodes.end(); ++iter)
+                    {
+                        const Object* obj = *iter;
+
+                        const long long objID = obj->GetID();
+                        const char* name = obj->GetName();
+
+                        const std::string str = std::to_string(objID) + name + "ArmatureNode";
+
+                        const bool selected = selectedID == objID;
+
+                        const ImGuiID id = ImGui::GetID(str.c_str());
+                        ImGui::PushID(id);
+
+                        const bool clicked = ImGui::Selectable(name, selected);
+
+                        ImGui::PopID();
+
+                        if (clicked)
+                        {
+                            m_editor->SetSelectedWeightNode(*iter);
+                        }
+
+                        if (selected)
+                        {
+                            ImGui::SetItemDefaultFocus();
+                        }
+                    }
+
+                    ImGui::EndCombo();
+                }
+            }   
+        }
 
         ImGui::Columns();
     }

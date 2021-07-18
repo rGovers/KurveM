@@ -9,6 +9,8 @@ struct Vertex
     glm::vec4 Position;
     glm::vec3 Normal;
     glm::vec2 UV;
+    glm::vec4 Bones;
+    glm::vec4 Weights;
 };
 
 class Model

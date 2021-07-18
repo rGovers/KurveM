@@ -243,7 +243,7 @@ void EditEditor::DrawObject(Camera* a_camera, Object* a_object, const glm::vec2&
 
     const glm::vec3 camFor = glm::normalize(camTransformMatrix[2]);
 
-    a_object->Draw(a_camera, a_winSize);
+    a_object->DrawBase(a_camera, a_winSize);
 
     const Object* obj = m_workspace->GetSelectedObject();
 
