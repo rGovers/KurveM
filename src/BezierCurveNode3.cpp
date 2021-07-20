@@ -16,9 +16,69 @@ BezierCurveNode3::BezierCurveNode3(const glm::vec3& a_pos, const glm::vec3& a_ha
 
     m_uv = a_uv;
 }
+BezierCurveNode3::BezierCurveNode3(const BezierCurveNode3& a_other)
+{
+    m_pos = a_other.m_pos;
+    m_handle = a_other.m_handle;
+
+    m_uv = a_other.m_uv;
+
+    m_bones = a_other.m_bones;
+}
 BezierCurveNode3::~BezierCurveNode3()
 {
 
+}
+
+BezierCurveNode3& BezierCurveNode3::operator =(const BezierCurveNode3& a_other)
+{
+    m_pos = a_other.m_pos;
+    m_handle = a_other.m_handle;
+
+    m_uv = a_other.m_uv;
+
+    m_bones = a_other.m_bones;
+
+    return *this;
+}
+
+void BezierCurveNode3::SetBoneWeight(long long a_bone, float a_weight)
+{
+    for (auto iter = m_bones.begin(); iter != m_bones.end(); ++iter)
+    {
+        if (iter->ID == a_bone)
+        {
+            if (a_weight <= 0)
+            {
+                m_bones.erase(iter);
+            }
+            else
+            {
+                iter->Weight = a_weight;
+            }
+
+            return;
+        }
+    }
+
+    BoneCluster cluster;
+
+    cluster.ID = a_bone;
+    cluster.Weight = a_weight;
+
+    m_bones.emplace_back(cluster);
+}
+float BezierCurveNode3::GetBoneWeight(long long a_bone) const
+{
+    for (auto iter = m_bones.begin(); iter != m_bones.end(); ++iter)
+    {
+        if (iter->ID == a_bone)
+        {
+            return iter->Weight;
+        }
+    }
+
+    return 0.0f;
 }
 
 BoneCluster* BezierCurveNode3::GetBonesLerp(const BezierCurveNode3& a_other, float a_lerp, unsigned int* a_count) const
@@ -57,11 +117,11 @@ BoneCluster* BezierCurveNode3::GetBonesLerp(const BezierCurveNode3& a_pointA, co
     *a_count = 0;
     for (auto iter = arrA.begin(); iter != arrA.end(); ++iter)
     {
+        cluster[*a_count].ID = iter->ID;
+
         bool found = false;
         for (auto innerIter = arrB.begin(); innerIter != arrB.end(); ++innerIter)
         {
-            cluster[*a_count].ID = iter->ID;
-
             if (iter->ID == innerIter->ID)
             {
                 found = true;

@@ -494,6 +494,10 @@ void EditEditor::LeftClicked(Camera* a_camera, const glm::vec2& a_cursorPos, con
         }
     }
 }
+void EditEditor::LeftDown(double a_delta, Camera* a_camera, const glm::vec2& a_start, const glm::vec2& a_currentPos, const glm::vec2& a_winSize)
+{
+
+}
 void EditEditor::LeftReleased(Camera* a_camera, const glm::vec2& a_start, const glm::vec2& a_end, const glm::vec2& a_winSize)
 {
     const glm::mat4 view = a_camera->GetView();
@@ -642,7 +646,7 @@ void EditEditor::LeftReleased(Camera* a_camera, const glm::vec2& a_start, const 
     }
 }
 
-void EditEditor::Update(Camera* a_camera, const glm::vec2& a_screenSize, double a_delta)
+void EditEditor::Update(Camera* a_camera, const glm::vec2& a_cursorPos, const glm::vec2& a_screenSize, double a_delta)
 {
     Transform* camTransform = a_camera->GetTransform();
     const glm::mat4 viewInv = camTransform->ToMatrix();

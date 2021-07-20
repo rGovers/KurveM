@@ -327,7 +327,7 @@ void Object::WriteOBJ(std::ofstream* a_file, bool a_smartStep, int a_steps) cons
 }
 void Object::Serialize(tinyxml2::XMLDocument* a_doc, tinyxml2::XMLElement* a_element) const
 {
-    a_element->SetAttribute("ID", (unsigned int)m_id);
+    a_element->SetAttribute("ID", std::to_string(m_id).c_str());
     a_element->SetAttribute("Name", m_name);   
 
     if (m_transform != nullptr)
@@ -349,8 +349,9 @@ void Object::Serialize(tinyxml2::XMLDocument* a_doc, tinyxml2::XMLElement* a_ele
     }
 }
 
-Object* Object::ParseData(Workspace* a_workspace, const tinyxml2::XMLElement* a_element, Object* a_parent)
+Object* Object::ParseData(Workspace* a_workspace, const tinyxml2::XMLElement* a_element, Object* a_parent, std::list<ObjectBoneGroup>* a_boneGroups, std::unordered_map<long long, long long>* a_idMap)
 {
+    const tinyxml2::XMLAttribute* idAtt = a_element->FindAttribute("ID");
     const tinyxml2::XMLAttribute* nameAtt = a_element->FindAttribute("Name");
 
     Object* obj = new Object(nameAtt->Value());
@@ -358,6 +359,8 @@ Object* Object::ParseData(Workspace* a_workspace, const tinyxml2::XMLElement* a_
     {
         obj->SetParent(a_parent);
     }
+
+    a_idMap->emplace(std::stoll(idAtt->Value()), obj->m_id);
 
     if (strcmp(a_element->Value(), "ArmatureNode") == 0)
     {
@@ -370,13 +373,13 @@ Object* Object::ParseData(Workspace* a_workspace, const tinyxml2::XMLElement* a_
 
         if (strcmp(str, "Object") == 0)
         {
-            ParseData(a_workspace, iter, obj);
+            ParseData(a_workspace, iter, obj, a_boneGroups, a_idMap);
         }
         else if (strcmp(str, "ArmatureNode") == 0)
         {
             obj->m_objectType = ObjectType_Armature;
 
-            ParseData(a_workspace, iter, obj);
+            ParseData(a_workspace, iter, obj, a_boneGroups, a_idMap);
         }
         else if (strcmp(str, "Transform") == 0)
         {
@@ -404,11 +407,22 @@ Object* Object::ParseData(Workspace* a_workspace, const tinyxml2::XMLElement* a_
         }
         else if (strcmp(str, "CurveModel") == 0)
         {
+            std::list<BoneGroup> bones;
+
             obj->m_objectType = ObjectType_CurveModel;
 
             obj->m_curveModel = new CurveModel(a_workspace);
-            obj->m_curveModel->ParseData(iter);
+            obj->m_curveModel->ParseData(iter, &bones);
             obj->m_curveModel->Triangulate();
+
+            if (bones.size() > 0)
+            {
+                ObjectBoneGroup boneGroup;
+                boneGroup.ID = obj->m_id;
+                boneGroup.Bones = bones;
+
+                a_boneGroups->emplace_back(boneGroup);
+            }
         }
         else
         {
@@ -419,4 +433,28 @@ Object* Object::ParseData(Workspace* a_workspace, const tinyxml2::XMLElement* a_
     }
 
     return obj;
+}
+void Object::PostParseData(const std::list<ObjectBoneGroup>& a_bones, const std::unordered_map<long long, long long>& a_idMap)
+{
+    switch (m_objectType)
+    {
+    case ObjectType_CurveModel:
+    {
+        if (m_curveModel != nullptr)
+        {
+            for (auto iter = a_bones.begin(); iter != a_bones.end(); ++iter)
+            {
+                if (iter->ID == m_id)
+                {
+                    m_curveModel->PostParseData(iter->Bones, a_idMap);
+                    m_curveModel->Triangulate();
+
+                    break;
+                }
+            }
+        }
+
+        break;
+    }
+    }    
 }

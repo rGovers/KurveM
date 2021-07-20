@@ -46,6 +46,9 @@ Editor::Editor(Workspace* a_workspace)
     m_camera = new Camera();
     m_camera->SetFOV(0.6911504f);
 
+    m_brushRadius = 1;
+    m_brushIntensity = 1;
+
     Init();
 
     m_cameraController = new CameraController(m_camera);
@@ -237,6 +240,13 @@ unsigned int* Editor::GetSelectedNodesArray() const
     }
 
     return nodes;
+}
+
+void Editor::SetEditorMode(e_EditorMode a_editorMode)
+{
+    m_editorMode = a_editorMode;
+
+    m_selectedWeightNode = -1;
 }
 
 bool Editor::IsEditorModeEnabled(e_EditorMode a_editorMode) const
@@ -598,6 +608,10 @@ void Editor::Update(double a_delta, const glm::vec2& a_winPos, const glm::vec2& 
 
             break;
         }
+        case ActionType_AddCurveNodeWeight:
+        {
+            break;
+        }
         default:
         {
             // Dirty but cannot be stuffed making screen space gizmos
@@ -618,6 +632,15 @@ void Editor::Update(double a_delta, const glm::vec2& a_winPos, const glm::vec2& 
 
             break;
         }
+        }
+
+        for (auto iter = m_editorControls.begin(); iter != m_editorControls.end(); ++iter)
+        {
+            ControlEditor* editor = *iter;
+            if (editor->GetEditorMode() == m_editorMode)
+            {
+                editor->LeftDown(a_delta, m_camera, m_startPos, curCursorPos, a_winSize);
+            }
         } 
     }
 
@@ -631,7 +654,7 @@ void Editor::Update(double a_delta, const glm::vec2& a_winPos, const glm::vec2& 
         ControlEditor* editor = *iter;
         if (editor->GetEditorMode() == m_editorMode)
         {
-            editor->Update(m_camera, a_winSize, a_delta);
+            editor->Update(m_camera, curCursorPos, a_winSize, a_delta);
         }
     }
 

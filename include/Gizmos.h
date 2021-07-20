@@ -44,7 +44,7 @@ public:
     static void DrawLine(const glm::vec3& a_start, const glm::vec3& a_end, float a_width, const glm::vec4& a_color);
     static void DrawLine(const glm::vec3& a_start, const glm::vec3& a_end, const glm::vec3& a_up, float a_width, const glm::vec4& a_color);
 
-    static void DrawCircle(const glm::vec3& a_position, const glm::vec3& a_dir, float a_radius, int a_steps, const glm::vec4& a_color);
+    static void DrawCircle(const glm::vec3& a_position, const glm::vec3& a_dir, float a_radius, float a_width, int a_steps, const glm::vec4& a_color);
     static void DrawCircleFilled(const glm::vec3& a_position, const glm::vec3& a_dir, float a_radius, int a_steps, const glm::vec4& a_color);
 
     static void DrawTriangle(const glm::vec3& a_position, const glm::vec3& a_dir, float a_size, const glm::vec4& a_color);

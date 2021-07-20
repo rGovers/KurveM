@@ -264,9 +264,18 @@ void Workspace::Open(const char* a_dir)
             const tinyxml2::XMLElement* objectsElement = sceneElement->FirstChildElement("Objects");
             if (objectsElement != nullptr)
             {   
+                std::list<ObjectBoneGroup> bones;
+                std::unordered_map<long long, long long> idMap;
+
                 for (const tinyxml2::XMLElement* iter = objectsElement->FirstChildElement(); iter != nullptr; iter = iter->NextSiblingElement())
                 {
-                    m_objectList.emplace_back(Object::ParseData(this, iter, nullptr));
+                    m_objectList.emplace_back(Object::ParseData(this, iter, nullptr, &bones, &idMap));
+                }
+
+                for (auto iter = m_objectList.begin(); iter != m_objectList.end(); ++iter)
+                {
+                    Object* obj = *iter;
+                    obj->PostParseData(bones, idMap);
                 }
             }   
             else

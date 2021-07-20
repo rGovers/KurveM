@@ -26,7 +26,11 @@ protected:
 public:
     BezierCurveNode3();
     BezierCurveNode3(const glm::vec3& a_pos, const glm::vec3& a_handlePos, const glm::vec2& a_uv = glm::vec2(0));
+    // Automatic copying was being weird there rule of 3
+    BezierCurveNode3(const BezierCurveNode3& a_other);
     ~BezierCurveNode3();
+
+    BezierCurveNode3& operator =(const BezierCurveNode3& a_other);
 
     inline glm::vec3 GetPosition() const
     {
@@ -55,10 +59,13 @@ public:
         m_uv = a_uv;
     }
 
-    std::vector<BoneCluster> GetBones() const
+    inline std::vector<BoneCluster> GetBones() const
     {
         return m_bones;
     }
+
+    void SetBoneWeight(long long a_bone, float a_weight);
+    float GetBoneWeight(long long a_bone) const;
 
     BoneCluster* GetBonesLerp(const BezierCurveNode3& a_other, float a_lerp, unsigned int* a_count) const;
 

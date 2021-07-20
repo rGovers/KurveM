@@ -63,6 +63,9 @@ private:
 
     Action*                   m_curAction;
 
+    float                     m_brushIntensity;
+    float                     m_brushRadius;
+
     void DrawObject(Object* a_object, const glm::vec2& a_winSize);
 
 protected:
@@ -79,6 +82,24 @@ public:
     inline void SetCurrentAction(Action* a_action)
     {
         m_curAction = a_action;
+    }
+
+    inline float GetBrushRadius() const
+    {
+        return m_brushRadius;
+    }
+    inline void SetBrushRadius(float a_value)
+    {
+        m_brushRadius = a_value;
+    }
+
+    inline float GetBrushIntensity() const
+    {
+        return m_brushIntensity;
+    }
+    inline void SetBrushIntensity(float a_value)
+    {
+        m_brushIntensity = a_value;
     }
 
     void Init();
@@ -122,10 +143,7 @@ public:
     {
         return m_editorMode;
     }
-    inline void SetEditorMode(e_EditorMode a_editorMode)
-    {
-        m_editorMode = a_editorMode;
-    }
+    void SetEditorMode(e_EditorMode a_editorMode);
 
     inline e_EditorFaceCullingMode GetEditorFaceCullingMode() const
     {

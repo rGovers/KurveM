@@ -193,9 +193,9 @@ void Gizmos::DrawLine(const glm::vec3& a_start, const glm::vec3& a_end, const gl
     Instance->m_indices.emplace_back(indexD);
 }
 
-void Gizmos::DrawCircle(const glm::vec3& a_position, const glm::vec3& a_dir, float a_radius, int a_steps, const glm::vec4& a_color)
+void Gizmos::DrawCircle(const glm::vec3& a_position, const glm::vec3& a_dir, float a_radius, float a_width, int a_steps, const glm::vec4& a_color)
 {
-    const glm::vec3 vec = glm::vec3(0, a_radius, 0);
+    const glm::vec4 vec = glm::vec4(0, a_radius, 0, 1);
 
     for (int i = 0; i < a_steps; ++i)
     {
@@ -205,7 +205,7 @@ void Gizmos::DrawCircle(const glm::vec3& a_position, const glm::vec3& a_dir, flo
         const glm::quat qA = glm::angleAxis(angleA, a_dir);
         const glm::quat qB = glm::angleAxis(angleB, a_dir);
 
-        DrawLine(a_position + (qA * vec), a_position + (qB * vec), 0.1f, a_color);
+        DrawLine(a_position + (qA * vec).xyz(), a_position + (qB * vec).xyz(), a_dir, a_width, a_color);
     }
 }
 void Gizmos::DrawCircleFilled(const glm::vec3& a_position, const glm::vec3& a_dir, float a_radius, int a_steps, const glm::vec4& a_color)

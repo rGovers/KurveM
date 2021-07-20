@@ -463,12 +463,10 @@ void CurveModel::Triangulate()
 void GetBoneData(const BezierCurveNode3& a_nodeA, const BezierCurveNode3& a_nodeB, float a_lerp, glm::vec4* a_weights, glm::vec4* a_bones, unsigned int a_boneCount, const std::unordered_map<long long, unsigned int>& a_idMap)
 {
     unsigned int count;
-    BoneCluster* bones = BezierCurveNode3::GetBonesLerp(a_nodeA, a_nodeA, a_lerp, &count);
+    BoneCluster* bones = BezierCurveNode3::GetBonesLerp(a_nodeA, a_nodeB, a_lerp, &count);
 
-    *a_bones = glm::vec4(0);
+    *a_bones = glm::vec4(-1);
     *a_weights = glm::vec4(0);
-
-    int index = 0;
 
     for (int i = 0; i < count; ++i)
     {
@@ -499,12 +497,12 @@ void GetBoneData(const BezierCurveNode3& a_nodeA, const BezierCurveNode3& a_node
 
 void BlendBoneData(const glm::vec4& a_bonesA, const glm::vec4& a_weightsA, const glm::vec4& a_bonesB, const glm::vec4& a_weightsB, float a_lerp, glm::vec4* a_bones, glm::vec4* a_weights)
 {
-    glm::vec4 boneData[2];
-    glm::vec4 weightData[2];
+    glm::vec4 boneData[2] = { glm::vec4(-1) };
+    glm::vec4 weightData[2] = { glm::vec4(0) };
 
-    glm::vec4 arrB = a_weightsB; 
+    glm::vec4 arrB = a_bonesB; 
 
-    *a_bones = glm::vec4(0);
+    *a_bones = glm::vec4(-1);
     *a_weights = glm::vec4(0);
 
     const float invLerp = 1 - a_lerp;
@@ -512,16 +510,22 @@ void BlendBoneData(const glm::vec4& a_bonesA, const glm::vec4& a_weightsA, const
     int count = 0;
     for (int i = 0; i < 4; ++i)
     {
+        if (a_bonesA[i] == -1)
+        {
+            continue;
+        }
+
         const int indA = count / 2;
         const int indB = count % 4;
 
         bool found = false;
         for (int j = 0; j < 4; ++j)
         {
-            if (arrB[j] != std::numeric_limits<float>::infinity() && a_bonesA[i] == arrB[j])
+            if (arrB[j] != -1 && a_bonesA[i] == arrB[j])
             {
                 found = true;
-                arrB[j] = std::numeric_limits<float>::infinity();
+
+                arrB[j] = -1;
 
                 boneData[indA][indB] = a_bonesA[i]; 
                 weightData[indA][indB] = glm::mix(a_weightsA[i], a_weightsB[i], a_lerp);
@@ -541,7 +545,7 @@ void BlendBoneData(const glm::vec4& a_bonesA, const glm::vec4& a_weightsA, const
 
     for (int i = 0; i < 4; ++i)
     {
-        if (arrB[i] != std::numeric_limits<float>::infinity())
+        if (arrB[i] != -1)
         {
             const int indA = count / 2;
             const int indB = count % 4;
@@ -669,12 +673,12 @@ void CurveModel::GetModelData(bool a_smartStep, int a_steps, unsigned int** a_in
                         glm::vec4 bLW = glm::vec4(0);
                         glm::vec4 bRW = glm::vec4(0);
 
-                        GetBoneData(nodes[FaceIndex_3Point_AB], nodes[FaceIndex_3Point_BA], iStep, &tLW, &tLBn, boneCount, idMap);
-                        GetBoneData(nodes[FaceIndex_3Point_AC], nodes[FaceIndex_3Point_CA], iStep, &tRW, &tRBn, boneCount, idMap);
-                        GetBoneData(nodes[FaceIndex_3Point_AB], nodes[FaceIndex_3Point_BA], iStep, &mLW, &mLBn, boneCount, idMap);
-                        GetBoneData(nodes[FaceIndex_3Point_AC], nodes[FaceIndex_3Point_CA], iStep, &mRW, &mRBn, boneCount, idMap);
-                        GetBoneData(nodes[FaceIndex_3Point_AB], nodes[FaceIndex_3Point_BA], iStep, &bLW, &bLBn, boneCount, idMap);
-                        GetBoneData(nodes[FaceIndex_3Point_AC], nodes[FaceIndex_3Point_CA], iStep, &bRW, &bRBn, boneCount, idMap);
+                        GetBoneData(nodes[FaceIndex_3Point_AB], nodes[FaceIndex_3Point_BA], iStep,  &tLW, &tLBn, boneCount, idMap);
+                        GetBoneData(nodes[FaceIndex_3Point_AC], nodes[FaceIndex_3Point_CA], iStep,  &tRW, &tRBn, boneCount, idMap);
+                        GetBoneData(nodes[FaceIndex_3Point_AB], nodes[FaceIndex_3Point_BA], nIStep, &mLW, &mLBn, boneCount, idMap);
+                        GetBoneData(nodes[FaceIndex_3Point_AC], nodes[FaceIndex_3Point_CA], nIStep, &mRW, &mRBn, boneCount, idMap);
+                        GetBoneData(nodes[FaceIndex_3Point_AB], nodes[FaceIndex_3Point_BA], bIStep, &bLW, &bLBn, boneCount, idMap);
+                        GetBoneData(nodes[FaceIndex_3Point_AC], nodes[FaceIndex_3Point_CA], bIStep, &bRW, &bRBn, boneCount, idMap);
 
                         for (int j = 0; j <= i; ++j)
                         {
@@ -719,6 +723,27 @@ void CurveModel::GetModelData(bool a_smartStep, int a_steps, unsigned int** a_in
                             BlendBoneData(mLBn, mLW, mRBn, mRW, aSMA, &mLFB, &mLFW);
                             BlendBoneData(mLBn, mLW, mRBn, mRW, aSMB, &mRFB, &mRFW);
 
+                            for (int i = 0; i < 4; ++i)
+                            {
+                                if (tFB[i] == -1)
+                                {
+                                    tFB[i] = 0;
+                                    tFW[i] = 0;
+                                }
+
+                                if (mLFB[i] == -1)
+                                {
+                                    mLFB[i] = 0;
+                                    mLFW[i] = 0;
+                                }
+
+                                if (mRFB[i] == -1)
+                                {
+                                    mRFB[i] = 0;
+                                    mRFW[i] = 0;
+                                }
+                            }
+
                             glm::vec3 v1 = mLF - tF;
                             glm::vec3 v2 = mRF - tF;
 
@@ -747,6 +772,15 @@ void CurveModel::GetModelData(bool a_smartStep, int a_steps, unsigned int** a_in
                                 glm::vec4 bFW = glm::vec4(0);
 
                                 BlendBoneData(bLBn, bLW, bRBn, bRW, aSL, &bFB, &bFW);
+
+                                for (int i = 0; i < 4; ++i)
+                                {
+                                    if (bFB[i] == -1)
+                                    {
+                                        bFB[i] = 0;
+                                        bFW[i] = 0;
+                                    }
+                                }
 
                                 v1 = mLF - bF;
                                 v2 = mRF - bF;
@@ -922,10 +956,37 @@ void CurveModel::GetModelData(bool a_smartStep, int a_steps, unsigned int** a_in
                             BlendBoneData(LHABn, LHAW, HLBBn, HLBW, 0.5f, &boneC, &weightC);
                             BlendBoneData(HHABn, HHAW, HHBBn, HHBW, 0.5f, &boneD, &weightD);
 
-                            glm::vec3 v1 = posB - posA;
-                            glm::vec3 v2 = posC - posA;
+                            for (int i = 0; i < 4; ++i)
+                            {
+                                if (boneA[i] == -1)
+                                {
+                                    boneA[i] = 0;
+                                    weightA[i] = 0;
+                                }
 
-                            glm::vec3 normal = glm::cross(v2, v1);
+                                if (boneB[i] == -1)
+                                {
+                                    boneB[i] = 0;
+                                    weightB[i] = 0;
+                                }
+
+                                if (boneC[i] == -1)
+                                {
+                                    boneC[i] = 0;
+                                    weightC[i] = 0;
+                                }
+
+                                if (boneD[i] == -1)
+                                {
+                                    boneD[i] = 0;
+                                    weightD[i] = 0;
+                                }
+                            }
+
+                            const glm::vec3 v1 = posB - posA;
+                            const glm::vec3 v2 = posC - posA;
+
+                            const glm::vec3 normal = glm::cross(v2, v1);
 
                             dirtyVertices.emplace_back(Vertex{ { posA, 1.0f }, normal, uvA, boneA, weightA });
                             dirtyVertices.emplace_back(Vertex{ { posB, 1.0f }, normal, uvB, boneB, weightB });
@@ -996,7 +1057,7 @@ void CurveModel::GetModelData(bool a_smartStep, int a_steps, unsigned int** a_in
                 for (unsigned int j = 0; j < vertexIndex; ++j)
                 {
                     const Vertex otherVert = (*a_vertices)[j];
-                    if (otherVert.Position == vert.Position && otherVert.UV == otherVert.UV)
+                    if (otherVert.Position == vert.Position && vert.UV == otherVert.UV)
                     {
                         found = true;
 
@@ -1052,6 +1113,7 @@ void CurveModel::Serialize(tinyxml2::XMLDocument* a_doc, tinyxml2::XMLElement* a
 
     curveModelElement->SetAttribute("StepAdjust", m_stepAdjust);
     curveModelElement->SetAttribute("Steps", m_steps);
+    curveModelElement->SetAttribute("Armature", std::to_string(m_armature).c_str());
 
     tinyxml2::XMLElement* facesElement = a_doc->NewElement("Faces");
     curveModelElement->InsertEndChild(facesElement);
@@ -1126,14 +1188,42 @@ void CurveModel::Serialize(tinyxml2::XMLDocument* a_doc, tinyxml2::XMLElement* a
 
                 XMLIO::WriteVec3(a_doc, cNodeElement, "HandlePosition", g.Node.GetHandlePosition());
                 XMLIO::WriteVec2(a_doc, cNodeElement, "UV", g.Node.GetUV());
+
+                const std::vector<BoneCluster> bones = g.Node.GetBones();
+
+                if (bones.size() > 0)
+                {
+                    tinyxml2::XMLElement* bonesElement = a_doc->NewElement("Bones");
+                    cNodeElement->InsertEndChild(bonesElement);
+
+                    for (auto iter = bones.begin(); iter != bones.end(); ++iter)
+                    {
+                        tinyxml2::XMLElement* boneRootElement = a_doc->NewElement("Bone");
+                        bonesElement->InsertEndChild(boneRootElement);
+
+                        tinyxml2::XMLElement* boneIndexId = a_doc->NewElement("ID");
+                        boneRootElement->InsertEndChild(boneIndexId);
+
+                        boneIndexId->SetText(std::to_string(iter->ID).c_str());
+
+                        if (iter->Weight > 0)
+                        {
+                            tinyxml2::XMLElement* weight = a_doc->NewElement("Weight");
+                            boneRootElement->InsertEndChild(weight);
+
+                            weight->SetText(iter->Weight);
+                        }
+                    }
+                }
             }
         }
     }
 }
-void CurveModel::ParseData(const tinyxml2::XMLElement* a_element)
+void CurveModel::ParseData(const tinyxml2::XMLElement* a_element, std::list<BoneGroup>* a_outBones)
 {
     m_stepAdjust = a_element->BoolAttribute("StepAdjust");
     m_steps = a_element->IntAttribute("Steps");
+    m_armature = std::stoll(a_element->Attribute("Armature"));
 
     for (const tinyxml2::XMLElement* iter = a_element->FirstChildElement(); iter != nullptr; iter = iter->NextSiblingElement())
     {
@@ -1248,6 +1338,48 @@ void CurveModel::ParseData(const tinyxml2::XMLElement* a_element)
 
                                     n.Node.SetUV(uv);
                                 }
+                                else if (strcmp(cStr, "Bones") == 0)
+                                {
+                                    for (const tinyxml2::XMLElement* bIter = cIter->FirstChildElement(); bIter != nullptr; bIter = bIter->NextSiblingElement())
+                                    {
+                                        const char* bStr = bIter->Value();
+                                        if (strcmp(bStr, "Bone") == 0)
+                                        {
+                                            BoneGroup bone;
+                                            bone.Index = nodes.size();
+                                            bone.ClusterIndex = node.Nodes.size();
+                                            bone.ID = 0;
+                                            bone.Weight = 0;
+
+                                            for (const tinyxml2::XMLElement* iBIter = bIter->FirstChildElement(); iBIter != nullptr; iBIter = iBIter->NextSiblingElement())
+                                            {
+                                                const char* iBStr = iBIter->Value();
+                                                if (strcmp(iBStr, "ID") == 0)
+                                                {
+                                                    bone.ID = std::stoll(iBIter->GetText());
+                                                }
+                                                else if (strcmp(iBStr, "Weight") == 0)
+                                                {
+                                                    bone.Weight = iBIter->FloatText();
+                                                }
+                                                else
+                                                {
+                                                    printf("CurveModel::ParseData: InvalidElement: ");
+                                                    printf(iBStr);
+                                                    printf("\n");
+                                                }
+                                            }
+
+                                            a_outBones->emplace_back(bone);
+                                        }
+                                        else
+                                        {
+                                            printf("CurveModel::ParseData: InvalidElement: ");
+                                            printf(bStr);
+                                            printf("\n");
+                                        }
+                                    }
+                                }
                                 else
                                 {
                                     printf("CurveModel::ParseData: InvalidElement: ");
@@ -1331,6 +1463,30 @@ void CurveModel::ParseData(const tinyxml2::XMLElement* a_element)
 
             break;
         }
+        }
+    }
+}
+void CurveModel::PostParseData(const std::list<BoneGroup>& a_bones, const std::unordered_map<long long, long long>& a_idMap)
+{
+    auto armID = a_idMap.find(m_armature);
+
+    if (armID != a_idMap.end())
+    {
+        m_armature = armID->second;
+    }
+    else
+    {
+        m_armature = -1;
+    }
+
+    for (auto iter = a_bones.begin(); iter != a_bones.end(); ++iter)
+    {
+        const unsigned int size = m_nodes[iter->Index].Nodes.size();
+
+        auto idIndex = a_idMap.find(iter->ID);
+        if (idIndex != a_idMap.end())
+        {
+            m_nodes[iter->Index].Nodes[iter->ClusterIndex].Node.SetBoneWeight(idIndex->second, iter->Weight);
         }
     }
 }

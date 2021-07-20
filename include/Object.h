@@ -5,6 +5,7 @@
 
 #include <fstream>
 #include <list>
+#include <unordered_map>
 
 #include "tinyxml2.h"
 
@@ -16,6 +17,8 @@ class Texture;
 class Transform;
 class Workspace;
 
+struct BoneGroup;
+
 enum e_ObjectType
 {
     ObjectType_Empty,
@@ -23,6 +26,12 @@ enum e_ObjectType
     ObjectType_ReferenceImage,
     ObjectType_Armature,
     ObjectType_ArmatureNode
+};
+
+struct ObjectBoneGroup
+{
+    long long ID;
+    std::list<BoneGroup> Bones;
 };
 
 // Master Object class used for all objects in the heirarchy 
@@ -132,5 +141,6 @@ public:
     void WriteOBJ(std::ofstream* a_file, bool a_smartStep, int a_steps) const;
     void Serialize(tinyxml2::XMLDocument* a_doc, tinyxml2::XMLElement* a_element) const;
 
-    static Object* ParseData(Workspace* a_workspace, const tinyxml2::XMLElement* a_element, Object* a_parent);
+    static Object* ParseData(Workspace* a_workspace, const tinyxml2::XMLElement* a_element, Object* a_parent, std::list<ObjectBoneGroup>* a_boneGroups, std::unordered_map<long long, long long>* a_idMap);
+    void PostParseData(const std::list<ObjectBoneGroup>& a_bones, const std::unordered_map<long long, long long>& a_idMap);
 };

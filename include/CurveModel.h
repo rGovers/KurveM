@@ -5,6 +5,7 @@
 
 #include <fstream>
 #include <list>
+#include <unordered_map>
 #include <vector>
 
 struct Vertex;
@@ -55,6 +56,14 @@ struct NodeGroup
         Node = a_node;
         FaceCount = 0;
     }
+};
+
+struct BoneGroup
+{
+    unsigned int Index;
+    unsigned int ClusterIndex;
+    long long ID;
+    float Weight;
 };
 
 struct Node3Cluster
@@ -199,7 +208,8 @@ public:
     void PostTriangulate(unsigned int* a_indices, unsigned int a_indexCount, Vertex* a_vertices, unsigned int a_vertexCount);
 
     void Serialize(tinyxml2::XMLDocument* a_doc, tinyxml2::XMLElement* a_parent) const;
-    void ParseData(const tinyxml2::XMLElement* a_element);
+    void ParseData(const tinyxml2::XMLElement* a_element, std::list<BoneGroup>* a_outBones);
+    void PostParseData(const std::list<BoneGroup>& a_bones, const std::unordered_map<long long, long long>& a_idMap);
 
     void WriteOBJ(std::ofstream* a_file, bool a_stepAdjust, int a_steps);
 };

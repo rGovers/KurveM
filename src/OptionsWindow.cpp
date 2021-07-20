@@ -156,7 +156,25 @@ void OptionsWindow::Update(double a_delta)
 
                     ImGui::EndCombo();
                 }
-            }   
+            }
+
+            ImGui::NextColumn();
+
+            ImGui::BeginGroup();
+
+            float brushRadius = m_editor->GetBrushRadius();
+            if (ImGui::DragFloat("Brush Radius", &brushRadius, 0.01))
+            {
+                m_editor->SetBrushRadius(brushRadius);
+            }
+
+            float brushIntensity = m_editor->GetBrushIntensity();
+            if (ImGui::SliderFloat("Intensity", &brushIntensity, -1.0f, 1.0f))
+            {
+                m_editor->SetBrushIntensity(brushIntensity);
+            }
+
+            ImGui::EndGroup();   
         }
 
         ImGui::Columns();

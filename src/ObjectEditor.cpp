@@ -86,12 +86,16 @@ void ObjectEditor::LeftClicked(Camera* a_camera, const glm::vec2& a_cursorPos, c
     IsInteractingTransform(a_camera, pos, glm::vec3(0, 1, 0), a_cursorPos, a_winSize, viewProj);
     IsInteractingTransform(a_camera, pos, glm::vec3(1, 0, 0), a_cursorPos, a_winSize, viewProj);
 }
+void ObjectEditor::LeftDown(double a_delta, Camera* a_camera, const glm::vec2& a_start, const glm::vec2& a_currentPos, const glm::vec2& a_winSize)
+{
+
+}
 void ObjectEditor::LeftReleased(Camera* a_camera, const glm::vec2& a_start, const glm::vec2& a_end, const glm::vec2& a_winSize)
 {
 
 }
 
-void ObjectEditor::Update(Camera* a_camera, const glm::vec2& a_winSize, double a_delta)
+void ObjectEditor::Update(Camera* a_camera, const glm::vec2& a_cursorPos, const glm::vec2& a_winSize, double a_delta)
 {
     Transform* camTransform = a_camera->GetTransform();
     const glm::mat4 viewInv = camTransform->ToMatrix();
