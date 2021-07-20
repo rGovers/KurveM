@@ -54,7 +54,11 @@ bool ObjectEditor::IsInteractingTransform(Camera* a_camera, const glm::vec3& a_p
         }
 
         delete[] objs;
+
+        return true;
     }
+
+    return false;
 }
 
 void ObjectEditor::DrawObject(Camera* a_camera, Object* a_object, const glm::vec2& a_winSize)

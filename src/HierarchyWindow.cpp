@@ -1,5 +1,7 @@
 #include "Windows/HierarchyWindow.h"
 
+#include <string>
+
 #include "Actions/CreateObjectAction.h"
 #include "Actions/DeleteObjectAction.h"
 #include "imgui.h"
