@@ -14,7 +14,8 @@ bool FileDialog::GenerateFilesAndDirs(std::list<char*>* a_dirs, std::list<char*>
 {
     if (std::filesystem::exists(a_path))
     {
-        std::filesystem::directory_iterator fsIter = std::filesystem::directory_iterator(a_path);
+        // So apparently on windows there seems to be a weird bug that if you have the permission for a directory it is not letting me in until I set the permission denied flag
+        std::filesystem::directory_iterator fsIter = std::filesystem::directory_iterator(a_path, std::filesystem::directory_options::skip_permission_denied);
 
         for (auto iter : fsIter)
         {
@@ -23,7 +24,7 @@ bool FileDialog::GenerateFilesAndDirs(std::list<char*>* a_dirs, std::list<char*>
                 // Have to use string otherwise I get garbage data
                 const std::string str = iter.path().filename().u8string();
 
-                int len = str.length() + 1;
+                const int len = str.length() + 1;
 
                 char* directory = new char[len];
 
@@ -42,7 +43,7 @@ bool FileDialog::GenerateFilesAndDirs(std::list<char*>* a_dirs, std::list<char*>
                 {
                     const std::string str = iter.path().filename().u8string();
 
-                    int len = str.length() + 1;
+                    const int len = str.length() + 1;
 
                     char* fileName = new char[len];
 
@@ -75,7 +76,7 @@ bool FileDialog::DirectoryExplorer(const std::list<char*>& a_dirs, char* a_path)
 
             for (int i = len; i >= 0; --i)
             {
-                if (a_path[i] == '/')
+                if (a_path[i] == '/' || a_path[i] == '\\')
                 {
                     end = i;
     

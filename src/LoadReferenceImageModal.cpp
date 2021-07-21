@@ -39,6 +39,13 @@ LoadReferenceImageModal::LoadReferenceImageModal(Workspace* a_workspace, Object*
 
     for (int i = 0; i < size; ++i)
     {
+        if (a_path[i] == '\\')
+        {
+            m_path[i] = '/';
+
+            continue;
+        }
+
         m_path[i] = a_path[i];
     }
 

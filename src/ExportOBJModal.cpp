@@ -44,9 +44,19 @@ ExportOBJModal::ExportOBJModal(Workspace* a_workspace, const char* a_path)
 
     m_path = new char[PATHSIZE];
 
+    int index = 0;
     for (int i = 0; i < size; ++i)
     {
-        m_path[i] = a_path[i];
+        if (a_path[i] == '\\')
+        {
+            m_path[index++] = '/';
+
+            ++i;
+
+            continue;
+        }
+
+        m_path[index++] = a_path[i];
     }
 
     m_name = new char[PATHSIZE] { 0 };

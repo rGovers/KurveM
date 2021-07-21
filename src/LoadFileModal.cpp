@@ -36,6 +36,13 @@ LoadFileModal::LoadFileModal(Workspace* a_workspace, const char* a_path)
 
     for (int i = 0; i < size; ++i)
     {
+        if (a_path[i] == '\\')
+        {
+            m_path[i] = '/';
+
+            continue;
+        }
+
         m_path[i] = a_path[i];
     }
 

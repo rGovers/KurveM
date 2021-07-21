@@ -37,7 +37,7 @@ void OptionsWindow::Update(double a_delta)
     {
         const ImVec2 size = ImGui::GetWindowSize();
 
-        ImGui::Columns(size.x / 256, nullptr, false);
+        ImGui::Columns(glm::max(1.0f, size.x / 256), nullptr, false);
 
         const e_EditorMode currentIndex = m_editor->GetEditorMode();
 
