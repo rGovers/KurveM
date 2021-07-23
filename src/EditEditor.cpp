@@ -33,7 +33,7 @@ e_EditorMode EditEditor::GetEditorMode()
 
 bool EditEditor::IsInteractingCurveNode(Camera* a_camera, const glm::vec3& a_pos, const glm::vec3& a_axis, const glm::vec2& a_cursorPos, const glm::vec2& a_screenSize, CurveModel* a_model, const glm::mat4& a_viewProj)
 {
-    if (SelectionControl::PointInPoint(a_viewProj, a_cursorPos, 0.0075f, a_pos + a_axis * 0.25f))
+    if (SelectionControl::PointInPoint(a_viewProj, a_cursorPos, 0.025f, a_pos + a_axis * 0.3f))
     {
         const glm::vec3 cPos = a_camera->GetScreenToWorld(glm::vec3(a_cursorPos, 0.9f), (int)a_screenSize.x, (int)a_screenSize.y);
 
@@ -87,7 +87,7 @@ bool EditEditor::IsInteractingCurveNodeHandle(const Node3Cluster& a_node, unsign
 {
     for (auto nodeIter = a_node.Nodes.begin(); nodeIter != a_node.Nodes.end(); ++nodeIter)
     {
-        if (SelectionControl::NodeHandleInPoint(a_viewProj, a_cursorPos, 0.05f, a_transform, nodeIter->Node))
+        if (SelectionControl::NodeHandleInPoint(a_viewProj, a_cursorPos, 0.025f, a_transform, nodeIter->Node))
         {
             Action* action = new MoveNodeHandleAction(m_workspace, nodeIter - a_node.Nodes.begin(), a_nodeIndex, a_model, a_cursorPos, a_right, a_up);
             if (!m_workspace->PushAction(action))
@@ -110,7 +110,7 @@ bool EditEditor::IsInteractingCurveNodeHandle(const Node3Cluster& a_node, unsign
 
 bool EditEditor::InteractingArmatureNode(Camera* a_camera, const glm::vec3& a_pos, const glm::vec3& a_axis, const glm::vec2& a_cursorPos, const glm::vec2& a_screenSize, const glm::mat4& a_viewProj)
 {
-    if (SelectionControl::PointInPoint(a_viewProj, a_cursorPos, 0.0075f, a_pos + a_axis * 0.25f))
+    if (SelectionControl::PointInPoint(a_viewProj, a_cursorPos, 0.025f, a_pos + a_axis * 0.3f))
     {
         const glm::vec3 cPos = a_camera->GetScreenToWorld(glm::vec3(a_cursorPos, 0.9f), (int)a_screenSize.x, (int)a_screenSize.y);
 

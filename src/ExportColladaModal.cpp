@@ -1,25 +1,26 @@
-#include "Modals/ExportOBJModal.h"
+#include "Modals/ExportColladaModal.h"
+
+#include <string.h>
 
 #include "FileDialog.h"
 #include "imgui.h"
-#include "imgui_internal.h"
 #include "Modals/ConfirmModal.h"
 #include "Modals/ErrorModal.h"
 #include "Workspace.h"
 
 #define PATHSIZE 2048
 
-void ExportOBJModal::Overwrite(bool a_value)
+void ExportColladaModal::Overwrite(bool a_value)
 {
     if (a_value)
     {
         m_ret = false;
 
-        m_workspace->ExportOBJ(m_fPath, m_exportSelected, m_smartStep, m_step);
+        m_workspace->ExportCollada(m_fPath, m_exportSelected, m_smartStep, m_step, m_author, m_copyright);
     }
 }
 
-void ExportOBJModal::Clear()
+void ExportColladaModal::Clear()
 {
     for (auto iter = m_dirs.begin(); iter != m_dirs.end(); ++iter)
     {
@@ -34,7 +35,7 @@ void ExportOBJModal::Clear()
     m_files.clear();
 }
 
-ExportOBJModal::ExportOBJModal(Workspace* a_workspace, const char* a_path)
+ExportColladaModal::ExportColladaModal(Workspace* a_workspace, const char* a_path)
 {
     m_workspace = a_workspace;
 
@@ -52,24 +53,24 @@ ExportOBJModal::ExportOBJModal(Workspace* a_workspace, const char* a_path)
 
             continue;
         }
-
         m_path[i] = a_path[i];
     }
 
     m_name = new char[PATHSIZE] { 0 };
 
-    m_exportSelected = false;
-    m_smartStep = true;
-    m_step = 10;
+    m_author = new char[PATHSIZE] { 0 };
+    m_copyright = new char[PATHSIZE] { 0 };
 
     m_ret = true;
 
-    FileDialog::GenerateFilesAndDirs(&m_dirs, &m_files, m_path, ".obj");
+    m_step = 10;
+    m_smartStep = false;
+
+    FileDialog::GenerateFilesAndDirs(&m_dirs, &m_files, m_path, ".dae");
 }
-ExportOBJModal::~ExportOBJModal()
+ExportColladaModal::~ExportColladaModal()
 {
-    delete[] m_path;
-    delete[] m_name;
+    Clear();
 
     if (m_fPath != nullptr)
     {
@@ -77,31 +78,35 @@ ExportOBJModal::~ExportOBJModal()
         m_fPath = nullptr;
     }
 
-    Clear();
+    delete[] m_name;
+    delete[] m_path;
+
+    delete[] m_author;
+    delete[] m_copyright;
 }
 
-const char* ExportOBJModal::GetName()
+const char* ExportColladaModal::GetName()
 {
-    return "Export Wavefront OBJ";
+    return "Export Collada DAE";
 }
 
-glm::vec2 ExportOBJModal::GetSize()
+glm::vec2 ExportColladaModal::GetSize()
 {
     return glm::vec2(640, 480);
 }
 
-bool ExportOBJModal::Execute()
-{  
+bool ExportColladaModal::Execute()
+{
     if (ImGui::InputText("Path", m_path, PATHSIZE))
     {
         Clear();
-        FileDialog::GenerateFilesAndDirs(&m_dirs, &m_files, m_path, ".obj");
+        FileDialog::GenerateFilesAndDirs(&m_dirs, &m_files, m_path, ".dae");
     }
 
     if (!FileDialog::PartialExplorer(m_dirs, m_files, m_path, m_name))
     {
         Clear();
-        FileDialog::GenerateFilesAndDirs(&m_dirs, &m_files, m_path, ".obj");
+        FileDialog::GenerateFilesAndDirs(&m_dirs, &m_files, m_path, ".dae");
     }
 
     ImGui::SameLine();
@@ -119,6 +124,11 @@ bool ExportOBJModal::Execute()
     {
         m_step = glm::max(m_step, 1);
     }
+
+    ImGui::Separator();
+
+    ImGui::InputText("Author", m_author, PATHSIZE);
+    ImGui::InputText("Copyright", m_copyright, PATHSIZE);
 
     ImGui::EndGroup();
 
@@ -146,10 +156,10 @@ bool ExportOBJModal::Execute()
 
             if (namePtr == nullptr)
             {
-                const char* ext = ".obj";
+                const char* ext = ".dae";
 
-                int nameLen = strlen(m_name);
-                int extLen = strlen(ext) + 1;
+                const int nameLen = strlen(m_name);
+                const int extLen = strlen(ext) + 1;
 
                 for (int i = 0; i < extLen; ++i)
                 {
@@ -157,9 +167,9 @@ bool ExportOBJModal::Execute()
                 }
             }
 
-            int nameLen = strlen(m_name);
+            const int nameLen = strlen(m_name);
 
-            int size = pathLen + nameLen + 1;
+            const int size = pathLen + nameLen + 1;
 
             if (m_fPath != nullptr)
             {
@@ -180,11 +190,11 @@ bool ExportOBJModal::Execute()
 
             if (std::ifstream(m_fPath).good())
             {
-                m_workspace->PushModal(new ConfirmModal("Overwrite File", std::bind(&ExportOBJModal::Overwrite, this, std::placeholders::_1)));
+                m_workspace->PushModal(new ConfirmModal("Overwrite File", std::bind(&ExportColladaModal::Overwrite, this, std::placeholders::_1)));
             }
             else
             {
-                m_workspace->ExportOBJ(m_fPath, m_exportSelected, m_smartStep, m_step);
+                m_workspace->ExportCollada(m_fPath, m_exportSelected, m_smartStep, m_step, m_author, m_copyright);
 
                 return false;
             }

@@ -17,6 +17,7 @@
 #include "imgui_internal.h"
 #include "LongTasks/LongTask.h"
 #include "Modals/ErrorModal.h"
+#include "Modals/ExportColladaModal.h"
 #include "Modals/ExportOBJModal.h"
 #include "Modals/LoadFileModal.h"
 #include "Modals/LoadReferenceImageModal.h"
@@ -327,7 +328,7 @@ void SaveObject(tinyxml2::XMLDocument* a_doc, tinyxml2::XMLElement* a_parentElem
     }
 }
 
-void Workspace::Save()
+void Workspace::Save() const
 {
     tinyxml2::XMLDocument doc;
 
@@ -393,7 +394,7 @@ void SaveOBJObject(std::ofstream* a_file, const Object* a_obj, bool a_smartStep,
         }
     }    
 }
-void Workspace::ExportOBJ(const char* a_dir, bool a_selectedObjects, bool a_smartStep, int a_steps)
+void Workspace::ExportOBJ(const char* a_dir, bool a_selectedObjects, bool a_smartStep, int a_steps) const
 {
     std::ofstream file;
 
@@ -417,6 +418,115 @@ void Workspace::ExportOBJ(const char* a_dir, bool a_selectedObjects, bool a_smar
 
         file.close();
     }
+}
+
+void SaveColladaObject(tinyxml2::XMLDocument* a_doc, tinyxml2::XMLElement* a_geometryElement, tinyxml2::XMLElement* a_parent, const Object* a_obj, bool a_stepAdjust, int a_steps)
+{
+    if (a_obj != nullptr)
+    {
+        tinyxml2::XMLElement* pElement = a_obj->WriteCollada(a_doc, a_geometryElement, a_parent, a_stepAdjust, a_steps);
+
+        const std::list<Object*> children = a_obj->GetChildren();
+
+        for (auto iter = children.begin(); iter != children.end(); ++iter)
+        {
+            if (pElement != nullptr)
+            {
+                SaveColladaObject(a_doc, a_geometryElement, pElement, *iter, a_stepAdjust, a_steps);
+            }
+            else
+            {
+                SaveColladaObject(a_doc, a_geometryElement, a_parent, *iter, a_stepAdjust, a_steps);
+            }
+        }
+    }
+}
+void Workspace::ExportCollada(const char* a_dir, bool a_selectedObjects, bool a_smartStep, int a_steps, const char* a_author, const char* a_copyright) const
+{
+    tinyxml2::XMLDocument doc;
+
+    tinyxml2::XMLDeclaration* dec = doc.NewDeclaration();
+    doc.InsertEndChild(dec);
+
+    tinyxml2::XMLElement* rootElement = doc.NewElement("COLLADA");
+    doc.InsertEndChild(rootElement);
+    rootElement->SetAttribute("xmlns", "http://www.collada.org/2008/03/COLLADASchema");
+    rootElement->SetAttribute("version", "1.5.0");
+
+    tinyxml2::XMLElement* assetElement = doc.NewElement("asset");
+    rootElement->InsertEndChild(assetElement);
+
+    tinyxml2::XMLElement* contributorElement = doc.NewElement("contributor");
+    assetElement->InsertEndChild(contributorElement);
+
+    tinyxml2::XMLElement* authorElement = doc.NewElement("author");
+    contributorElement->InsertEndChild(authorElement);
+    if (a_author != nullptr)
+    {
+        authorElement->SetText(a_author);
+    }
+
+    tinyxml2::XMLElement* authoringToolElement = doc.NewElement("authoring_tool");
+    contributorElement->InsertEndChild(authoringToolElement);
+    const std::string toolName = "KurveM " + std::to_string(KURVEM_VERSION_MAJOR) + "." + std::to_string(KURVEM_VERSION_MINOR);
+    authoringToolElement->SetText(toolName.c_str());
+
+    tinyxml2::XMLElement* commentsElement = doc.NewElement("comments");
+    contributorElement->InsertEndChild(commentsElement);
+    commentsElement->SetText("Export from KurveM converted from curves to polygon mesh");
+
+    tinyxml2::XMLElement* copyrightElement = doc.NewElement("copyright");
+    contributorElement->InsertEndChild(copyrightElement);
+    if (a_copyright != nullptr)
+    {
+        copyrightElement->SetText(a_copyright);
+    }
+
+    // tinyxml2::XMLElement* sourceDataElement = doc.NewElement("source_data");
+    // contributorElement->InsertEndChild(sourceDataElement);
+
+    tinyxml2::XMLElement* createdElement = doc.NewElement("created");
+    assetElement->InsertEndChild(createdElement);
+
+    tinyxml2::XMLElement* modifiedElement = doc.NewElement("modified");
+    assetElement->InsertEndChild(modifiedElement);
+
+    tinyxml2::XMLElement* unitElement = doc.NewElement("unit");
+    assetElement->InsertEndChild(unitElement);
+    unitElement->SetAttribute("meter", 1);
+    unitElement->SetAttribute("name", "meter");
+
+    tinyxml2::XMLElement* upAxisElement = doc.NewElement("up_axis");
+    assetElement->InsertEndChild(upAxisElement);
+    upAxisElement->SetText("Y_UP");
+
+    tinyxml2::XMLElement* libraryGeometriesElement = doc.NewElement("library_geometries");
+    rootElement->InsertEndChild(libraryGeometriesElement);
+
+    tinyxml2::XMLElement* libraryVisualSceneElement = doc.NewElement("library_visual_scenes");
+    rootElement->InsertEndChild(libraryVisualSceneElement);
+
+    tinyxml2::XMLElement* sceneElement = doc.NewElement("visual_scene");
+    libraryVisualSceneElement->InsertEndChild(sceneElement);
+    sceneElement->SetAttribute("id", "DefaultScene");
+
+    if (a_selectedObjects)
+    {
+        for (auto iter = m_selectedObjects.begin(); iter != m_selectedObjects.end(); ++iter)
+        {
+            (*iter)->WriteCollada(&doc, libraryGeometriesElement, sceneElement, a_smartStep, a_steps);
+        }
+    }
+    else
+    {
+        for (auto iter = m_objectList.begin(); iter != m_objectList.end(); ++iter)
+        {
+            SaveColladaObject(&doc, libraryGeometriesElement, sceneElement, *iter, a_smartStep, a_steps);
+        }
+    }
+
+
+    doc.SaveFile(a_dir);
 }
 
 bool Workspace::Undo()
@@ -1008,7 +1118,11 @@ void Workspace::Update(double a_delta)
 
                 if (ImGui::MenuItem("Collada(.dae)"))
                 {
+                    char* home = GetHomePath();
 
+                    PushModal(new ExportColladaModal(this, home));
+
+                    delete[] home;
                 }
 
                 ImGui::EndMenu();

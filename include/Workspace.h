@@ -98,10 +98,11 @@ public:
 
     void New();
     void Open(const char* a_dir);
-    void Save();
+    void Save() const;
     void SaveAs(const char* a_dir);
 
-    void ExportOBJ(const char* a_dir, bool a_selectedObjects, bool a_smartStep, int a_steps);
+    void ExportOBJ(const char* a_dir, bool a_selectedObjects, bool a_smartStep, int a_steps) const;
+    void ExportCollada(const char* a_dir, bool a_selectedObjects, bool a_smartStep, int a_steps, const char* a_author, const char* a_copyright) const;
 
     bool Undo();
     bool Redo(); 

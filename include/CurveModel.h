@@ -212,4 +212,5 @@ public:
     void PostParseData(const std::list<BoneGroup>& a_bones, const std::unordered_map<long long, long long>& a_idMap);
 
     void WriteOBJ(std::ofstream* a_file, bool a_stepAdjust, int a_steps);
+    void WriteCollada(tinyxml2::XMLDocument* a_doc, tinyxml2::XMLElement* a_parent, const char* a_name, bool a_stepAdjust, int a_steps);
 };

@@ -132,7 +132,7 @@ bool GetIndex(const CurveFace& a_face, e_FaceIndex a_faceIndexA, e_FaceIndex a_f
 
         return true;
     }
-    else if (IsEdgeIndex(a_face, FaceIndex_3Point_BA, FaceIndex_3Point_AB, a_indexA, a_indexB))
+    else if (IsEdgeIndex(a_face, a_faceIndexB, a_faceIndexA, a_indexA, a_indexB))
     {
         *a_out = a_face.ClusterIndex[a_faceIndexB];
 
@@ -342,19 +342,19 @@ bool InsertFaceAction::Execute()
         face.Index[FaceIndex_4Point_AC] = pointA;
         face.Index[FaceIndex_4Point_BA] = pointB;
         face.Index[FaceIndex_4Point_BD] = pointB;
-        face.Index[FaceIndex_4Point_CA] = pointD;
-        face.Index[FaceIndex_4Point_CD] = pointD;
-        face.Index[FaceIndex_4Point_DB] = pointC;
-        face.Index[FaceIndex_4Point_DC] = pointC;
+        face.Index[FaceIndex_4Point_CA] = pointC;
+        face.Index[FaceIndex_4Point_CD] = pointC;
+        face.Index[FaceIndex_4Point_DB] = pointD;
+        face.Index[FaceIndex_4Point_DC] = pointD;
 
         face.ClusterIndex[FaceIndex_4Point_AB] = PushNode(&nodes[pointA], pointA, pointB, faces, faceCount);
         face.ClusterIndex[FaceIndex_4Point_AC] = PushNode(&nodes[pointA], pointA, pointC, faces, faceCount);
         face.ClusterIndex[FaceIndex_4Point_BA] = PushNode(&nodes[pointB], pointB, pointA, faces, faceCount);
         face.ClusterIndex[FaceIndex_4Point_BD] = PushNode(&nodes[pointB], pointB, pointD, faces, faceCount);
-        face.ClusterIndex[FaceIndex_4Point_CA] = PushNode(&nodes[pointD], pointD, pointA, faces, faceCount);
-        face.ClusterIndex[FaceIndex_4Point_CD] = PushNode(&nodes[pointD], pointD, pointD, faces, faceCount);
-        face.ClusterIndex[FaceIndex_4Point_DB] = PushNode(&nodes[pointC], pointC, pointB, faces, faceCount);
-        face.ClusterIndex[FaceIndex_4Point_DC] = PushNode(&nodes[pointC], pointC, pointC, faces, faceCount);
+        face.ClusterIndex[FaceIndex_4Point_CA] = PushNode(&nodes[pointC], pointC, pointA, faces, faceCount);
+        face.ClusterIndex[FaceIndex_4Point_CD] = PushNode(&nodes[pointC], pointC, pointD, faces, faceCount);
+        face.ClusterIndex[FaceIndex_4Point_DB] = PushNode(&nodes[pointD], pointD, pointB, faces, faceCount);
+        face.ClusterIndex[FaceIndex_4Point_DC] = PushNode(&nodes[pointD], pointD, pointC, faces, faceCount);
 
         m_curveModel->EmplaceFace(face);
 

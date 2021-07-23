@@ -149,7 +149,7 @@ bool DeleteNodeAction::Redo()
 }
 bool DeleteNodeAction::Execute()
 {
-    if (m_nodeCount != m_oldNodeCount && m_faceCount != m_oldFaceCount)
+    if (m_nodeCount != m_oldNodeCount || m_faceCount != m_oldFaceCount)
     {
         m_editor->ClearSelectedNodes();
 
@@ -166,7 +166,7 @@ bool DeleteNodeAction::Execute()
 }
 bool DeleteNodeAction::Revert()
 {
-    if (m_nodeCount != m_oldNodeCount && m_faceCount != m_oldFaceCount)
+    if (m_nodeCount != m_oldNodeCount || m_faceCount != m_oldFaceCount)
     {
         m_editor->ClearSelectedNodes();
 

@@ -26,7 +26,7 @@ e_EditorMode ObjectEditor::GetEditorMode()
 
 bool ObjectEditor::IsInteractingTransform(Camera* a_camera, const glm::vec3& a_pos, const glm::vec3& a_axis, const glm::vec2& a_cursorPos, const glm::vec2& a_screenSize, const glm::mat4& a_viewProj)
 {
-    if (SelectionControl::PointInPoint(a_viewProj, a_cursorPos, 0.025f, a_pos + a_axis * 0.5f))
+    if (SelectionControl::PointInPoint(a_viewProj, a_cursorPos, 0.025f, a_pos + a_axis * 0.55f))
     {
         const glm::vec3 cPos = a_camera->GetScreenToWorld(glm::vec3(a_cursorPos, 0.9f), (int)a_screenSize.x, (int)a_screenSize.y);
 

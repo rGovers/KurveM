@@ -87,6 +87,7 @@ public:
     {
         return m_name;
     }
+    char* GetNameNoWhitespace() const;
     void SetName(const char* a_name);
 
     inline long long GetID() const
@@ -139,6 +140,7 @@ public:
     void DrawWeight(Camera* a_camera, const glm::vec2& a_winSize, unsigned int a_bone, unsigned int a_boneCount);
 
     void WriteOBJ(std::ofstream* a_file, bool a_smartStep, int a_steps) const;
+    tinyxml2::XMLElement* WriteCollada(tinyxml2::XMLDocument* a_doc, tinyxml2::XMLElement* a_geometryElement, tinyxml2::XMLElement* a_parentElement, bool a_stepAdjust, int a_steps) const;
     void Serialize(tinyxml2::XMLDocument* a_doc, tinyxml2::XMLElement* a_element) const;
 
     static Object* ParseData(Workspace* a_workspace, const tinyxml2::XMLElement* a_element, Object* a_parent, std::list<ObjectBoneGroup>* a_boneGroups, std::unordered_map<long long, long long>* a_idMap);
