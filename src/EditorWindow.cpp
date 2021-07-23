@@ -5,6 +5,7 @@
 #include "Actions/InsertFaceAction.h"
 #include "Editor.h"
 #include "imgui.h"
+#include "ImGuiExt.h"
 #include "Object.h"
 #include "RenderTexture.h"
 #include "Texture.h"
@@ -49,6 +50,10 @@ void EditorWindow::Update(double a_delta)
                 m_workspace->ImportObjectMenuList(nullptr);
 
                 ImGui::Separator();
+
+                ImGuiExt::Image("Textures/OBJECT_ARMATURE.png", { 16, 16 });
+
+                ImGui::SameLine();
 
                 if (ImGui::MenuItem("New Armature"))
                 {

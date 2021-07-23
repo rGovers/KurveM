@@ -12,7 +12,7 @@ private:
     Workspace* m_workspace;
     Editor*    m_editor;
 
-    void ToolbarButton(const char* a_text, e_ToolMode a_toolMode);
+    void ToolbarButton(const char* a_text, const char* a_path, e_ToolMode a_toolMode, const char* a_tooltip = "");
 protected:
 
 public:

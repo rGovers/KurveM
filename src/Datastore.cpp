@@ -87,14 +87,16 @@ Texture* Datastore::GetTexture(const char* a_path)
             int comp;
 
             unsigned char* data = stbi_load(a_path, &width, &height, &comp, STBI_rgb_alpha);
+            if (data != nullptr)
+            {
+                Texture* tex = new Texture(width, height, GL_RGBA, GL_RGBA, data);
 
-            Texture* tex = new Texture(width, height, GL_RGBA, GL_RGBA, data);
+                Instance->m_textures.emplace(a_path, tex);
 
-            Instance->m_textures.emplace(a_path, tex);
+                stbi_image_free(data);
 
-            stbi_image_free(data);
-
-            return tex;
+                return tex;
+            }
         }
     }
 

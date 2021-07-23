@@ -8,12 +8,16 @@
 #include "Actions/SetCurveStepsAction.h"
 #include "Actions/TranslateObjectAction.h"
 #include "imgui.h"
+#include "ImGuiExt.h"
 #include "LongTasks/TriangulateCurveLongTask.h"
 #include "Object.h"
 #include "Transform.h"
 #include "Workspace.h"
 
 const char* RotationMode_String[] = { "Axis Angle", "Quaternion", "Euler Angle" };
+
+#define OBJECT_TOOLTIP "Contains object settings"
+#define CURVE_TOOLTIP "Contains curve model settings"
 
 PropertiesWindow::PropertiesWindow(Workspace* a_workspace, Editor* a_editor)
 {
@@ -54,6 +58,27 @@ void PropertiesWindow::PushRotation(const glm::quat& a_quat)
         }
 
         delete[] objs;
+    }
+}
+
+void PropertiesWindow::PropertiesTabButton(const char* a_label, const char* a_path, e_ObjectPropertiesTab a_propertiesTab, const char* a_tooltip)
+{
+    if (ImGuiExt::ImageToggleButton(a_label, a_path, m_propertiesMode == a_propertiesTab, { 16, 16 }))
+    {
+        m_propertiesMode = a_propertiesTab;
+    }
+
+    if (ImGui::IsItemHovered())
+    {
+        ImGui::BeginTooltip();
+
+        ImGui::Text(a_label);
+
+        ImGui::Separator();
+
+        ImGui::Text(a_tooltip);
+
+        ImGui::EndTooltip();
     }
 }
 
@@ -100,17 +125,11 @@ void PropertiesWindow::Update(double a_delta)
 
             ImGui::BeginGroup();
 
-            if (ImGui::Button("Object"))
-            {
-                m_propertiesMode = ObjectPropertiesTab_Object;
-            }
+            PropertiesTabButton("Object", "Textures/PROPERTIES_OBJECT.png", ObjectPropertiesTab_Object, OBJECT_TOOLTIP);
 
             if (obj->GetObjectType() == ObjectType_CurveModel)
             {
-                if (ImGui::Button("Curve"))
-                {
-                    m_propertiesMode = ObjectPropertiesTab_Curve;
-                }
+                PropertiesTabButton("Curve", "Textures/PROPERTIES_CURVE.png", ObjectPropertiesTab_Curve, CURVE_TOOLTIP);
             }
 
             ImGui::EndGroup();

@@ -5,6 +5,7 @@
 #include "Actions/CreateObjectAction.h"
 #include "Actions/DeleteObjectAction.h"
 #include "imgui.h"
+#include "ImGuiExt.h"
 #include "Object.h"
 #include "Workspace.h"
 
@@ -67,7 +68,7 @@ bool HierarchyWindow::ObjectHeirachyGUI(Object* a_object, bool* a_blockMenu)
     if (objectType != ObjectType_ArmatureNode)
     {
         bool visible = a_object->IsVisible();
-        if (ImGui::Checkbox((uString + "Visible").c_str(), &visible))
+        if (ImGuiExt::ImageSwitchButton((uString + "Visible").c_str(), "Textures/OBJECT_VISIBLE.png", "Textures/OBJECT_HIDDEN.png", &visible, { 12, 12 }))
         {
             a_object->SetVisible(visible);
         }
@@ -75,8 +76,35 @@ bool HierarchyWindow::ObjectHeirachyGUI(Object* a_object, bool* a_blockMenu)
         ImGui::SameLine();
     }
 
-    const ImGuiID guiID = ImGui::GetID((uString + "Name").c_str());
+    switch (objectType)
+    {
+    case ObjectType_Armature:
+    {
+        ImGuiExt::Image("Textures/OBJECT_ARMATURE.png", { 16, 16 });
 
+        ImGui::SameLine();
+
+        break;
+    }
+    case ObjectType_CurveModel:
+    {
+        ImGuiExt::Image("Textures/OBJECT_CURVE.png", { 16, 16 });
+
+        ImGui::SameLine();
+
+        break;
+    }
+    case ObjectType_ReferenceImage:
+    {
+        ImGuiExt::Image("Textures/OBJECT_REFERENCEIMAGE.png", { 16, 16 });
+
+        ImGui::SameLine();
+
+        break;
+    }
+    }
+
+    const ImGuiID guiID = ImGui::GetID((uString + "Name").c_str());
     ImGui::PushID(guiID);
     bool nameClick = ImGui::Selectable(name, selected);
     ImGui::PopID();
@@ -151,6 +179,10 @@ bool HierarchyWindow::ObjectHeirachyGUI(Object* a_object, bool* a_blockMenu)
             m_workspace->ImportObjectMenuList(a_object);
 
             ImGui::Separator();
+
+            ImGuiExt::Image("Textures/OBJECT_ARMATURE.png", { 16, 16 });
+
+            ImGui::SameLine();
 
             if (ImGui::MenuItem("New Armature"))
             {
@@ -254,6 +286,10 @@ void HierarchyWindow::Update(double a_delta)
             m_workspace->ImportObjectMenuList(nullptr);
 
             ImGui::Separator();
+
+            ImGuiExt::Image("Textures/OBJECT_ARMATURE.png", { 16, 16 });
+
+            ImGui::SameLine();
 
             if (ImGui::MenuItem("New Armature"))
             {

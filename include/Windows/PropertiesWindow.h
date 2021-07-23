@@ -43,6 +43,8 @@ private:
 
     void PushRotation(const glm::quat& a_quat);
 
+    void PropertiesTabButton(const char* a_label, const char* a_path, e_ObjectPropertiesTab a_propertiesTab, const char* a_tooltip);
+
 protected:
 
 public:

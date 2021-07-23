@@ -12,7 +12,7 @@ private:
     Workspace* m_workspace;
     Editor*    m_editor;
 
-    void EditorFaceButton(const char* a_text, e_EditorFaceCullingMode a_face);
+    void EditorFaceButton(const char* a_text, const char* a_path, e_EditorFaceCullingMode a_face, const char* a_tooltip);
 
 protected:
 

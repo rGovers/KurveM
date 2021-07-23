@@ -852,6 +852,10 @@ void Workspace::UVWindowConfig()
 
 void Workspace::CreateCurveObjectMenuList(Object* a_parent)
 {
+    ImGuiExt::Image("Textures/OBJECT_CURVE.png", { 16, 16 });
+
+    ImGui::SameLine();
+
     if (ImGui::BeginMenu("New Curve Object"))
     {
         if (ImGui::MenuItem("Triangle"))
@@ -903,6 +907,10 @@ void Workspace::CreateCurveObjectMenuList(Object* a_parent)
 }
 void Workspace::ImportObjectMenuList(Object* a_parent)
 {
+    ImGuiExt::Image("Textures/OBJECT_REFERENCEIMAGE.png", { 16, 16 });
+
+    ImGui::SameLine();
+
     if (ImGui::BeginMenu("New Reference Image"))
     {
         if (ImGui::MenuItem("PNG"))
