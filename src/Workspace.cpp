@@ -420,11 +420,11 @@ void Workspace::ExportOBJ(const char* a_dir, bool a_selectedObjects, bool a_smar
     }
 }
 
-void SaveColladaObject(tinyxml2::XMLDocument* a_doc, tinyxml2::XMLElement* a_geometryElement, tinyxml2::XMLElement* a_parent, const Object* a_obj, bool a_stepAdjust, int a_steps)
+void SaveColladaObject(tinyxml2::XMLDocument* a_doc, tinyxml2::XMLElement* a_geometryElement, tinyxml2::XMLElement* a_controllerElement, tinyxml2::XMLElement* a_parent, const Object* a_obj, bool a_stepAdjust, int a_steps)
 {
     if (a_obj != nullptr)
     {
-        tinyxml2::XMLElement* pElement = a_obj->WriteCollada(a_doc, a_geometryElement, a_parent, a_stepAdjust, a_steps);
+        tinyxml2::XMLElement* pElement = a_obj->WriteCollada(a_doc, a_geometryElement, a_controllerElement, a_parent, a_stepAdjust, a_steps);
 
         const std::list<Object*> children = a_obj->GetChildren();
 
@@ -432,11 +432,11 @@ void SaveColladaObject(tinyxml2::XMLDocument* a_doc, tinyxml2::XMLElement* a_geo
         {
             if (pElement != nullptr)
             {
-                SaveColladaObject(a_doc, a_geometryElement, pElement, *iter, a_stepAdjust, a_steps);
+                SaveColladaObject(a_doc, a_geometryElement, a_controllerElement, pElement, *iter, a_stepAdjust, a_steps);
             }
             else
             {
-                SaveColladaObject(a_doc, a_geometryElement, a_parent, *iter, a_stepAdjust, a_steps);
+                SaveColladaObject(a_doc, a_geometryElement, a_controllerElement, a_parent, *iter, a_stepAdjust, a_steps);
             }
         }
     }
@@ -503,6 +503,9 @@ void Workspace::ExportCollada(const char* a_dir, bool a_selectedObjects, bool a_
     tinyxml2::XMLElement* libraryGeometriesElement = doc.NewElement("library_geometries");
     rootElement->InsertEndChild(libraryGeometriesElement);
 
+    tinyxml2::XMLElement* libraryContollersElement = doc.NewElement("library_controllers");
+    rootElement->InsertEndChild(libraryContollersElement);
+
     tinyxml2::XMLElement* libraryVisualSceneElement = doc.NewElement("library_visual_scenes");
     rootElement->InsertEndChild(libraryVisualSceneElement);
 
@@ -514,14 +517,14 @@ void Workspace::ExportCollada(const char* a_dir, bool a_selectedObjects, bool a_
     {
         for (auto iter = m_selectedObjects.begin(); iter != m_selectedObjects.end(); ++iter)
         {
-            (*iter)->WriteCollada(&doc, libraryGeometriesElement, sceneElement, a_smartStep, a_steps);
+            (*iter)->WriteCollada(&doc, libraryGeometriesElement, libraryContollersElement, sceneElement, a_smartStep, a_steps);
         }
     }
     else
     {
         for (auto iter = m_objectList.begin(); iter != m_objectList.end(); ++iter)
         {
-            SaveColladaObject(&doc, libraryGeometriesElement, sceneElement, *iter, a_smartStep, a_steps);
+            SaveColladaObject(&doc, libraryGeometriesElement, libraryContollersElement, sceneElement, *iter, a_smartStep, a_steps);
         }
     }
 

@@ -61,6 +61,8 @@ ExportColladaModal::ExportColladaModal(Workspace* a_workspace, const char* a_pat
     m_author = new char[PATHSIZE] { 0 };
     m_copyright = new char[PATHSIZE] { 0 };
 
+    m_exportSelected = false;
+
     m_ret = true;
 
     m_step = 10;

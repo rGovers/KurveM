@@ -2,6 +2,7 @@
 
 #include "Model.h"
 #include "Object.h"
+#include "Transform.h"
 #include "Workspace.h"
 #include "XMLIO.h"
 
@@ -1501,7 +1502,8 @@ void CurveModel::PostParseData(const std::list<BoneGroup>& a_bones, const std::u
 void SplitVertices(Vertex* a_vertices, unsigned int a_vertexCount, 
 glm::vec4** a_positions, unsigned int* a_posCount, std::unordered_map<unsigned int, unsigned int>* a_posMap,
 glm::vec3** a_normals, unsigned int* a_normalCount, std::unordered_map<unsigned int, unsigned int>* a_normMap,
-glm::vec2** a_uvs, unsigned int* a_uvCount, std::unordered_map<unsigned int, unsigned int>* a_uvMap)
+glm::vec2** a_uvs, unsigned int* a_uvCount, std::unordered_map<unsigned int, unsigned int>* a_uvMap,
+glm::vec4** a_bones = nullptr, glm::vec4** a_weights = nullptr)
 {
     *a_posCount = 0;
     *a_normalCount = 0;
@@ -1510,6 +1512,14 @@ glm::vec2** a_uvs, unsigned int* a_uvCount, std::unordered_map<unsigned int, uns
     *a_positions = new glm::vec4[a_vertexCount];
     *a_normals = new glm::vec3[a_vertexCount];
     *a_uvs = new glm::vec2[a_vertexCount];
+    if (a_bones != nullptr)
+    {
+        *a_bones = new glm::vec4[a_vertexCount];
+    }
+    if (a_weights != nullptr)
+    {
+        *a_weights = new glm::vec4[a_vertexCount];
+    }
 
     for (unsigned int i = 0; i < a_vertexCount; ++i)
     {
@@ -1534,6 +1544,14 @@ glm::vec2** a_uvs, unsigned int* a_uvCount, std::unordered_map<unsigned int, uns
         {
             a_posMap->emplace(i, *a_posCount);
             (*a_positions)[*a_posCount] = vert.Position;
+            if (a_bones != nullptr)
+            {
+                (*a_bones)[*a_posCount] = vert.Bones;
+            }
+            if (a_weights != nullptr)
+            {
+                (*a_weights)[*a_posCount] = vert.Weights;
+            }
             ++*a_posCount;
         }
 
@@ -1581,7 +1599,7 @@ glm::vec2** a_uvs, unsigned int* a_uvCount, std::unordered_map<unsigned int, uns
     }
 }
 
-void CurveModel::WriteOBJ(std::ofstream* a_file, bool a_stepAdjust, int a_steps)
+void CurveModel::WriteOBJ(std::ofstream* a_file, bool a_stepAdjust, int a_steps) const
 {
     Vertex* vertices;
     unsigned int* indices;
@@ -1688,7 +1706,7 @@ void CurveModel::WriteOBJ(std::ofstream* a_file, bool a_stepAdjust, int a_steps)
     delete[] vertices;
     delete[] indices;
 }
-void CurveModel::WriteCollada(tinyxml2::XMLDocument* a_doc, tinyxml2::XMLElement* a_parent, const char* a_name, bool a_stepAdjust, int a_steps)
+void CurveModel::WriteCollada(tinyxml2::XMLDocument* a_doc, tinyxml2::XMLElement* a_parent, tinyxml2::XMLElement* a_parentController, const char* a_parentID, const char* a_name, bool a_stepAdjust, int a_steps, char** a_outRoot) const
 {
     tinyxml2::XMLElement* meshElement = a_doc->NewElement("mesh");
     a_parent->InsertEndChild(meshElement);
@@ -1704,6 +1722,8 @@ void CurveModel::WriteCollada(tinyxml2::XMLDocument* a_doc, tinyxml2::XMLElement
     glm::vec4* posVerts;
     glm::vec3* normVerts;
     glm::vec2* uvVerts;
+    glm::vec4* bones;
+    glm::vec4* weights;
 
     unsigned int posCount;
     unsigned int normCount;
@@ -1713,7 +1733,7 @@ void CurveModel::WriteCollada(tinyxml2::XMLDocument* a_doc, tinyxml2::XMLElement
     std::unordered_map<unsigned int, unsigned int> normMap;
     std::unordered_map<unsigned int, unsigned int> uvMap;
 
-    SplitVertices(vertices, vertexCount, &posVerts, &posCount, &posMap, &normVerts, &normCount, &normMap, &uvVerts, &uvCount, &uvMap);
+    SplitVertices(vertices, vertexCount, &posVerts, &posCount, &posMap, &normVerts, &normCount, &normMap, &uvVerts, &uvCount, &uvMap, &bones, &weights);
 
     // Position
     const std::string posSourceStr = std::string(a_name) + "-pos";
@@ -1752,11 +1772,6 @@ void CurveModel::WriteCollada(tinyxml2::XMLDocument* a_doc, tinyxml2::XMLElement
     posAccessorElement->InsertEndChild(posParamZElement);
     posParamZElement->SetAttribute("name", "Z");
     posParamZElement->SetAttribute("type", "float");
-
-    // tinyxml2::XMLElement* posParamWElement = a_doc->NewElement("param");
-    // posAccessorElement->InsertEndChild(posParamWElement);
-    // posParamWElement->SetAttribute("name", "W");
-    // posParamWElement->SetAttribute("type", "float");
 
     std::string pData;
 
@@ -1937,4 +1952,225 @@ void CurveModel::WriteCollada(tinyxml2::XMLDocument* a_doc, tinyxml2::XMLElement
 
     delete[] vertices;
     delete[] indices;
+    
+    if (a_parentController != nullptr)
+    {
+        const std::list<Object*> armNodes = GetArmatureNodes();
+
+        const unsigned int jointCount = armNodes.size();
+
+        glm::mat4* invBind = new glm::mat4[jointCount]; 
+
+        tinyxml2::XMLElement* skinElement = a_doc->NewElement("skin");
+        a_parentController->InsertEndChild(skinElement);
+        skinElement->SetAttribute("source", ("#" + std::string(a_parentID)).c_str());
+
+        const std::string jointsName = std::string(a_name) + "-joints";
+
+        tinyxml2::XMLElement* jointSourceElement = a_doc->NewElement("source");
+        skinElement->InsertEndChild(jointSourceElement);
+        jointSourceElement->SetAttribute("id", jointsName.c_str());
+
+        const std::string jointArrayName = jointsName + "-array";
+
+        tinyxml2::XMLElement* jointSourceArrayElement = a_doc->NewElement("Name_array");
+        jointSourceElement->InsertEndChild(jointSourceArrayElement);
+        jointSourceArrayElement->SetAttribute("id", jointArrayName.c_str());
+        jointSourceArrayElement->SetAttribute("count", jointCount);
+
+        tinyxml2::XMLElement* jointTechniqueElement = a_doc->NewElement("technique_common");
+        jointSourceElement->InsertEndChild(jointTechniqueElement);
+
+        tinyxml2::XMLElement* jointAccessorElement = a_doc->NewElement("accessor");
+        jointTechniqueElement->InsertEndChild(jointAccessorElement);
+        jointAccessorElement->SetAttribute("source", ("#" + jointArrayName).c_str());
+        jointAccessorElement->SetAttribute("count", jointCount);
+        jointAccessorElement->SetAttribute("stride", 1);
+
+        tinyxml2::XMLElement* jointParamElement = a_doc->NewElement("param");
+        jointAccessorElement->InsertEndChild(jointParamElement);
+        jointParamElement->SetAttribute("name", "JOINT");
+        jointParamElement->SetAttribute("type", "name");
+
+        std::string jData;
+
+        *a_outRoot = (*armNodes.begin())->GetIDName();
+
+        unsigned int index = 0;
+        for (auto iter = armNodes.begin(); iter != armNodes.end(); ++iter)
+        {
+            const Object* obj = *iter;
+
+            char* name = obj->GetIDName();
+
+            jData += name;
+            jData += "\n";
+
+            Object* parent = obj->GetParent();
+
+            // glm::mat4 p = glm::mat4(1);
+            // if (parent != nullptr)
+            // {
+            //     p = parent->GetGlobalMatrix();
+            // }
+
+            // I think? It has been a while need to double check
+            invBind[index] = glm::inverse(obj->GetGlobalMatrix());
+
+            ++index;
+
+            delete[] name;
+        }
+
+        jointSourceArrayElement->SetText(jData.c_str());
+
+        const std::string weightName = std::string(a_name) + "-weights";
+
+        tinyxml2::XMLElement* weightSourceElement = a_doc->NewElement("source");
+        skinElement->InsertEndChild(weightSourceElement);
+        weightSourceElement->SetAttribute("id", weightName.c_str());
+
+        const std::string weightArrayName = weightName + "-array";
+
+        tinyxml2::XMLElement* weightSourceArray = a_doc->NewElement("float_array");
+        weightSourceElement->InsertEndChild(weightSourceArray);
+        weightSourceArray->SetAttribute("id", weightArrayName.c_str());
+        weightSourceArray->SetAttribute("count", posCount * 4);
+
+        tinyxml2::XMLElement* weightTechniqueElement = a_doc->NewElement("technique_common");
+        weightSourceElement->InsertEndChild(weightTechniqueElement);
+
+        tinyxml2::XMLElement* weightAccessorElement = a_doc->NewElement("accessor");
+        weightTechniqueElement->InsertEndChild(weightAccessorElement);
+        weightAccessorElement->SetAttribute("source", ("#" + weightArrayName).c_str());
+        weightAccessorElement->SetAttribute("count", posCount * 4);
+        weightAccessorElement->SetAttribute("stride", 1);
+
+        tinyxml2::XMLElement* weightParamElement = a_doc->NewElement("param");
+        weightAccessorElement->InsertEndChild(weightParamElement);
+        weightParamElement->SetAttribute("name", "WEIGHT");
+        weightParamElement->SetAttribute("type", "float");
+
+        std::string wData;
+
+        for (unsigned int i = 0; i < posCount; ++i)
+        {
+            for (int j = 0; j < 4; ++j)
+            {
+                wData += std::to_string(weights[i][j]);
+                wData += " ";
+            }
+            wData += "\n";
+        }
+
+        weightSourceArray->SetText(wData.c_str());
+
+        const std::string invBindName = std::string(a_name) + "-invbind";
+
+        tinyxml2::XMLElement* invBindSourceElement = a_doc->NewElement("source");
+        skinElement->InsertEndChild(invBindSourceElement);
+        invBindSourceElement->SetAttribute("id", invBindName.c_str());
+
+        const std::string invBindArrayName = invBindName + "-array";
+
+        tinyxml2::XMLElement* invBindSourceArrayElement = a_doc->NewElement("float_array");
+        invBindSourceElement->InsertEndChild(invBindSourceArrayElement);
+        invBindSourceArrayElement->SetAttribute("id", invBindArrayName.c_str());
+        invBindSourceArrayElement->SetAttribute("count", jointCount * 16);
+
+        tinyxml2::XMLElement* invBindTechniqueElement = a_doc->NewElement("technique_common");
+        invBindSourceElement->InsertEndChild(invBindTechniqueElement);
+
+        tinyxml2::XMLElement* invBindAccessorElement = a_doc->NewElement("accessor");
+        invBindTechniqueElement->InsertEndChild(invBindAccessorElement);
+        invBindAccessorElement->SetAttribute("source", ("#" + invBindArrayName).c_str());
+        invBindAccessorElement->SetAttribute("count", jointCount);
+        invBindAccessorElement->SetAttribute("stride", 16);
+
+        tinyxml2::XMLElement* invBindParamElement = a_doc->NewElement("param");
+        invBindAccessorElement->InsertEndChild(invBindParamElement);
+        invBindParamElement->SetAttribute("name", "TRANSFORM");
+        invBindParamElement->SetAttribute("type", "float4x4");
+
+        std::string iBData;
+
+        for (unsigned int i = 0; i < jointCount; ++i)
+        {
+            const glm::mat4 mat = invBind[i];
+
+            for (int j = 0; j < 4; ++j)
+            {
+                for (int k = 0; k < 4; ++k)
+                {
+                    iBData += std::to_string(mat[j][k]);
+                    iBData += " ";
+                }
+            }
+            iBData += "\n";
+        }
+
+        invBindSourceArrayElement->SetText(iBData.c_str());
+
+        tinyxml2::XMLElement* jointsElement = a_doc->NewElement("joints");
+        skinElement->InsertEndChild(jointsElement);
+
+        tinyxml2::XMLElement* jointJointInputElement = a_doc->NewElement("input");
+        jointsElement->InsertEndChild(jointJointInputElement);
+        jointJointInputElement->SetAttribute("semantic", "JOINT");
+        jointJointInputElement->SetAttribute("source", ("#" + jointsName).c_str());
+
+        tinyxml2::XMLElement* jointInvBindInputElement = a_doc->NewElement("input");
+        jointsElement->InsertEndChild(jointInvBindInputElement);
+        jointInvBindInputElement->SetAttribute("semantic", "INV_BIND_MATRIX");
+        jointInvBindInputElement->SetAttribute("source", ("#" + invBindName).c_str());
+
+        tinyxml2::XMLElement* vertexWeightElement = a_doc->NewElement("vertex_weights");
+        skinElement->InsertEndChild(vertexWeightElement);
+        vertexWeightElement->SetAttribute("count", posCount);
+
+        tinyxml2::XMLElement* vertexWeightJointInputElement = a_doc->NewElement("input");
+        vertexWeightElement->InsertEndChild(vertexWeightJointInputElement);
+        vertexWeightJointInputElement->SetAttribute("semantic", "JOINT");
+        vertexWeightJointInputElement->SetAttribute("source", ("#" + jointsName).c_str());
+        vertexWeightJointInputElement->SetAttribute("offset", 0);
+
+        tinyxml2::XMLElement* vertexWeightWeightInputElement = a_doc->NewElement("input");
+        vertexWeightElement->InsertEndChild(vertexWeightWeightInputElement);
+        vertexWeightWeightInputElement->SetAttribute("semantic", "WEIGHT");
+        vertexWeightWeightInputElement->SetAttribute("source", ("#" + weightName).c_str());
+        vertexWeightWeightInputElement->SetAttribute("offset", 1);
+
+        tinyxml2::XMLElement* vCountElement = a_doc->NewElement("vcount");
+        vertexWeightElement->InsertEndChild(vCountElement);
+
+        tinyxml2::XMLElement* vElement = a_doc->NewElement("v");
+        vertexWeightElement->InsertEndChild(vElement);
+
+        std::string vData;
+        std::string vCData;
+
+        for (unsigned int i = 0; i < posCount; ++i)
+        {
+            vCData += std::to_string(4);
+            vCData += "\n";
+
+            for (int j = 0; j < 4; ++j)
+            {
+                vData += std::to_string((unsigned int)(bones[i][j] * jointCount));
+                vData += " ";
+                vData += std::to_string(i * 4 + j);
+                vData += " ";
+            }
+            
+            vData += "\n";
+        }
+
+        vCountElement->SetText(vCData.c_str());
+        vElement->SetText(vData.c_str());
+
+        delete[] invBind;
+    }
+
+    delete[] bones;
+    delete[] weights;
 }

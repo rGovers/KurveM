@@ -126,6 +126,27 @@ char* Object::GetNameNoWhitespace() const
 
     return name;
 }
+char* Object::GetIDName() const
+{
+    const std::string str = "[" + std::to_string(m_id) + "]" + m_name;
+
+    const int len = str.length() + 1;
+    char* cStr = new char[len];
+
+    for (int i = 0; i < len; ++i)
+    {
+        if (str[i] == ' ')
+        {
+            cStr[i] = '-';
+
+            continue;
+        }
+
+        cStr[i] = str[i];
+    }
+
+    return cStr;
+}
 void Object::SetName(const char* a_name)
 {   
     if (m_name != nullptr)
@@ -344,68 +365,122 @@ void Object::WriteOBJ(std::ofstream* a_file, bool a_smartStep, int a_steps) cons
         return m_curveModel->WriteOBJ(a_file, a_smartStep, a_steps);
     }
 }
-tinyxml2::XMLElement* Object::WriteCollada(tinyxml2::XMLDocument* a_doc, tinyxml2::XMLElement* a_geometryElement, tinyxml2::XMLElement* a_parentElement, bool a_stepAdjust, int a_steps) const
+tinyxml2::XMLElement* Object::WriteCollada(tinyxml2::XMLDocument* a_doc, tinyxml2::XMLElement* a_geometryElement, tinyxml2::XMLElement* a_controllerElement, tinyxml2::XMLElement* a_parentElement, bool a_stepAdjust, int a_steps) const
 {
+    char* name = GetNameNoWhitespace();
+    char* idStr = GetIDName();
+
+    tinyxml2::XMLElement* nodeElement = nullptr;
+
     switch (m_objectType)
     {
+    case ObjectType_Armature:
+    {
+        nodeElement = a_doc->NewElement("node");
+        a_parentElement->InsertEndChild(nodeElement);
+        nodeElement->SetAttribute("id", idStr);
+        nodeElement->SetAttribute("name", name);
+        nodeElement->SetAttribute("type", "NODE");
+
+        break;
+    }
+    case ObjectType_ArmatureNode:
+    {
+        nodeElement = a_doc->NewElement("node");
+        a_parentElement->InsertEndChild(nodeElement);
+        nodeElement->SetAttribute("id", idStr);
+        nodeElement->SetAttribute("name", name);
+        nodeElement->SetAttribute("type", "JOINT");
+
+        break;
+    }
     case ObjectType_CurveModel:
     {
         if (m_curveModel != nullptr)
         {
-            char* name = GetNameNoWhitespace();
-
             tinyxml2::XMLElement* geometryElement = a_doc->NewElement("geometry");
             a_geometryElement->InsertEndChild(geometryElement);
 
-            const std::string idStr = "[" + std::to_string(m_id) + "]" + name;
-
-            geometryElement->SetAttribute("id", idStr.c_str());
+            geometryElement->SetAttribute("id", idStr);
             geometryElement->SetAttribute("name", name);
 
-            m_curveModel->WriteCollada(a_doc, geometryElement, name, a_stepAdjust, a_steps);
+            tinyxml2::XMLElement* controllerElement = nullptr;
+            const Object* armObject = m_curveModel->GetArmature();
+            const std::string conStr = std::string(idStr) + "-controller"; 
 
-            tinyxml2::XMLElement* nodeElement = a_doc->NewElement("node");
+            if (armObject != nullptr)
+            {
+                controllerElement = a_doc->NewElement("controller");
+
+                controllerElement = a_doc->NewElement("controller");
+                a_controllerElement->InsertEndChild(controllerElement);
+                controllerElement->SetAttribute("id", conStr.c_str());
+                controllerElement->SetAttribute("name", name);
+            }
+
+            char* outRoot;
+
+            m_curveModel->WriteCollada(a_doc, geometryElement, controllerElement, idStr, name, a_stepAdjust, a_steps, &outRoot);
+
+            nodeElement = a_doc->NewElement("node");
             a_parentElement->InsertEndChild(nodeElement);
-            nodeElement->SetAttribute("id", idStr.c_str());
+            nodeElement->SetAttribute("id", idStr);
             nodeElement->SetAttribute("name", name);
+            nodeElement->SetAttribute("type", "NODE");
 
-            tinyxml2::XMLElement* translateElement = a_doc->NewElement("translate");
-            nodeElement->InsertEndChild(translateElement);
+            if (armObject != nullptr)
+            {
+                tinyxml2::XMLElement* controllerInstanceElement = a_doc->NewElement("instance_controller");
+                nodeElement->InsertEndChild(controllerInstanceElement);
+                controllerInstanceElement->SetAttribute("url", ("#" + std::string(conStr)).c_str());
+                
+                tinyxml2::XMLElement* skeletonElement = a_doc->NewElement("skeleton");
+                controllerInstanceElement->InsertEndChild(skeletonElement);
+                skeletonElement->SetText(("#" + std::string(outRoot)).c_str());
 
-            const glm::vec3 translation = m_transform->Translation();
-
-            translateElement->SetText((std::to_string(translation.x) + " " + std::to_string(translation.y) + " " + std::to_string(translation.z)).c_str());
-            
-            tinyxml2::XMLElement* rotationElement = a_doc->NewElement("rotation");
-            nodeElement->InsertEndChild(rotationElement);
-
-            const glm::quat quaternion = m_transform->Quaternion();
-            const glm::vec4 axisAngle = glm::vec4(glm::axis(quaternion), glm::degrees(glm::angle(quaternion)));
-
-            rotationElement->SetText((std::to_string(axisAngle.x) + " " + std::to_string(axisAngle.y) + " " + std::to_string(axisAngle.z) + " " + std::to_string(axisAngle.w)).c_str());
-
-            tinyxml2::XMLElement* scaleElement = a_doc->NewElement("scale");
-            nodeElement->InsertEndChild(scaleElement);
-
-            const glm::vec3 scale = m_transform->Scale();
-
-            scaleElement->SetText((std::to_string(scale.x) + " " + std::to_string(scale.y) + " " + std::to_string(scale.z)).c_str());
-
-            tinyxml2::XMLElement* geometryInstanceElement = a_doc->NewElement("instance_geometry");
-            nodeElement->InsertEndChild(geometryInstanceElement);
-
-            geometryInstanceElement->SetAttribute("url", ("#" + idStr).c_str());
-
-            delete[] name;
-
-            return nodeElement;
+                delete[] outRoot;
+            }
+            else
+            {   
+                tinyxml2::XMLElement* geometryInstanceElement = a_doc->NewElement("instance_geometry");
+                nodeElement->InsertEndChild(geometryInstanceElement);
+                geometryInstanceElement->SetAttribute("url", ("#" + std::string(idStr)).c_str());
+            }
         }  
 
         break;
     }
     }
 
-    return nullptr;
+    if (nodeElement != nullptr)
+    {
+        tinyxml2::XMLElement* translateElement = a_doc->NewElement("translate");
+        nodeElement->InsertEndChild(translateElement);
+
+        const glm::vec3 translation = m_transform->Translation();
+
+        translateElement->SetText((std::to_string(translation.x) + " " + std::to_string(translation.y) + " " + std::to_string(translation.z)).c_str());
+
+        tinyxml2::XMLElement* rotationElement = a_doc->NewElement("rotation");
+        nodeElement->InsertEndChild(rotationElement);
+
+        const glm::quat quaternion = m_transform->Quaternion();
+        const glm::vec4 axisAngle = glm::vec4(glm::axis(quaternion), glm::degrees(glm::angle(quaternion)));
+
+        rotationElement->SetText((std::to_string(axisAngle.x) + " " + std::to_string(axisAngle.y) + " " + std::to_string(axisAngle.z) + " " + std::to_string(axisAngle.w)).c_str());
+
+        tinyxml2::XMLElement* scaleElement = a_doc->NewElement("scale");
+        nodeElement->InsertEndChild(scaleElement);
+
+        const glm::vec3 scale = m_transform->Scale();
+
+        scaleElement->SetText((std::to_string(scale.x) + " " + std::to_string(scale.y) + " " + std::to_string(scale.z)).c_str());
+    }
+
+    delete[] name;
+    delete[] idStr;
+
+    return nodeElement;
 }
 void Object::Serialize(tinyxml2::XMLDocument* a_doc, tinyxml2::XMLElement* a_element) const
 {
