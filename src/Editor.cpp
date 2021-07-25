@@ -15,8 +15,10 @@
 #include "BezierCurveNode3.h"
 #include "Camera.h"
 #include "CameraController.h"
+#include "ColorTheme.h"
 #include "Datastore.h"
 #include "EditorInputController.h"
+#include "Editors/AnimateEditor.h"
 #include "Editors/EditEditor.h"
 #include "Editors/ObjectEditor.h"
 #include "Editors/WeightPaintingEditor.h"
@@ -55,6 +57,7 @@ Editor::Editor(Workspace* a_workspace)
 
     m_inputController = new EditorInputController(m_workspace, this);
 
+    m_editorControls.emplace_back(new AnimateEditor(this, m_workspace));
     m_editorControls.emplace_back(new EditEditor(this, m_workspace));
     m_editorControls.emplace_back(new ObjectEditor(this, m_workspace));
     m_editorControls.emplace_back(new WeightPaintingEditor(this, m_workspace));
@@ -93,6 +96,8 @@ void Editor::Init()
     transform->Quaternion() = glm::angleAxis(3.14159f, glm::normalize(glm::vec3(0.0f, 1.0f, 0.0f))) * glm::angleAxis(3.14159f * 0.1f, glm::normalize(glm::vec3(1.0f, 0.0f, 0.0f)));
 
     m_curAction = nullptr;
+
+    m_selectedTime = 0.0f;
 
     m_editorMode = EditorMode_Object;
     m_faceCullingMode = EditorFaceCullingMode_Back;
@@ -625,10 +630,10 @@ void Editor::Update(double a_delta, const glm::vec2& a_winPos, const glm::vec2& 
 
             const glm::vec3 f = viewInv[2].xyz();
 
-            Gizmos::DrawLine(tlWP, trWP, f, 0.0001f, glm::vec4(0.93f, 0.53f, 0.00f, 1.00f));
-            Gizmos::DrawLine(trWP, brWP, f, 0.0001f, glm::vec4(0.93f, 0.53f, 0.00f, 1.00f));
-            Gizmos::DrawLine(brWP, blWP, f, 0.0001f, glm::vec4(0.93f, 0.53f, 0.00f, 1.00f));
-            Gizmos::DrawLine(blWP, tlWP, f, 0.0001f, glm::vec4(0.93f, 0.53f, 0.00f, 1.00f));
+            Gizmos::DrawLine(tlWP, trWP, f, 0.0001f, ColorTheme::Active);
+            Gizmos::DrawLine(trWP, brWP, f, 0.0001f, ColorTheme::Active);
+            Gizmos::DrawLine(brWP, blWP, f, 0.0001f, ColorTheme::Active);
+            Gizmos::DrawLine(blWP, tlWP, f, 0.0001f, ColorTheme::Active);
 
             break;
         }

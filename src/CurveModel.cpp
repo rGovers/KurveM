@@ -496,7 +496,16 @@ void GetBoneData(const BezierCurveNode3& a_nodeA, const BezierCurveNode3& a_node
     delete[] bones;
 }
 
-void BlendBoneData(const glm::vec4& a_bonesA, const glm::vec4& a_weightsA, const glm::vec4& a_bonesB, const glm::vec4& a_weightsB, float a_lerp, glm::vec4* a_bones, glm::vec4* a_weights)
+float BlendWeight(float a_weightA, float a_weightB, float a_lerp)
+{
+    const float step = glm::mix(a_weightA, a_weightB, a_lerp);
+
+    const float innerStepA = glm::mix(a_weightA, step, a_lerp);
+    const float innerStepB = glm::mix(step, a_weightB, a_lerp);
+
+    return glm::mix(innerStepA, innerStepB, a_lerp);
+}
+void BlendBoneDataNL(const glm::vec4& a_bonesA, const glm::vec4& a_weightsA, const glm::vec4& a_bonesB, const glm::vec4& a_weightsB, float a_lerp, glm::vec4* a_bones, glm::vec4* a_weights)
 {
     glm::vec4 boneData[2] = { glm::vec4(-1) };
     glm::vec4 weightData[2] = { glm::vec4(0) };
@@ -506,7 +515,91 @@ void BlendBoneData(const glm::vec4& a_bonesA, const glm::vec4& a_weightsA, const
     *a_bones = glm::vec4(-1);
     *a_weights = glm::vec4(0);
 
-    const float invLerp = 1 - a_lerp;
+    int count = 0;
+    for (int i = 0; i < 4; ++i)
+    {
+        if (a_bonesA[i] == -1)
+        {
+            continue;
+        }
+
+        const int indA = count / 2;
+        const int indB = count % 4;
+
+        bool found = false;
+        for (int j = 0; j < 4; ++j)
+        {
+            if (arrB[j] != -1 && a_bonesA[i] == arrB[j])
+            {
+                found = true;
+
+                arrB[j] = -1;
+
+                boneData[indA][indB] = a_bonesA[i]; 
+                weightData[indA][indB] = BlendWeight(a_weightsA[i], a_weightsB[i], a_lerp);
+
+                break;
+            }
+        }
+
+        if (!found)
+        {
+            boneData[indA][indB] = a_bonesA[i];
+            weightData[indA][indB] = BlendWeight(a_weightsA[i], 0.0f, a_lerp);
+        }
+
+        ++count;
+    }
+
+    for (int i = 0; i < 4; ++i)
+    {
+        if (arrB[i] != -1)
+        {
+            const int indA = count / 2;
+            const int indB = count % 4;
+
+            boneData[indA][indB] = a_bonesB[i];
+            weightData[indA][indB] = BlendWeight(0.0f, a_weightsB[i], a_lerp);
+
+            ++count;
+        }
+    }
+
+    for (int i = 0; i < count; ++i)
+    {
+        float min = std::numeric_limits<float>::infinity();
+        int index = 0;
+
+        for (int j = 0; j < 4; ++j)
+        {
+            const float val = (*a_weights)[j];
+            if (val < min)
+            {
+                index = j;
+                min = val;
+            }
+        }
+
+        const int indA = i / 2;
+        const int indB = i % 4;
+
+        const float weight = weightData[indA][indB];
+        if (min < weight)
+        {
+            (*a_bones)[index] = boneData[indA][indB];
+            (*a_weights)[index] = weight;
+        }
+    }
+}
+void BlendBoneData(const glm::vec4& a_bonesA, const glm::vec4& a_weightsA, const glm::vec4& a_bonesB, const glm::vec4& a_weightsB, float a_lerp, glm::vec4* a_bones, glm::vec4* a_weights)
+{
+    glm::vec4 boneData[2] = { glm::vec4(-1) };
+    glm::vec4 weightData[2] = { glm::vec4(0) };
+
+    glm::vec4 arrB = a_bonesB; 
+
+    *a_bones = glm::vec4(-1);
+    *a_weights = glm::vec4(0);
 
     int count = 0;
     for (int i = 0; i < 4; ++i)
@@ -552,7 +645,7 @@ void BlendBoneData(const glm::vec4& a_bonesA, const glm::vec4& a_weightsA, const
             const int indB = count % 4;
 
             boneData[indA][indB] = a_bonesB[i];
-            weightData[indA][indB] = glm::mix(a_weightsB[i], 0.0f, invLerp);
+            weightData[indA][indB] = glm::mix(0.0f, a_weightsB[i], a_lerp);
 
             ++count;
         }
@@ -583,6 +676,16 @@ void BlendBoneData(const glm::vec4& a_bonesA, const glm::vec4& a_weightsA, const
             (*a_weights)[index] = weight;
         }
     }
+}
+
+glm::vec2 BlendUV(const glm::vec2& a_start, const glm::vec2& a_end, float a_lerp)
+{
+    const glm::vec2 step = glm::mix(a_start, a_end, a_lerp);
+
+    const glm::vec2 innerStepA = glm::mix(a_start, step, a_lerp);
+    const glm::vec2 innerStepB = glm::mix(step, a_end, a_lerp);
+
+    return glm::mix(innerStepA, innerStepB, a_lerp);
 }
 
 void CurveModel::GetModelData(bool a_smartStep, int a_steps, unsigned int** a_indices, unsigned int* a_indexCount, Vertex** a_vertices, unsigned int* a_vertexCount) const
@@ -708,9 +811,9 @@ void CurveModel::GetModelData(bool a_smartStep, int a_steps, unsigned int** a_in
                             const glm::vec3 mLF = mA + (mSA * nIStep);
                             const glm::vec3 mRF = mB + (mSB * nIStep);
 
-                            const glm::vec2 tFUV = glm::mix(tLUV, tRUV, aS);
-                            const glm::vec2 mLFUV = glm::mix(mLUV, mRUV, aSMA);
-                            const glm::vec2 mRFUV = glm::mix(mLUV, mRUV, aSMB);
+                            const glm::vec2 tFUV = BlendUV(tLUV, tRUV, aS);
+                            const glm::vec2 mLFUV = BlendUV(mLUV, mRUV, aSMA);
+                            const glm::vec2 mRFUV = BlendUV(mLUV, mRUV, aSMB);
 
                             glm::vec4 tFB = glm::vec4(0);
                             glm::vec4 mLFB = glm::vec4(0);
@@ -720,9 +823,9 @@ void CurveModel::GetModelData(bool a_smartStep, int a_steps, unsigned int** a_in
                             glm::vec4 mLFW = glm::vec4(0);
                             glm::vec4 mRFW = glm::vec4(0);
 
-                            BlendBoneData(tLBn, tLW, tRBn, tRW, aS, &tFB, &tFW);
-                            BlendBoneData(mLBn, mLW, mRBn, mRW, aSMA, &mLFB, &mLFW);
-                            BlendBoneData(mLBn, mLW, mRBn, mRW, aSMB, &mRFB, &mRFW);
+                            BlendBoneDataNL(tLBn, tLW, tRBn, tRW, aS, &tFB, &tFW);
+                            BlendBoneDataNL(mLBn, mLW, mRBn, mRW, aSMA, &mLFB, &mLFW);
+                            BlendBoneDataNL(mLBn, mLW, mRBn, mRW, aSMB, &mRFB, &mRFW);
 
                             for (int i = 0; i < 4; ++i)
                             {
@@ -766,13 +869,13 @@ void CurveModel::GetModelData(bool a_smartStep, int a_steps, unsigned int** a_in
 
                                 const glm::vec3 bF = b + (bS * bIStep);
 
-                                const glm::vec2 bFUV = glm::mix(bLUV, bRUV, aSL);
+                                const glm::vec2 bFUV = BlendUV(bLUV, bRUV, aSL);
 
                                 glm::vec4 bFB = glm::vec4(0);
 
                                 glm::vec4 bFW = glm::vec4(0);
 
-                                BlendBoneData(bLBn, bLW, bRBn, bRW, aSL, &bFB, &bFW);
+                                BlendBoneDataNL(bLBn, bLW, bRBn, bRW, aSL, &bFB, &bFW);
 
                                 for (int i = 0; i < 4; ++i)
                                 {
@@ -922,15 +1025,15 @@ void CurveModel::GetModelData(bool a_smartStep, int a_steps, unsigned int** a_in
                             glm::vec4 HLBW = glm::vec4(0);
                             glm::vec4 HHBW = glm::vec4(0);
 
-                            BlendBoneData(pointABLeftBn,  pointABLeftW,  pointCDLeftBn,  pointCDLeftW,  jStep,  &LLABn, &LLAW);
-                            BlendBoneData(pointABLeftBn,  pointABLeftW,  pointCDLeftBn,  pointCDLeftW,  nJStep, &LHABn, &LHAW);
-                            BlendBoneData(pointABRightBn, pointABRightW, pointCDRightBn, pointCDRightW, jStep,  &HLABn, &HLAW);
-                            BlendBoneData(pointABRightBn, pointABRightW, pointCDRightBn, pointCDRightW, nJStep, &HHABn, &HHAW);
+                            BlendBoneDataNL(pointABLeftBn,  pointABLeftW,  pointCDLeftBn,  pointCDLeftW,  jStep,  &LLABn, &LLAW);
+                            BlendBoneDataNL(pointABLeftBn,  pointABLeftW,  pointCDLeftBn,  pointCDLeftW,  nJStep, &LHABn, &LHAW);
+                            BlendBoneDataNL(pointABRightBn, pointABRightW, pointCDRightBn, pointCDRightW, jStep,  &HLABn, &HLAW);
+                            BlendBoneDataNL(pointABRightBn, pointABRightW, pointCDRightBn, pointCDRightW, nJStep, &HHABn, &HHAW);
 
-                            BlendBoneData(pointACLeftBn,  pointACLeftW,  pointBDLeftBn,  pointBDLeftW,  iStep,  &LLBBn, &LLBW);
-                            BlendBoneData(pointACLeftBn,  pointACLeftW,  pointBDLeftBn,  pointBDLeftW,  nIStep, &LHBBn, &LHBW);
-                            BlendBoneData(pointABRightBn, pointABRightW, pointCDRightBn, pointCDRightW, iStep,  &HLBBn, &HLBW);
-                            BlendBoneData(pointABRightBn, pointABRightW, pointCDRightBn, pointCDRightW, nIStep, &HHBBn, &HHBW);
+                            BlendBoneDataNL(pointACLeftBn,  pointACLeftW,  pointBDLeftBn,  pointBDLeftW,  iStep,  &LLBBn, &LLBW);
+                            BlendBoneDataNL(pointACLeftBn,  pointACLeftW,  pointBDLeftBn,  pointBDLeftW,  nIStep, &LHBBn, &LHBW);
+                            BlendBoneDataNL(pointABRightBn, pointABRightW, pointCDRightBn, pointCDRightW, iStep,  &HLBBn, &HLBW);
+                            BlendBoneDataNL(pointABRightBn, pointABRightW, pointCDRightBn, pointCDRightW, nIStep, &HHBBn, &HHBW);
 
                             const glm::vec3 posA = (LLA + LLB) * 0.5f;
                             const glm::vec3 posB = (HLA + LHB) * 0.5f;
@@ -1691,7 +1794,7 @@ void CurveModel::WriteOBJ(std::ofstream* a_file, bool a_stepAdjust, int a_steps)
             const std::string nStr = std::to_string(normMap[index] + 1);
             const std::string uStr = std::to_string(uvMap[index] + 1);
 
-            const std::string str = pStr + "/" + uStr + '/' + nStr;
+            const std::string str = pStr + "/" + uStr + '/' + nStr + " ";
 
             a_file->write(str.c_str(), str.length());
         }

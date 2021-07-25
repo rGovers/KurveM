@@ -22,6 +22,7 @@ enum e_EditorMode
     EditorMode_Object,
     EditorMode_Edit,
     EditorMode_WeightPainting,
+    EditorMode_Animate,
     EditorMode_End
 };
 
@@ -66,6 +67,8 @@ private:
     float                     m_brushIntensity;
     float                     m_brushRadius;
 
+    float                     m_selectedTime;
+
     void DrawObject(Object* a_object, const glm::vec2& a_winSize);
 
 protected:
@@ -100,6 +103,15 @@ public:
     inline void SetBrushIntensity(float a_value)
     {
         m_brushIntensity = a_value;
+    }
+
+    inline float GetSelectedTime() const
+    {
+        return m_selectedTime;
+    }
+    inline void SetSelectedTime(float a_time)
+    {
+        m_selectedTime = a_time;
     }
 
     void Init();

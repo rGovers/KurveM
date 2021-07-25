@@ -13,6 +13,7 @@ private:
     Editor*    m_editor;
 
     void EditorFaceButton(const char* a_text, const char* a_path, e_EditorFaceCullingMode a_face, const char* a_tooltip);
+    void DeleteAnimation(bool a_state);
 
 protected:
 

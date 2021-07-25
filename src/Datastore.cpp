@@ -79,7 +79,7 @@ Texture* Datastore::GetTexture(const char* a_path)
 
     if (c != nullptr)
     {
-        if (strcmp(c, ".png") == 0)
+        if (strcmp(c, ".png") == 0 || strcmp(c, ".bmp") == 0 || strcmp(c, ".jpg") == 0)
         {
             int width;
             int height;

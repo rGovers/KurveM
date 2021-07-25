@@ -4,7 +4,9 @@ enum e_ActionType
 {
     ActionType_Null = -1,
     ActionType_AddCurveNodeWeight,
+    ActionType_CreateAnimation,
     ActionType_CreateObject,
+    ActionType_DeleteAnimation,
     ActionType_DeleteNode,
     ActionType_DeleteObject,
     ActionType_ExtrudeArmatureNode,

@@ -68,7 +68,7 @@ bool HierarchyWindow::ObjectHeirachyGUI(Object* a_object, bool* a_blockMenu)
     if (objectType != ObjectType_ArmatureNode)
     {
         bool visible = a_object->IsVisible();
-        if (ImGuiExt::ImageSwitchButton((uString + "Visible").c_str(), "Textures/OBJECT_VISIBLE.png", "Textures/OBJECT_HIDDEN.png", &visible, { 12, 12 }))
+        if (ImGuiExt::ImageSwitchButton((uString + "Visible").c_str(), "Textures/OBJECT_VISIBLE.png", "Textures/OBJECT_HIDDEN.png", &visible, glm::vec2(12, 12)))
         {
             a_object->SetVisible(visible);
         }
@@ -80,7 +80,7 @@ bool HierarchyWindow::ObjectHeirachyGUI(Object* a_object, bool* a_blockMenu)
     {
     case ObjectType_Armature:
     {
-        ImGuiExt::Image("Textures/OBJECT_ARMATURE.png", { 16, 16 });
+        ImGuiExt::Image("Textures/OBJECT_ARMATURE.png", glm::vec2(16, 16));
 
         ImGui::SameLine();
 
@@ -88,7 +88,7 @@ bool HierarchyWindow::ObjectHeirachyGUI(Object* a_object, bool* a_blockMenu)
     }
     case ObjectType_CurveModel:
     {
-        ImGuiExt::Image("Textures/OBJECT_CURVE.png", { 16, 16 });
+        ImGuiExt::Image("Textures/OBJECT_CURVE.png", glm::vec2(16, 16));
 
         ImGui::SameLine();
 
@@ -96,7 +96,7 @@ bool HierarchyWindow::ObjectHeirachyGUI(Object* a_object, bool* a_blockMenu)
     }
     case ObjectType_ReferenceImage:
     {
-        ImGuiExt::Image("Textures/OBJECT_REFERENCEIMAGE.png", { 16, 16 });
+        ImGuiExt::Image("Textures/OBJECT_REFERENCEIMAGE.png", glm::vec2(16, 16));
 
         ImGui::SameLine();
 
@@ -180,7 +180,7 @@ bool HierarchyWindow::ObjectHeirachyGUI(Object* a_object, bool* a_blockMenu)
 
             ImGui::Separator();
 
-            ImGuiExt::Image("Textures/OBJECT_ARMATURE.png", { 16, 16 });
+            ImGuiExt::Image("Textures/OBJECT_ARMATURE.png", glm::vec2(16, 16));
 
             ImGui::SameLine();
 
@@ -287,7 +287,7 @@ void HierarchyWindow::Update(double a_delta)
 
             ImGui::Separator();
 
-            ImGuiExt::Image("Textures/OBJECT_ARMATURE.png", { 16, 16 });
+            ImGuiExt::Image("Textures/OBJECT_ARMATURE.png", glm::vec2(16, 16));
 
             ImGui::SameLine();
 

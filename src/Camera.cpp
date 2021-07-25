@@ -24,6 +24,10 @@ glm::mat4 Camera::GetView() const
 {
     return glm::inverse(m_transform->ToMatrix());
 }
+glm::mat4 Camera::GetProjection(const glm::vec2& a_size) const
+{
+    return GetProjection((int)a_size.x, (int)a_size.y);
+}
 glm::mat4 Camera::GetProjection(int a_width, int a_height) const
 {
     if (m_orthographic)
@@ -39,6 +43,10 @@ glm::mat4 Camera::GetProjection(int a_width, int a_height) const
     return glm::perspective(m_fov, (float)a_width / a_height, m_near, m_far);
 }
 
+glm::vec3 Camera::GetScreenToWorld(const glm::vec3& a_screenPos, const glm::vec2& a_screenSize) const
+{
+    return GetScreenToWorld(a_screenPos, (int)a_screenSize.x, (int)a_screenSize.y);
+}
 glm::vec3 Camera::GetScreenToWorld(const glm::vec3& a_screenPos, int a_width, int a_height) const
 {
     const glm::mat4 viewInv = m_transform->ToMatrix();

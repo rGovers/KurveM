@@ -21,7 +21,7 @@ ToolbarWindow::~ToolbarWindow()
 
 void ToolbarWindow::ToolbarButton(const char* a_text, const char* a_path, e_ToolMode a_toolMode, const char* a_tooltip)
 {
-    if (ImGuiExt::ImageToggleButton(a_text, a_path, m_workspace->GetToolMode() == a_toolMode, { 32, 32 }))
+    if (ImGuiExt::ImageToggleButton(a_text, a_path, m_workspace->GetToolMode() == a_toolMode, glm::vec2(32, 32)))
     {
         m_workspace->SetToolMode(a_toolMode);
     }

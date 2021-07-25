@@ -100,14 +100,22 @@ glm::vec3 BezierCurveNode3::GetPointScaled(const BezierCurveNode3& a_other, floa
     return GetPointScaled(*this, a_other, a_scale, a_lerp);
 }
 
+float WeightBlend(float a_start, const float a_end, float a_lerp)
+{
+    const float step = glm::mix(a_start, a_end, a_lerp);
+
+    const float innerStepA = glm::mix(a_start, step, a_lerp);
+    const float innerStepB = glm::mix(step, a_end, a_lerp);
+
+    return glm::mix(innerStepA, innerStepB, a_lerp);
+}
+
 BoneCluster* BezierCurveNode3::GetBonesLerp(const BezierCurveNode3& a_pointA, const BezierCurveNode3& a_pointB, float a_lerp, unsigned int* a_count)
 {
     const unsigned int sizeA = a_pointA.m_bones.size();
     const unsigned int sizeB = a_pointB.m_bones.size();
 
     const unsigned int size = sizeA + sizeB;
-
-    const float invLerp = 1 - a_lerp;
 
     BoneCluster* cluster = new BoneCluster[size]; 
 
@@ -126,7 +134,7 @@ BoneCluster* BezierCurveNode3::GetBonesLerp(const BezierCurveNode3& a_pointA, co
             {
                 found = true;
 
-                cluster[*a_count].Weight = glm::mix(iter->Weight, innerIter->Weight, a_lerp);
+                cluster[*a_count].Weight = WeightBlend(iter->Weight, innerIter->Weight, a_lerp);
 
                 arrB.erase(innerIter);
 
@@ -136,7 +144,7 @@ BoneCluster* BezierCurveNode3::GetBonesLerp(const BezierCurveNode3& a_pointA, co
 
         if (!found)
         {
-            cluster[*a_count].Weight = glm::mix(iter->Weight, 0.0f, a_lerp);
+            cluster[*a_count].Weight = WeightBlend(iter->Weight, 0.0f, a_lerp);
         }
 
         ++*a_count;
@@ -145,7 +153,7 @@ BoneCluster* BezierCurveNode3::GetBonesLerp(const BezierCurveNode3& a_pointA, co
     for (auto iter = arrB.begin(); iter != arrB.end(); ++iter)
     {
         cluster[*a_count].ID = iter->ID;
-        cluster[*a_count].Weight = glm::mix(iter->Weight, 0.0f, invLerp);
+        cluster[*a_count].Weight = WeightBlend(0.0f, iter->Weight, a_lerp);
 
         ++*a_count;
     }
@@ -155,7 +163,14 @@ BoneCluster* BezierCurveNode3::GetBonesLerp(const BezierCurveNode3& a_pointA, co
 
 glm::vec2 BezierCurveNode3::GetUVLerp(const BezierCurveNode3& a_pointA, const BezierCurveNode3& a_pointB, float a_lerp)
 {
-    return glm::mix(a_pointA.m_uv, a_pointB.m_uv, a_lerp);
+    // Not in linear space therefore have to use multiple lerps
+    // Should correct for the mesh deformation
+    const glm::vec2 step = glm::mix(a_pointA.m_uv, a_pointB.m_uv, a_lerp);
+
+    const glm::vec2 innerStepA = glm::mix(a_pointA.m_uv, step, a_lerp);
+    const glm::vec2 innerStepB = glm::mix(step, a_pointB.m_uv, a_lerp);
+
+    return glm::mix(innerStepA, innerStepB, a_lerp);
 }
 
 glm::vec3 BezierCurveNode3::GetPoint(const BezierCurveNode3& a_pointA, const BezierCurveNode3& a_pointB, float a_lerp)

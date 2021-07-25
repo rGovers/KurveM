@@ -2,8 +2,12 @@
 
 #include <string>
 
+#include "Actions/DeleteAnimationAction.h"
+#include "Animation.h"
 #include "imgui.h"
 #include "ImGuiExt.h"
+#include "Modals/ConfirmModal.h"
+#include "Modals/CreateAnimationModal.h"
 #include "Object.h"
 #include "Workspace.h"
 
@@ -11,13 +15,23 @@ const char* EditorMode_String[] =
 { 
     "Object Mode", 
     "Edit Mode", 
-    "Weight Mode" 
+    "Weight Mode",
+    "Animate Mode"
 };
 const char* EditorMode_Path[] =
 {
     "Textures/EDITOR_OBJECT.png",
     "Textures/EDITOR_EDIT.png",
-    "Textures/EDITOR_WEIGHT.png"
+    "Textures/EDITOR_WEIGHT.png",
+    "Textures/EDITOR_ANIMATE.png"
+};
+
+const char* EditorMode_Preview_Path[] =
+{
+    "Textures/EDITOR_OBJECT_DARK.png",
+    "Textures/EDITOR_EDIT_DARK.png",
+    "Textures/EDITOR_WEIGHT_DARK.png",
+    "Textures/EDITOR_ANIMATE_DARK.png"
 };
 
 #define FRONTFACE_TOOLTIP "Displays the object front faces"
@@ -37,7 +51,7 @@ OptionsWindow::~OptionsWindow()
 
 void OptionsWindow::EditorFaceButton(const char* a_text, const char* a_path, e_EditorFaceCullingMode a_face, const char* a_tooltip)
 {
-    if (ImGuiExt::ImageToggleButton(a_text, a_path, m_editor->GetEditorFaceCullingMode() == a_face, { 16, 16 }))
+    if (ImGuiExt::ImageToggleButton(a_text, a_path, m_editor->GetEditorFaceCullingMode() == a_face, glm::vec2(16, 16)))
     {
         m_editor->SetEditorFaceCullingMode(a_face);
     }
@@ -55,6 +69,21 @@ void OptionsWindow::EditorFaceButton(const char* a_text, const char* a_path, e_E
         ImGui::EndTooltip();
     }
 }
+
+void OptionsWindow::DeleteAnimation(bool a_state)
+{
+    if (a_state)
+    {
+        Action* action = new DeleteAnimationAction(m_workspace, m_workspace->GetCurrentAnimation());
+        if (!m_workspace->PushAction(action))
+        {
+            printf("Failed to delete animation \n");
+            
+            delete action;
+        }
+    }
+}
+
 void OptionsWindow::Update(double a_delta)
 {
     if (ImGui::Begin("Options"))
@@ -65,16 +94,17 @@ void OptionsWindow::Update(double a_delta)
 
         const e_EditorMode currentIndex = m_editor->GetEditorMode();
 
-        if (ImGui::BeginCombo("##combo", EditorMode_String[m_editor->GetEditorMode()]))
+        if (ImGuiExt::BeginImageCombo("##combo", EditorMode_Preview_Path[currentIndex], glm::vec2(16, 16), EditorMode_String[currentIndex]))
         {
             for (int i = 0; i < EditorMode_End; ++i)
             {
                 if (m_editor->IsEditorModeEnabled((e_EditorMode)i))
                 {   
                     const bool selected = currentIndex == i;
-                    ImGuiExt::Image(EditorMode_Path[i], { 16, 16 });
-
-                    ImGui::SameLine();
+                    if (ImGuiExt::Image(EditorMode_Path[i], glm::vec2(16, 16)))
+                    {
+                        ImGui::SameLine();
+                    }
 
                     if (ImGui::Selectable(EditorMode_String[i], selected))
                     {
@@ -105,7 +135,83 @@ void OptionsWindow::Update(double a_delta)
 
         ImGui::EndGroup();
 
-        if (currentIndex == EditorMode_WeightPainting)
+        switch (currentIndex)
+        {
+        case EditorMode_Animate:
+        {
+            ImGui::NextColumn();
+
+            if (ImGui::Button("Create Animation"))
+            {
+                m_workspace->PushModal(new CreateAnimationModal(m_workspace));
+            }
+
+            const std::list<Animation*> animations = m_workspace->GetAnimations();
+
+            if (animations.size() > 0)
+            {
+                ImGui::NextColumn();
+
+                Animation* curAnimation = m_workspace->GetCurrentAnimation();
+
+                const char* curAnimName = "";
+                if (curAnimation != nullptr)
+                {
+                    curAnimName = curAnimation->GetName();
+                }
+
+                if (ImGui::BeginCombo("Current Animation", curAnimName))
+                {
+                    for (auto iter = animations.begin(); iter != animations.end(); ++iter)
+                    {
+                        Animation* animation = *iter;
+
+                        const bool selected = animation == curAnimation;
+
+                        if (ImGui::Selectable(animation->GetName(), selected))
+                        {
+                            m_workspace->SetCurrentAnimation(animation);
+                        }
+
+                        if (selected)
+                        {
+                            ImGui::SetItemDefaultFocus();
+                        }
+                    }
+
+                    ImGui::EndCombo();
+                }
+
+                if (curAnimation != nullptr)
+                {
+                    ImGui::NextColumn();
+
+                    if (ImGui::Button("Delete Animation"))
+                    {
+                        m_workspace->PushModal(new ConfirmModal("Delete Animation", std::bind(&OptionsWindow::DeleteAnimation, this, std::placeholders::_1)));
+                    }
+
+                    ImGui::NextColumn();
+
+                    int refFrameRate = curAnimation->GetReferenceFramerate();
+                    if (ImGui::InputInt("Reference Framerate", &refFrameRate))
+                    {
+                        curAnimation->SetReferenceFramerate(glm::max(1, refFrameRate));
+                    }
+
+                    ImGui::NextColumn();
+
+                    float animTime = curAnimation->GetAnimationLength();
+                    if (ImGui::DragFloat("Animation Length", &animTime, 0.01f, 0.0f))
+                    {
+                        curAnimation->SetAnimationLength(animTime);
+                    }
+                }
+            }
+
+            break;
+        }
+        case EditorMode_WeightPainting:
         {
             std::list<Object*> nodes;
 
@@ -202,7 +308,10 @@ void OptionsWindow::Update(double a_delta)
                 m_editor->SetBrushIntensity(brushIntensity);
             }
 
-            ImGui::EndGroup();   
+            ImGui::EndGroup();  
+
+            break;
+        }
         }
 
         ImGui::Columns();

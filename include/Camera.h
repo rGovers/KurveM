@@ -56,7 +56,9 @@ public:
     }
 
     glm::mat4 GetView() const;
+    glm::mat4 GetProjection(const glm::vec2& a_size) const;
     glm::mat4 GetProjection(int a_width, int a_height) const;
 
+    glm::vec3 GetScreenToWorld(const glm::vec3& a_screenPos, const glm::vec2& a_screenSize) const;
     glm::vec3 GetScreenToWorld(const glm::vec3& a_screenPos, int a_width, int a_height) const;
 };

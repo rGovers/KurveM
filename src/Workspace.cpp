@@ -183,6 +183,8 @@ Workspace::~Workspace()
 
 void Workspace::ClearBuffers()
 {
+    m_currentAnimation = nullptr;
+
     ClearSelectedObjects();
 
     for (auto iter = m_objectList.begin(); iter != m_objectList.end(); ++iter)
@@ -190,6 +192,12 @@ void Workspace::ClearBuffers()
         delete *iter;
     }
     m_objectList.clear();
+
+    for (auto iter = m_animations.begin(); iter != m_animations.end(); ++iter)
+    {
+        delete *iter;
+    }
+    m_animations.clear();
 
     for (auto iter = m_actionQueue.begin(); iter != m_actionQueue.end(); ++iter)
     {
@@ -569,6 +577,31 @@ bool Workspace::Redo()
     return false;
 }
 
+void Workspace::AddAnimation(Animation* a_animation)
+{
+    for (auto iter = m_animations.begin(); iter != m_animations.end(); ++iter)
+    {
+        if (*iter == a_animation)
+        {
+            return;
+        }
+    }
+
+    m_animations.emplace_back(a_animation);
+}
+void Workspace::RemoveAnimation(Animation* a_animation)
+{
+    for (auto iter = m_animations.begin(); iter != m_animations.end(); ++iter)
+    {
+        if (*iter == a_animation)
+        {
+            m_animations.erase(iter);
+
+            return;
+        }
+    }
+}
+
 Object* GetObjects(Object* a_object, long long a_id)
 {
     if (a_object->GetID() == a_id)
@@ -765,6 +798,33 @@ void Workspace::RemoveSelectedObject(Object* a_object)
     m_editor->ClearSelectedNodes();
 }
 
+void GetAllObjects(Object* a_object, std::list<Object*>* a_objs)
+{
+    if (a_object != nullptr)
+    {
+        a_objs->emplace_back(a_object);
+    }
+
+    const std::list<Object*> children = a_object->GetChildren();
+
+    for (auto iter = children.begin(); iter != children.end(); ++iter)
+    {
+        GetAllObjects(*iter, a_objs);
+    }
+}
+
+std::list<Object*> Workspace::GetAllObjectsList() const
+{
+    std::list<Object*> objs;
+
+    for (auto iter = m_objectList.begin(); iter != m_objectList.end(); ++iter)
+    {
+        GetAllObjects(*iter, &objs);
+    }
+
+    return objs;
+}
+
 void Workspace::DefaultWindowConfig()
 {
     const Application* app = Application::GetInstance();
@@ -852,7 +912,7 @@ void Workspace::UVWindowConfig()
 
 void Workspace::CreateCurveObjectMenuList(Object* a_parent)
 {
-    ImGuiExt::Image("Textures/OBJECT_CURVE.png", { 16, 16 });
+    ImGuiExt::Image("Textures/OBJECT_CURVE.png", glm::vec2(16, 16));
 
     ImGui::SameLine();
 
@@ -907,20 +967,28 @@ void Workspace::CreateCurveObjectMenuList(Object* a_parent)
 }
 void Workspace::ImportObjectMenuList(Object* a_parent)
 {
-    ImGuiExt::Image("Textures/OBJECT_REFERENCEIMAGE.png", { 16, 16 });
+    ImGuiExt::Image("Textures/OBJECT_REFERENCEIMAGE.png", glm::vec2(16, 16));
 
     ImGui::SameLine();
 
     if (ImGui::BeginMenu("New Reference Image"))
     {
+        char* home = GetHomePath();
+
         if (ImGui::MenuItem("PNG"))
         {
-            char* home = GetHomePath();
-
             PushModal(new LoadReferenceImageModal(this, a_parent, home, ".png"));
-
-            delete[] home;
         }
+        if (ImGui::MenuItem("BMP"))
+        {
+            PushModal(new LoadReferenceImageModal(this, a_parent, home, ".bmp"));
+        }
+        if (ImGui::MenuItem("JPEG"))
+        {
+            PushModal(new LoadReferenceImageModal(this, a_parent, home, ".jpg"));
+        }
+
+        delete[] home;
 
         ImGui::EndMenu();
     }

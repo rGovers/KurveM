@@ -8,6 +8,7 @@
 #include "Actions/MoveNodeHandleAction.h"
 #include "Actions/TranslateObjectRelativeAction.h"
 #include "Camera.h"
+#include "ColorTheme.h"
 #include "Editor.h"
 #include "Gizmos.h"
 #include "Object.h"
@@ -230,7 +231,7 @@ void DrawCurve(int a_steps, const glm::mat4& a_modelMatrix, BezierCurveNode3& a_
         const glm::vec3 pointA = (a_modelMatrix * glm::vec4(BezierCurveNode3::GetPoint(a_nodeA, a_nodeB, (float)i / a_steps), 1)).xyz();
         const glm::vec3 pointB = (a_modelMatrix * glm::vec4(BezierCurveNode3::GetPoint(a_nodeA, a_nodeB, (float)(i + 1) / a_steps), 1)).xyz();
 
-        Gizmos::DrawLine(pointA, pointB, 0.0025f, glm::vec4(0.93f, 0.53f, 0.00f, 1.00f));
+        Gizmos::DrawLine(pointA, pointB, 0.0025f, ColorTheme::Active);
     }
 }
 
@@ -321,7 +322,7 @@ void EditEditor::DrawObject(Camera* a_camera, Object* a_object, const glm::vec2&
 
                     const glm::vec4 pos = modelMatrix * glm::vec4(curve.GetPosition(), 1);
 
-                    Gizmos::DrawCircleFilled(pos, camFor, 0.025f, 10, glm::vec4(0.61f, 0.35f, 0.02f, 1.00f));
+                    Gizmos::DrawCircleFilled(pos, camFor, 0.025f, 10, ColorTheme::InActive);
                 }
                 else
                 {
@@ -334,12 +335,12 @@ void EditEditor::DrawObject(Camera* a_camera, Object* a_object, const glm::vec2&
                         {
                             const glm::vec4 handlePos = modelMatrix * glm::vec4(iter->Node.GetHandlePosition(), 1);
 
-                            Gizmos::DrawLine(pos, handlePos, camFor, 0.005f, glm::vec4(0.93f, 0.53f, 0.00f, 1.00f));
-                            Gizmos::DrawCircleFilled(handlePos, camFor, 0.05f, 15, glm::vec4(0.93f, 0.53f, 0.00f, 1.00f));
+                            Gizmos::DrawLine(pos, handlePos, camFor, 0.005f, ColorTheme::Active);
+                            Gizmos::DrawCircleFilled(handlePos, camFor, 0.05f, 15, ColorTheme::Active);
                         }
                         else
                         {
-                            Gizmos::DrawCircleFilled(pos, camFor, 0.05f, 15, glm::vec4(0.93f, 0.53f, 0.00f, 1.00f));
+                            Gizmos::DrawCircleFilled(pos, camFor, 0.05f, 15, ColorTheme::Active);
                         }
                     }
                 }
@@ -368,7 +369,7 @@ void EditEditor::DrawObject(Camera* a_camera, Object* a_object, const glm::vec2&
 
                 // Gizmos::DrawTriangle(pPos + diff * 0.5f, diff / len, camFor, 0.1f, glm::vec4(0.93f, 0.53f, 0.00f, 1.00f));
 
-                Gizmos::DrawLine(pos, pPos, camFor, 0.005f, glm::vec4(0.93f, 0.53f, 0.00f, 1.00f));
+                Gizmos::DrawLine(pos, pPos, camFor, 0.005f, ColorTheme::Active);
             }
 
             bool selected = false;
@@ -388,11 +389,11 @@ void EditEditor::DrawObject(Camera* a_camera, Object* a_object, const glm::vec2&
 
             if (!selected)
             {
-                Gizmos::DrawCircleFilled(pos, camFor, 0.025f, 10, glm::vec4(0.61f, 0.35f, 0.02f, 1.00f));
+                Gizmos::DrawCircleFilled(pos, camFor, 0.025f, 10, ColorTheme::InActive);
             }
             else
             {
-                Gizmos::DrawCircleFilled(pos, camFor, 0.025f, 10, glm::vec4(0.93f, 0.53f, 0.00f, 1.00f));
+                Gizmos::DrawCircleFilled(pos, camFor, 0.025f, 10, ColorTheme::Active);
             }
         }
 

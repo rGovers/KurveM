@@ -3,6 +3,7 @@
 #include <glad/glad.h>
 
 #include "Actions/MoveUVAction.h"
+#include "ColorTheme.h"
 #include "CurveModel.h"
 #include "Editor.h"
 #include "Gizmos.h"
@@ -110,8 +111,8 @@ void UVEditor::Update(double a_delta, const glm::vec2& a_winPos, const glm::vec2
     {
         const float pos = (i / 10.0f * 2 - 1) * BorderSize;
 
-        Gizmos::DrawLine(glm::vec3(pos, -BorderSize, 0), glm::vec3(pos, BorderSize, 0), glm::vec3(0, 0, 1), 0.001f, glm::vec4(0.61f, 0.35f, 0.02f, 1.00f));
-        Gizmos::DrawLine(glm::vec3(-BorderSize, pos, 0), glm::vec3(BorderSize, pos, 0), glm::vec3(0, 0, 1), 0.001f, glm::vec4(0.61f, 0.35f, 0.02f, 1.00f));
+        Gizmos::DrawLine(glm::vec3(pos, -BorderSize, 0), glm::vec3(pos, BorderSize, 0), glm::vec3(0, 0, 1), 0.001f, ColorTheme::InActive);
+        Gizmos::DrawLine(glm::vec3(-BorderSize, pos, 0), glm::vec3(BorderSize, pos, 0), glm::vec3(0, 0, 1), 0.001f, ColorTheme::InActive);
     }
 
     Object* obj = m_workspace->GetSelectedObject();
@@ -135,7 +136,7 @@ void UVEditor::Update(double a_delta, const glm::vec2& a_winPos, const glm::vec2
 
                     pos += uv;
 
-                    Gizmos::DrawCircleFilled(glm::vec3((uv * 2.0f - 1.0f) * BorderSize, 0.1f), glm::vec3(0, 0, 1), 0.01f, 10, glm::vec4(0.93f, 0.53f, 0.00f, 1.00f));
+                    Gizmos::DrawCircleFilled(glm::vec3((uv * 2.0f - 1.0f) * BorderSize, 0.1f), glm::vec3(0, 0, 1), 0.01f, 10, ColorTheme::Active);
                 }
 
                 pos /= nodeCount;

@@ -7,6 +7,7 @@
 #include "imgui.h"
 
 class Action;
+class Animation;
 class LongTask;
 class Modal;
 class Object;
@@ -60,6 +61,9 @@ private:
     bool                         m_block;
     bool                         m_clear;
     std::thread                  m_taskThread;
+
+    Animation*                   m_currentAnimation;
+    std::list<Animation*>        m_animations;
 
     std::list<Action*>           m_actionQueue;
     std::list<Action*>::iterator m_actionQueueIndex;
@@ -119,6 +123,22 @@ public:
         return m_block;
     }
 
+    inline std::list<Animation*> GetAnimations() const
+    {
+        return m_animations;
+    }
+    void AddAnimation(Animation* a_animation);
+    void RemoveAnimation(Animation* a_animation);
+
+    inline Animation* GetCurrentAnimation() const
+    {
+        return m_currentAnimation;
+    }
+    inline void SetCurrentAnimation(Animation* a_animation)
+    {
+        m_currentAnimation = a_animation;
+    }
+
     Object* GetObject(long long a_id) const;
 
     inline unsigned int GetSelectedObjectCount() const
@@ -140,6 +160,7 @@ public:
     {
         return m_objectList;
     }
+    std::list<Object*> GetAllObjectsList() const;
 
     inline e_ToolMode GetToolMode() const
     {

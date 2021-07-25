@@ -63,7 +63,7 @@ void PropertiesWindow::PushRotation(const glm::quat& a_quat)
 
 void PropertiesWindow::PropertiesTabButton(const char* a_label, const char* a_path, e_ObjectPropertiesTab a_propertiesTab, const char* a_tooltip)
 {
-    if (ImGuiExt::ImageToggleButton(a_label, a_path, m_propertiesMode == a_propertiesTab, { 16, 16 }))
+    if (ImGuiExt::ImageToggleButton(a_label, a_path, m_propertiesMode == a_propertiesTab, glm::vec2(16, 16)))
     {
         m_propertiesMode = a_propertiesTab;
     }

@@ -51,7 +51,7 @@ void EditorWindow::Update(double a_delta)
 
                 ImGui::Separator();
 
-                ImGuiExt::Image("Textures/OBJECT_ARMATURE.png", { 16, 16 });
+                ImGuiExt::Image("Textures/OBJECT_ARMATURE.png", glm::vec2(16, 16));
 
                 ImGui::SameLine();
 
