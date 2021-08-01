@@ -67,6 +67,7 @@ private:
     float                     m_brushIntensity;
     float                     m_brushRadius;
 
+    float                     m_animTime;
     float                     m_selectedTime;
 
     void DrawObject(Object* a_object, const glm::vec2& a_winSize);
@@ -103,6 +104,15 @@ public:
     inline void SetBrushIntensity(float a_value)
     {
         m_brushIntensity = a_value;
+    }
+
+    inline float GetAnimationTime() const
+    {
+        return m_animTime;
+    }
+    inline void SetAnimationTime(float a_time)
+    {
+        m_animTime = a_time;
     }
 
     inline float GetSelectedTime() const

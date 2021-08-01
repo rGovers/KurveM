@@ -202,6 +202,7 @@ public:
     {
         m_curAction = nullptr;
     }
+    e_ActionType GetCurrentActionType() const;
     inline Action* GetCurrentAction() const
     {
         return m_curAction;

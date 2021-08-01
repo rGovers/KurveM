@@ -1,16 +1,41 @@
 #pragma once
 
+#define GLM_FORCE_SWIZZLE 
+#include <glm/glm.hpp>
+
+#include <glm/gtc/quaternion.hpp>
+#include <list>
+
+class Object;
 class Workspace;
+
+struct AnimationNode
+{
+    float Time;
+
+    glm::vec3 Translation;
+    glm::quat Rotation;
+    glm::vec3 Scale;
+};
+
+struct AnimationGroup
+{
+    Object* SelectedObject;
+
+    std::list<AnimationNode> Nodes;
+};
 
 class Animation
 {
 private:
-    Workspace* m_workspace;
+    Workspace*                m_workspace;
+          
+    char*                     m_name;
+          
+    int                       m_referenceFramerate;
+    float                     m_length;
 
-    char*      m_name;
-
-    int        m_referenceFramerate;
-    float      m_length;
+    std::list<AnimationGroup> m_nodes;
 
 protected:
 
@@ -40,4 +65,19 @@ public:
     {
         m_length = a_value;
     }
+
+    inline std::list<AnimationGroup> GetNodes() const
+    {
+        return m_nodes;
+    }
+
+    void AddNode(Object* a_object, const AnimationNode& a_node);
+    void RemoveNode(Object* a_object, const AnimationNode& a_node);
+
+    AnimationNode GetNode(Object* a_object, float a_time) const;
+    void SetNode(Object* a_object, const AnimationNode& a_node);
+
+    glm::vec3 GetTranslation(Object* a_object, float a_time) const;
+    glm::quat GetRotation(Object* a_object, float a_time) const;
+    glm::vec3 GetScale(Object* a_object, float a_time) const;
 };

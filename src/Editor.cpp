@@ -98,6 +98,7 @@ void Editor::Init()
     m_curAction = nullptr;
 
     m_selectedTime = 0.0f;
+    m_animTime = 0.0f;
 
     m_editorMode = EditorMode_Object;
     m_faceCullingMode = EditorFaceCullingMode_Back;

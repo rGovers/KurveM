@@ -26,6 +26,14 @@ FileToHeader(
     HEADER_FILE "include/Shaders/EditorStandardPixel.h"
     VARIABLE_NAME "EditorStandardPixel")
 FileToHeader(
+    SOURCE_FILE "shaders/animatorStandard.vert"
+    HEADER_FILE "include/Shaders/AnimatorStandardVertex.h"
+    VARIABLE_NAME "AnimatorStandardVertex")
+FileToHeader(
+    SOURCE_FILE "shaders/animatorStandard.frag"
+    HEADER_FILE "include/Shaders/AnimatorStandardPixel.h"
+    VARIABLE_NAME "AnimatorStandardPixel")
+FileToHeader(
     SOURCE_FILE "shaders/weightStandard.vert"
     HEADER_FILE "include/Shaders/WeightStandardVertex.h"
     VARIABLE_NAME "WeightStandardVertex")

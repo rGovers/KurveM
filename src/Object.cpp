@@ -10,12 +10,15 @@
 #include "Model.h"
 #include "ShaderPixel.h"
 #include "ShaderProgram.h"
+#include "Shaders/AnimatorStandardPixel.h"
+#include "Shaders/AnimatorStandardVertex.h"
 #include "Shaders/EditorStandardPixel.h"
 #include "Shaders/EditorStandardVertex.h"
 #include "Shaders/ReferenceImagePixel.h"
 #include "Shaders/ReferenceImageVertex.h"
 #include "Shaders/WeightStandardPixel.h"
 #include "Shaders/WeightStandardVertex.h"
+#include "ShaderStorageBuffer.h"
 #include "ShaderVertex.h"
 #include "Texture.h"
 #include "Transform.h"
@@ -29,6 +32,9 @@ Object::Object(const char* a_name, e_ObjectType a_objectType)
     m_name = nullptr;
 
     m_transform = new Transform();
+    m_animationTransform = new Transform();
+
+    m_armatureBuffer = nullptr;
 
     m_parent = nullptr;
 
@@ -43,10 +49,16 @@ Object::Object(const char* a_name, e_ObjectType a_objectType)
 
     m_rootObject = nullptr;
 
-    m_program = Datastore::GetShaderProgram("SHADER_EDITORSTANDARD");
-    if (m_program == nullptr)
+    m_baseProgram = Datastore::GetShaderProgram("SHADER_EDITORSTANDARD");
+    if (m_baseProgram == nullptr)
     {
-        m_program = ShaderProgram::InitProgram("SHADER_EDITORSTANDARD", EDITORSTANDARDVERTEX, EDITORSTANDARDPIXEL);
+        m_baseProgram = ShaderProgram::InitProgram("SHADER_EDITORSTANDARD", EDITORSTANDARDVERTEX, EDITORSTANDARDPIXEL);
+    }
+
+    m_animatorProgram = Datastore::GetShaderProgram("SHADER_ANIMATORSTANDARD");
+    if (m_animatorProgram == nullptr)
+    {
+        m_animatorProgram = ShaderProgram::InitProgram("SHADER_ANIMATORSTANDARD", ANIMATORSTANDARDVERTEX, ANIMATORSTANDARDPIXEL);
     }
 
     m_weightProgram = Datastore::GetShaderProgram("SHADER_WEIGHTSTANDARD");
@@ -89,7 +101,14 @@ Object::~Object()
         m_name = nullptr;
     }
 
+    if (m_armatureBuffer != nullptr)
+    {
+        delete m_armatureBuffer;
+        m_armatureBuffer = nullptr;
+    }
+
     delete m_transform;
+    delete m_animationTransform;
 
     for (auto iter = m_children.begin(); iter != m_children.end(); ++iter)
     {
@@ -289,7 +308,7 @@ void Object::DrawBase(Camera* a_camera, const glm::vec2& a_winSize)
 
                 if (model != nullptr)
                 {   
-                    const unsigned int programHandle = m_program->GetHandle();
+                    const unsigned int programHandle = m_baseProgram->GetHandle();
                     glUseProgram(programHandle);
 
                     const unsigned int vao = model->GetVAO();
@@ -307,6 +326,137 @@ void Object::DrawBase(Camera* a_camera, const glm::vec2& a_winSize)
         }
         }
     }   
+}
+
+void UpdateMatrices(const glm::mat4& a_parent, const glm::mat4& a_animParent, Object* a_obj, std::vector<glm::mat4>* a_matrices)
+{
+    if (a_obj != nullptr && a_obj->GetObjectType() == ObjectType_ArmatureNode)
+    {
+        const Transform* transform = a_obj->GetTransform();
+        const Transform* animTransform = a_obj->GetAnimationTransform();
+
+        const glm::mat4 matrix = transform->ToMatrix();
+        const glm::mat4 global = a_parent * matrix;
+
+        const glm::mat4 animMatrix = animTransform->ToMatrix();
+        const glm::mat4 globalAnim = a_animParent * animMatrix;
+
+        const glm::mat4 globalInv = glm::inverse(global);
+
+        const glm::mat4 boneMat = globalInv * globalAnim;
+
+        a_matrices->emplace_back(boneMat);
+
+        const std::list<Object*> children = a_obj->GetChildren();
+        for (auto iter = children.begin(); iter != children.end(); ++iter)
+        {
+            UpdateMatrices(global, globalAnim, *iter, a_matrices);
+        }
+    }
+}
+
+void Object::DrawAnimator(Camera* a_camera, const glm::vec2& a_winSize)
+{
+    if (IsGlobalVisible())
+    {
+        const glm::mat4 view = a_camera->GetView();
+        const glm::mat4 proj = a_camera->GetProjection(a_winSize);
+
+        const glm::mat4 world = GetGlobalMatrix();
+
+        switch (m_objectType)
+        {
+        case ObjectType_Armature:
+        {
+            std::vector<glm::mat4> matrices;
+
+            for (auto iter = m_children.begin(); iter != m_children.end(); ++iter)
+            {
+                UpdateMatrices(glm::mat4(1), glm::mat4(1), *iter, &matrices);
+            }
+
+            if (m_armatureBuffer == nullptr)
+            {
+                m_armatureBuffer = new ShaderStorageBuffer(matrices.data(), matrices.size());
+            }
+            else
+            {
+                m_armatureBuffer->WriteData(matrices.data(), matrices.size());
+            }
+
+            break;
+        }
+        case ObjectType_ReferenceImage:
+        {
+            if (m_referenceImage != nullptr)
+            {
+                glEnable(GL_BLEND);
+                glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);  
+
+                const unsigned int programHandle = m_referenceProgram->GetHandle();
+                glUseProgram(programHandle);
+
+                const unsigned int vao = Model::GetEmpty()->GetVAO();
+                glBindVertexArray(vao);
+
+                glUniformMatrix4fv(0, 1, false, (float*)&view);
+                glUniformMatrix4fv(1, 1, false, (float*)&proj);
+                glUniformMatrix4fv(2, 1, false, (float*)&world);
+
+                const unsigned int texHandle = m_referenceImage->GetHandle();
+                glActiveTexture(GL_TEXTURE0);
+                glBindTexture(GL_TEXTURE_2D, texHandle);  
+                glUniform1i(4, 0);
+
+                glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+                glDisable(GL_BLEND);
+            }
+
+            break;
+        }
+        case ObjectType_CurveModel:
+        {
+            if (m_curveModel != nullptr)
+            {
+                const Model* model = m_curveModel->GetDisplayModel();
+                if (model != nullptr)
+                {
+                    unsigned int programHandle = m_baseProgram->GetHandle();
+
+                    const Object* arm = m_curveModel->GetArmature();
+                    if (arm != nullptr)
+                    {
+                        programHandle = m_animatorProgram->GetHandle();
+                    }
+
+                    glUseProgram(programHandle);
+                    
+                    if (arm != nullptr)
+                    {
+                        const ShaderStorageBuffer* buffer = arm->m_armatureBuffer;
+                        const unsigned int bufferHandle = buffer->GetHandle();
+
+                        glUniform1ui(3, m_curveModel->GetArmatureNodeCount());
+
+                        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, bufferHandle);
+                    }
+                    
+                    const unsigned int vao = model->GetVAO();
+                    glBindVertexArray(vao);
+
+                    glUniformMatrix4fv(0, 1, false, (float*)&view);
+                    glUniformMatrix4fv(1, 1, false, (float*)&proj);
+                    glUniformMatrix4fv(2, 1, false, (float*)&world);
+
+                    glDrawElements(GL_TRIANGLES, model->GetIndexCount(), GL_UNSIGNED_INT, nullptr);
+                }                
+            }
+
+            break;
+        }
+        }
+    }
 }
 void Object::DrawWeight(Camera* a_camera, const glm::vec2& a_winSize, unsigned int a_bone, unsigned int a_boneCount)
 {

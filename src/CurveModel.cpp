@@ -103,6 +103,10 @@ std::list<Object*> CurveModel::GetArmatureNodes() const
 
     return nodes;
 }
+unsigned int CurveModel::GetArmatureNodeCount() const
+{
+    return GetArmatureNodes().size();
+}
 
 float GetNodeDist(const BezierCurveNode3& a_nodeA, const BezierCurveNode3& a_nodeB)
 {

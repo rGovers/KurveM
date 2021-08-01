@@ -727,6 +727,16 @@ bool Workspace::PushAction(Action* a_action)
     return true;
 }
 
+e_ActionType Workspace::GetCurrentActionType() const
+{
+    if (m_curAction != nullptr)
+    {
+        return m_curAction->GetActionType();
+    }
+
+    return ActionType_Null;
+}
+
 void Workspace::PushLongTask(LongTask* a_longTask)
 {
     if (a_longTask->PushAction(this))
@@ -768,6 +778,8 @@ void Workspace::ClearSelectedObjects()
     {
         m_editor->ClearSelectedNodes();
     }
+
+    m_curAction = nullptr;
 }
 void Workspace::AddSelectedObject(Object* a_object)
 {
@@ -782,6 +794,8 @@ void Workspace::AddSelectedObject(Object* a_object)
     m_selectedObjects.emplace_back(a_object);
 
     m_editor->ClearSelectedNodes();
+
+    m_curAction = nullptr;
 }
 void Workspace::RemoveSelectedObject(Object* a_object)
 {
@@ -796,6 +810,8 @@ void Workspace::RemoveSelectedObject(Object* a_object)
     }
 
     m_editor->ClearSelectedNodes();
+
+    m_curAction = nullptr;
 }
 
 void GetAllObjects(Object* a_object, std::list<Object*>* a_objs)

@@ -34,7 +34,7 @@ SetCurveSmartStepAction::~SetCurveSmartStepAction()
 
 e_ActionType SetCurveSmartStepAction::GetActionType() 
 {
-    return ActionType_SetCurveSmartStepAction;
+    return ActionType_SetCurveSmartStep;
 }
 
 bool SetCurveSmartStepAction::Redo()

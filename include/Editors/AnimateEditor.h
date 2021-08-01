@@ -11,6 +11,8 @@ private:
 
     Workspace* m_workspace;
 
+    void UpdateObject(Object* a_object);
+
 protected:
 
 public:

@@ -210,11 +210,35 @@ bool ImGuiExt::Image(const char* a_path, const ImVec2& a_size)
     return false;
 }
 
-bool ImGuiExt::ImageSwitchButton(const char* a_label, const char* a_pathEnabled, const char* a_pathDisabled, bool* a_state, const glm::vec2& a_size)
+bool ImGuiExt::ImageButton(const char* a_label, const char* a_path, const glm::vec2& a_size)
 {
-    ImageSwitchButton(a_label, a_pathEnabled, a_pathDisabled, a_state, ImVec2(a_size.x, a_size.y));
+    ImageButton(a_label, a_path, ImVec2(a_size.x, a_size.y));
 }
-bool ImGuiExt::ImageSwitchButton(const char* a_label, const char* a_pathEnabled, const char* a_pathDisabled, bool* a_state, const ImVec2& a_size)
+bool ImGuiExt::ImageButton(const char* a_label, const char* a_path, const ImVec2& a_size)
+{
+    Texture* tex = Datastore::GetTexture(a_path);
+
+    if (tex != nullptr)
+    {
+        const ImGuiID id = ImGui::GetID(a_label);
+
+        ImGui::PushID(id);
+        const bool ret = ImGui::ImageButton((ImTextureID)tex->GetHandle(), a_size);
+        ImGui::PopID();
+
+        return ret;
+    }
+    else
+    {
+        return ImGui::Button(a_label, a_size);
+    }
+}
+
+bool ImGuiExt::ImageSwitchButton(const char* a_label, const char* a_pathEnabled, const char* a_pathDisabled, bool* a_state, const glm::vec2& a_size, bool a_background)
+{
+    ImageSwitchButton(a_label, a_pathEnabled, a_pathDisabled, a_state, ImVec2(a_size.x, a_size.y), a_background);
+}
+bool ImGuiExt::ImageSwitchButton(const char* a_label, const char* a_pathEnabled, const char* a_pathDisabled, bool* a_state, const ImVec2& a_size, bool a_background)
 {
     ImGuiStyle& style = ImGui::GetStyle();
 
@@ -222,8 +246,11 @@ bool ImGuiExt::ImageSwitchButton(const char* a_label, const char* a_pathEnabled,
     const ImVec4 hColor = style.Colors[ImGuiCol_ButtonHovered];
     const ImVec4 aColor = style.Colors[ImGuiCol_ButtonActive];
 
-    style.Colors[ImGuiCol_Button] = ImVec4(0, 0, 0, 0);
-    style.Colors[ImGuiCol_ButtonActive] = ImVec4(0, 0, 0, 0);
+    if (!a_background)
+    {
+        style.Colors[ImGuiCol_Button] = ImVec4(0, 0, 0, 0);
+        style.Colors[ImGuiCol_ButtonActive] = ImVec4(0, 0, 0, 0);
+    }
 
     const char* path = a_pathDisabled;
 

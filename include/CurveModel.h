@@ -178,6 +178,7 @@ public:
         return m_armature;
     }
     std::list<Object*> GetArmatureNodes() const;
+    unsigned int GetArmatureNodeCount() const;
 
     unsigned int Get3PointFaceIndex(unsigned int a_indexA, unsigned int a_indexB, unsigned int a_indexC) const;
     unsigned int Get3PointFaceIndex(const unsigned int a_indices[6]) const;

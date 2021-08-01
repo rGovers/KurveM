@@ -3,6 +3,7 @@
 enum e_ActionType 
 {
     ActionType_Null = -1,
+    ActionType_AddAnimationNode,
     ActionType_AddCurveNodeWeight,
     ActionType_CreateAnimation,
     ActionType_CreateObject,
@@ -16,12 +17,16 @@ enum e_ActionType
     ActionType_MoveNode,
     ActionType_MoveNodeHandle,
     ActionType_MoveUVAction,
+    ActionType_RemoveAnimationNode,
     ActionType_RenameObject,
     ActionType_RotateObject,
     ActionType_ScaleObject,
-    ActionType_SetCurveArmatureAction,
-    ActionType_SetCurveSmartStepAction,
-    ActionType_SetCurveStepsAction,
+    ActionType_SetAnimationFramerate,
+    ActionType_SetAnimationLength,
+    ActionType_SetAnimationNode,
+    ActionType_SetCurveArmature,
+    ActionType_SetCurveSmartStep,
+    ActionType_SetCurveSteps,
     ActionType_TranslateObject,
     ActionType_TranslateObjectRelative,
     ActionType_End

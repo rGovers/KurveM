@@ -11,6 +11,8 @@ private:
     Workspace* m_workspace;
     Editor*    m_editor;
 
+    bool       m_playing;
+
 protected:
 
 public:

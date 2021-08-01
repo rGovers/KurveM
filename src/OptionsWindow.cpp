@@ -3,6 +3,8 @@
 #include <string>
 
 #include "Actions/DeleteAnimationAction.h"
+#include "Actions/SetAnimationFramerateAction.h"
+#include "Actions/SetAnimationLengthAction.h"
 #include "Animation.h"
 #include "imgui.h"
 #include "ImGuiExt.h"
@@ -196,15 +198,69 @@ void OptionsWindow::Update(double a_delta)
                     int refFrameRate = curAnimation->GetReferenceFramerate();
                     if (ImGui::InputInt("Reference Framerate", &refFrameRate))
                     {
-                        curAnimation->SetReferenceFramerate(glm::max(1, refFrameRate));
+                        switch (m_workspace->GetCurrentActionType())
+                        {
+                        case ActionType_SetAnimationFramerate:
+                        {
+                            SetAnimationFramerateAction* action = (SetAnimationFramerateAction*)m_workspace->GetCurrentAction();
+
+                            action->SetFramerate(glm::max(1, refFrameRate));
+                            action->Execute();
+
+                            break;
+                        }
+                        default:
+                        {
+                            Action* action = new SetAnimationFramerateAction(curAnimation, glm::max(1, refFrameRate));
+                            if (!m_workspace->PushAction(action))
+                            {
+                                printf("Cannot set animation length \n");
+
+                                delete action;
+                            }
+                            else
+                            {
+                                m_workspace->SetCurrentAction(action);
+                            }
+
+                            break;
+                        }
+                        }
                     }
 
                     ImGui::NextColumn();
 
                     float animTime = curAnimation->GetAnimationLength();
-                    if (ImGui::DragFloat("Animation Length", &animTime, 0.01f, 0.0f))
+                    if (ImGui::DragFloat("Animation Length", &animTime, 0.01f))
                     {
-                        curAnimation->SetAnimationLength(animTime);
+                        switch (m_workspace->GetCurrentActionType())
+                        {
+                        case ActionType_SetAnimationLength:
+                        {
+                            SetAnimationLengthAction* action = (SetAnimationLengthAction*)m_workspace->GetCurrentAction();
+
+                            action->SetLength(glm::max(0.0f, animTime));
+                            action->Execute();
+
+                            break;
+                        }
+                        default:
+                        {
+                            Action* action = new SetAnimationLengthAction(curAnimation, glm::max(0.0f, animTime));
+                            if (!m_workspace->PushAction(action))
+                            {
+                                printf("Cannot set animation length \n");
+
+                                delete action;
+                            }
+                            else
+                            {
+                                m_workspace->SetCurrentAction(action);
+                            }
+
+                            break;
+                        }
+                        }
                     }
                 }
             }

@@ -22,8 +22,11 @@ namespace ImGuiExt
     bool Image(const char* a_path, const glm::vec2& a_size);
     bool Image(const char* a_path, const ImVec2& a_size);
 
-    bool ImageSwitchButton(const char* a_label, const char* a_pathEnabled, const char* a_pathDisabled, bool* a_state, const glm::vec2& a_size);
-    bool ImageSwitchButton(const char* a_label, const char* a_pathEnabled, const char* a_pathDisabled, bool* a_state, const ImVec2& a_size);
+    bool ImageButton(const char* a_label, const char* a_path, const glm::vec2& a_size);
+    bool ImageButton(const char* a_label, const char* a_path, const ImVec2& a_size);
+
+    bool ImageSwitchButton(const char* a_label, const char* a_pathEnabled, const char* a_pathDisabled, bool* a_state, const glm::vec2& a_size, bool a_background = false);
+    bool ImageSwitchButton(const char* a_label, const char* a_pathEnabled, const char* a_pathDisabled, bool* a_state, const ImVec2& a_size, bool a_background = false);
 
     bool ImageToggleButton(const char* a_label, const char* a_path, bool a_state, const glm::vec2& a_size);
     bool ImageToggleButton(const char* a_label, const char* a_path, bool a_state, const ImVec2& a_size);

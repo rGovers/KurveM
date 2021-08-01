@@ -35,7 +35,7 @@ SetCurveArmatureAction::~SetCurveArmatureAction()
 
 e_ActionType SetCurveArmatureAction::GetActionType() 
 {
-    return ActionType_SetCurveArmatureAction;
+    return ActionType_SetCurveArmature;
 }
 
 bool SetCurveArmatureAction::Redo()

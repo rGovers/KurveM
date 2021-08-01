@@ -9,10 +9,12 @@
 
 #include "tinyxml2.h"
 
+class Animation; 
 class Camera;
 class CurveModel;
 class Model;
 class ShaderProgram;
+class ShaderStorageBuffer;
 class Texture;
 class Transform;
 class Workspace;
@@ -41,30 +43,34 @@ class Object
 private:
     static long long ObjectIDNum;
 
-    bool               m_visible;
+    bool                 m_visible;
+    
+    long long            m_id;
+            
+    char*                m_name; 
+            
+    char*                m_referencePath;
+    Texture*             m_referenceImage;
+    
+    e_ObjectType         m_objectType;
+    
+    Transform*           m_transform;
+    Transform*           m_animationTransform;
 
-    long long          m_id;
-        
-    char*              m_name; 
-        
-    char*              m_referencePath;
-    Texture*           m_referenceImage;
+    Object*              m_parent;
+    std::list<Object*>   m_children;
+    
+    Object*              m_rootObject;
 
-    e_ObjectType       m_objectType;
+    ShaderStorageBuffer* m_armatureBuffer;
 
-    Transform*         m_transform;
+    ShaderProgram*       m_baseProgram;
+    ShaderProgram*       m_animatorProgram;
+    ShaderProgram*       m_weightProgram;
 
-    Object*            m_parent;
-    std::list<Object*> m_children;
+    ShaderProgram*       m_referenceProgram;
 
-    Object*            m_rootObject;
-
-    ShaderProgram*     m_program;
-    ShaderProgram*     m_weightProgram;
-
-    ShaderProgram*     m_referenceProgram;
-
-    CurveModel*        m_curveModel;
+    CurveModel*          m_curveModel;
 
 protected:
 
@@ -99,6 +105,10 @@ public:
     inline Transform* GetTransform() const
     {
         return m_transform;
+    }
+    inline Transform* GetAnimationTransform() const
+    {
+        return m_animationTransform;
     }
 
     inline Object* GetRootObject() const
@@ -137,7 +147,10 @@ public:
     glm::vec3 GetGlobalTranslation() const;
     void SetGlobalTranslation(const glm::vec3& a_pos);
 
+    void Update(double a_delta, float a_time);
+
     void DrawBase(Camera* a_camera, const glm::vec2& a_winSize);
+    void DrawAnimator(Camera* a_camera, const glm::vec2& a_winSize);
     void DrawWeight(Camera* a_camera, const glm::vec2& a_winSize, unsigned int a_bone, unsigned int a_boneCount);
 
     void WriteOBJ(std::ofstream* a_file, bool a_smartStep, int a_steps) const;
