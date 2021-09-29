@@ -1,8 +1,7 @@
 #pragma once
 
-#include <glm/vec2.hpp>
-#include <glm/vec3.hpp>
-#include <glm/vec4.hpp>
+#define GLM_FORCE_SWIZZLE 
+#include <glm/glm.hpp>
 
 struct Vertex
 {
@@ -29,7 +28,7 @@ protected:
 
 public:
     Model(Vertex* a_vertices, unsigned int* a_indices, unsigned int a_vertexCount, unsigned int a_indexCount);
-    ~Model();
+    virtual ~Model();
 
     static void Init();
     static void Destroy();

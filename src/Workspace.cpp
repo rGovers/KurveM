@@ -24,6 +24,7 @@
 #include "Modals/SaveFileModal.h"
 #include "Model.h"
 #include "Object.h"
+#include "TransformVisualizer.h"
 #include "UVEditor.h"
 #include "Windows/AnimatorWindow.h"
 #include "Windows/EditorWindow.h"
@@ -135,6 +136,8 @@ Workspace::Workspace()
 
     m_editor = nullptr;
 
+    TransformVisualizer::Init();
+
     New();
 
     m_editor = new Editor(this);
@@ -150,6 +153,8 @@ Workspace::Workspace()
 }
 Workspace::~Workspace()
 {
+    TransformVisualizer::Destroy();
+
     for (auto iter = m_windows.begin(); iter != m_windows.end(); ++iter)
     {
         delete *iter;

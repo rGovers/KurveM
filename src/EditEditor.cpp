@@ -6,6 +6,9 @@
 #include "Actions/ExtrudeNodeAction.h"
 #include "Actions/MoveNodeAction.h"
 #include "Actions/MoveNodeHandleAction.h"
+#include "Actions/RotateNodeAction.h"
+#include "Actions/RotateObjectRelativeAction.h"
+#include "Actions/ScaleNodeAction.h"
 #include "Actions/TranslateObjectRelativeAction.h"
 #include "Camera.h"
 #include "ColorTheme.h"
@@ -14,6 +17,7 @@
 #include "Object.h"
 #include "SelectionControl.h"
 #include "Transform.h"
+#include "TransformVisualizer.h"
 #include "Workspace.h"
 
 EditEditor::EditEditor(Editor* a_editor, Workspace* a_workspace)
@@ -34,52 +38,150 @@ e_EditorMode EditEditor::GetEditorMode()
 
 bool EditEditor::IsInteractingCurveNode(Camera* a_camera, const glm::vec3& a_pos, const glm::vec3& a_axis, const glm::vec2& a_cursorPos, const glm::vec2& a_screenSize, CurveModel* a_model, const glm::mat4& a_viewProj)
 {
-    if (SelectionControl::PointInPoint(a_viewProj, a_cursorPos, 0.025f, a_pos + a_axis * 0.3f))
+    constexpr glm::mat4 iden = glm::identity<glm::mat4>();
+        
+    glm::vec3 up = glm::vec3(0, 1, 0);
+    if (glm::dot(up, a_axis) >= 0.9f)
     {
-        const glm::vec3 cPos = a_camera->GetScreenToWorld(glm::vec3(a_cursorPos, 0.9f), (int)a_screenSize.x, (int)a_screenSize.y);
+        up = glm::vec3(0, 0, 1);
+    }
+    const glm::vec3 right = glm::cross(up, a_axis);
+    up = glm::cross(right, a_axis);
 
-        const unsigned int nodeCount = m_editor->GetSelectedNodeCount();
-        unsigned int* indices = m_editor->GetSelectedNodesArray();
+    switch (m_workspace->GetToolMode())
+    {
+    case ToolMode_Translate:
+    {
+        const glm::mat4 rot = glm::mat4(glm::vec4(right, 0), glm::vec4(up, 0), glm::vec4(a_axis, 0), glm::vec4(0, 0, 0, 1));
 
-        switch (m_workspace->GetToolMode())
+        const glm::mat4 mat = a_viewProj * glm::translate(iden, a_pos + a_axis * 0.25f) * glm::scale(iden, glm::vec3(0.25f)) * rot;
+
+        const LocalModel* handle = TransformVisualizer::GetTranslationHandle();
+
+        if (SelectionControl::PointInMesh(mat, handle, a_cursorPos))
         {
-        case ToolMode_Translate:
-        {
+            const glm::vec3 cPos = a_camera->GetScreenToWorld(glm::vec3(a_cursorPos, 0.9f), a_screenSize);
+            const unsigned int nodeCount = m_editor->GetSelectedNodeCount();
+            const unsigned int* indices = m_editor->GetSelectedNodesArray();
+
             Action* action = new MoveNodeAction(m_workspace, indices, nodeCount, a_model, cPos, a_axis);
-            if (!m_workspace->PushAction(action))
+            if (m_workspace->PushAction(action))
+            {
+                m_editor->SetCurrentAction(action);   
+            }
+            else
             {
                 printf("Error moving node \n");
 
                 delete action;
             }
-            else
+
+            delete[] indices;
+
+            return true;
+        }
+
+        break;
+    }
+    case ToolMode_Rotate:
+    {
+        const glm::mat4 rot = glm::mat4(glm::vec4(right, 0), glm::vec4(a_axis, 0), glm::vec4(-up, 0), glm::vec4(0, 0, 0, 1));
+
+        const glm::mat4 mat = a_viewProj * glm::translate(iden, a_pos) * glm::scale(iden, glm::vec3(0.25f)) * rot;
+
+        const LocalModel* handle = TransformVisualizer::GetRotationHandle();
+
+        if (SelectionControl::PointInMesh(mat, handle, a_cursorPos))
+        {
+            const glm::vec3 cPos = a_camera->GetScreenToWorld(glm::vec3(a_cursorPos, 0.9f), a_screenSize);
+            const unsigned int nodeCount = m_editor->GetSelectedNodeCount();
+            const unsigned int* indices = m_editor->GetSelectedNodesArray();
+
+            Action* action = new RotateNodeAction(m_workspace, indices, nodeCount, a_model, cPos, a_axis);
+            if (m_workspace->PushAction(action))
             {
                 m_editor->SetCurrentAction(action);
             }
+            else
+            {
+                printf("Error rotating node \n");
 
-            break;
+                delete action;
+            }
+
+            delete[] indices;
+
+            return true;
         }
-        case ToolMode_Extrude:
+
+        break;
+    }
+    case ToolMode_Scale:
+    {
+        const glm::mat4 rot = glm::mat4(glm::vec4(right, 0), glm::vec4(up, 0), glm::vec4(a_axis, 0), glm::vec4(0, 0, 0, 1));
+
+        const glm::mat4 mat = a_viewProj * glm::translate(iden, a_pos + a_axis * 0.25f) * glm::scale(iden, glm::vec3(0.25f)) * rot;
+
+        const LocalModel* handle = TransformVisualizer::GetScaleHandle();
+
+        if (SelectionControl::PointInMesh(mat, handle, a_cursorPos))
         {
+            const glm::vec3 cPos = a_camera->GetScreenToWorld(glm::vec3(a_cursorPos, 0.9f), a_screenSize);
+            const unsigned int nodeCount = m_editor->GetSelectedNodeCount();
+            const unsigned int* indices = m_editor->GetSelectedNodesArray();
+
+            Action* action = new ScaleNodeAction(m_workspace, indices, nodeCount, a_model, cPos, a_axis);
+            if (m_workspace->PushAction(action))
+            {
+                m_editor->SetCurrentAction(action);
+            }
+            else
+            {
+                printf("Error scaling node \n");
+
+                delete action;
+            }
+
+            delete[] indices;
+
+            return true;
+        }
+
+        break;
+    }
+    case ToolMode_Extrude:
+    {
+        const glm::mat4 rot = glm::mat4(glm::vec4(right, 0), glm::vec4(up, 0), glm::vec4(a_axis, 0), glm::vec4(0, 0, 0, 1));
+
+        const glm::mat4 mat = a_viewProj * glm::translate(iden, a_pos + a_axis * 0.25f) * glm::scale(iden, glm::vec3(0.25f)) * rot;
+
+        const LocalModel* handle = TransformVisualizer::GetTranslationHandle();
+
+        if (SelectionControl::PointInMesh(mat, handle, a_cursorPos))
+        {
+            const glm::vec3 cPos = a_camera->GetScreenToWorld(glm::vec3(a_cursorPos, 0.9f), a_screenSize);
+            const unsigned int nodeCount = m_editor->GetSelectedNodeCount();
+            unsigned int* indices = m_editor->GetSelectedNodesArray();
+
             Action* action = new ExtrudeNodeAction(m_workspace, m_editor, indices, nodeCount, a_model, cPos, a_axis);
-            if (!m_workspace->PushAction(action))
+            if (m_workspace->PushAction(action))
+            {
+                m_editor->SetCurrentAction(action);
+            }
+            else
             {
                 printf("Error extruding node \n");
 
                 delete action;
             }
-            else
-            {
-                m_editor->SetCurrentAction(action);
-            }
 
-            break;
-        }
-        }
-        
-        delete[] indices;
+            delete[] indices;
 
-        return true;
+            return true;
+        }
+
+        break;
+    }
     }
 
     return false;
@@ -111,53 +213,121 @@ bool EditEditor::IsInteractingCurveNodeHandle(const Node3Cluster& a_node, unsign
 
 bool EditEditor::InteractingArmatureNode(Camera* a_camera, const glm::vec3& a_pos, const glm::vec3& a_axis, const glm::vec2& a_cursorPos, const glm::vec2& a_screenSize, const glm::mat4& a_viewProj)
 {
-    if (SelectionControl::PointInPoint(a_viewProj, a_cursorPos, 0.025f, a_pos + a_axis * 0.3f))
+    constexpr glm::mat4 iden = glm::identity<glm::mat4>();
+        
+    glm::vec3 up = glm::vec3(0, 1, 0);
+    if (glm::dot(up, a_axis) >= 0.9f)
     {
-        const glm::vec3 cPos = a_camera->GetScreenToWorld(glm::vec3(a_cursorPos, 0.9f), (int)a_screenSize.x, (int)a_screenSize.y);
+        up = glm::vec3(0, 0, 1);
+    }
+    const glm::vec3 right = glm::cross(up, a_axis);
+    up = glm::cross(right, a_axis);
+    
+    switch (m_workspace->GetToolMode())
+    {
+    case ToolMode_Translate:
+    {
+        const glm::mat4 rot = glm::mat4(glm::vec4(right, 0), glm::vec4(up, 0), glm::vec4(a_axis, 0), glm::vec4(0, 0, 0, 1));
 
-        const int objCount = m_editor->GetSelectedArmatureNodesCount();
-        Object** objs = m_editor->GetSelectedArmatureObjectsArray();
+        const glm::mat4 mat = a_viewProj * glm::translate(iden, a_pos + a_axis * 0.25f) * glm::scale(iden, glm::vec3(0.25f)) * rot;
 
-        const e_ToolMode toolMode = m_workspace->GetToolMode();
-        switch (toolMode)
+        const LocalModel* handle = TransformVisualizer::GetTranslationHandle();
+
+        if (SelectionControl::PointInMesh(mat, handle, a_cursorPos))
         {
-        case ToolMode_Translate:
-        {
-            Action *action = new TranslateObjectRelativeAction(cPos, a_axis, objs, objCount);
-            if (!m_workspace->PushAction(action))
+            const glm::vec3 cPos = a_camera->GetScreenToWorld(glm::vec3(a_cursorPos, 0.9f), a_screenSize);
+
+            const int objectCount = m_editor->GetSelectedArmatureObjectsCount();
+            Object* const* objs = m_editor->GetSelectedArmatureObjectsArray();
+
+            Action* action = new TranslateObjectRelativeAction(cPos, a_axis, objs, objectCount);
+
+            if (m_workspace->PushAction(action))
+            {
+                m_editor->SetCurrentAction(action);
+            }
+            else
             {
                 printf("Error moving armature node \n");
 
                 delete action;
             }
-            else
+
+            delete[] objs;
+
+            return true;
+        }
+
+        break;
+    }
+    case ToolMode_Rotate:
+    {
+        const glm::mat4 rot = glm::mat4(glm::vec4(right, 0), glm::vec4(a_axis, 0), glm::vec4(-up, 0), glm::vec4(0, 0, 0, 1));
+
+        const glm::mat4 mat = a_viewProj * glm::translate(iden, a_pos) * glm::scale(iden, glm::vec3(0.25f)) * rot;
+
+        const LocalModel* handle = TransformVisualizer::GetRotationHandle();
+
+        if (SelectionControl::PointInMesh(mat, handle, a_cursorPos))
+        {
+            const glm::vec3 cPos = a_camera->GetScreenToWorld(glm::vec3(a_cursorPos, 0.9f), a_screenSize);
+
+            const int objectCount = m_editor->GetSelectedArmatureObjectsCount();
+            Object* const* objs = m_editor->GetSelectedArmatureObjectsArray();
+
+            Action* action = new RotateObjectRelativeAction(cPos, a_axis, objs, objectCount);
+            if (m_workspace->PushAction(action))
             {
                 m_editor->SetCurrentAction(action);
             }
+            else
+            {
+                printf("Error rotating armature node \n");
 
-            break;
+                delete action;
+            }
+
+            delete[] objs;
+
+            return true;
         }
-        case ToolMode_Extrude:
+
+        break;
+    }
+    case ToolMode_Extrude:
+    {
+        const glm::mat4 rot = glm::mat4(glm::vec4(right, 0), glm::vec4(up, 0), glm::vec4(a_axis, 0), glm::vec4(0, 0, 0, 1));
+
+        const glm::mat4 mat = a_viewProj * glm::translate(iden, a_pos + a_axis * 0.25f) * glm::scale(iden, glm::vec3(0.25f)) * rot;
+
+        const LocalModel* handle = TransformVisualizer::GetTranslationHandle();
+
+        if (SelectionControl::PointInMesh(mat, handle, a_cursorPos))
         {
-            Action* action = new ExtrudeArmatureNodeAction(m_editor, objs, objCount, cPos, a_axis);
-            if (!m_workspace->PushAction(action))
+            const glm::vec3 cPos = a_camera->GetScreenToWorld(glm::vec3(a_cursorPos, 0.9f), a_screenSize);
+
+            const int objectCount = m_editor->GetSelectedArmatureObjectsCount();
+            Object** objs = m_editor->GetSelectedArmatureObjectsArray();
+
+            Action* action = new ExtrudeArmatureNodeAction(m_editor, objs, objectCount, cPos, a_axis);
+            if (m_workspace->PushAction(action))
+            {
+                m_editor->SetCurrentAction(action);
+            }
+            else
             {
                 printf("Error extruding armature node \n");
 
                 delete action;
             }
-            else
-            {
-                m_editor->SetCurrentAction(action);
-            }
 
-            break;
-        }
+            delete[] objs;
+
+            return true;
         }
 
-        delete[] objs;
-
-        return true;
+        break;
+    }
     }
 
     return false;
@@ -534,6 +704,8 @@ void EditEditor::LeftReleased(Camera* a_camera, const glm::vec2& a_start, const 
                 case ActionType_ExtrudeNode:
                 case ActionType_MoveNode:
                 case ActionType_MoveNodeHandle:
+                case ActionType_RotateNode:
+                case ActionType_ScaleNode:
                 {
                     m_editor->SetCurrentAction(nullptr);
 
@@ -688,6 +860,12 @@ void EditEditor::Update(Camera* a_camera, const glm::vec2& a_cursorPos, const gl
 
                     break;
                 }
+                case ToolMode_Rotate:
+                {
+                    Gizmos::DrawRotation(fPos, viewInv[2], 0.25f);
+
+                    break;
+                }
                 default:
                 {   
                     Gizmos::DrawTranslation(fPos, viewInv[2], 0.25f);
@@ -728,6 +906,12 @@ void EditEditor::Update(Camera* a_camera, const glm::vec2& a_cursorPos, const gl
             case ToolMode_Scale:
             {
                 Gizmos::DrawScale(pos, viewInv[2], 0.25f);
+
+                break;
+            }
+            case ToolMode_Rotate:
+            {
+                Gizmos::DrawRotation(pos, viewInv[2], 0.25f);
 
                 break;
             }

@@ -10,6 +10,10 @@
 #include "Actions/InsertFaceAction.h"
 #include "Actions/MoveNodeAction.h"
 #include "Actions/MoveNodeHandleAction.h"
+#include "Actions/RotateNodeAction.h"
+#include "Actions/RotateObjectRelativeAction.h"
+#include "Actions/ScaleNodeAction.h"
+#include "Actions/ScaleObjectRelativeAction.h"
 #include "Actions/TranslateObjectRelativeAction.h"
 #include "Application.h"
 #include "BezierCurveNode3.h"
@@ -514,6 +518,7 @@ void Editor::Update(double a_delta, const glm::vec2& a_winPos, const glm::vec2& 
                 case ActionType_ExtrudeNode:
                 case ActionType_MoveNodeHandle:
                 case ActionType_MoveNode:
+                case ActionType_RotateObjectRelative:
                 case ActionType_TranslateObjectRelative:
                 {
                     m_curAction = nullptr;
@@ -605,10 +610,46 @@ void Editor::Update(double a_delta, const glm::vec2& a_winPos, const glm::vec2& 
 
             break;
         }
+        case ActionType_RotateNode:
+        {
+            RotateNodeAction* action = (RotateNodeAction*)m_curAction;
+            action->SetRotation(cWorldPos);
+
+            action->Execute();
+
+            break;
+        }
+        case ActionType_ScaleNode:
+        {
+            ScaleNodeAction* action = (ScaleNodeAction*)m_curAction;
+            action->SetScale(cWorldPos);
+
+            action->Execute();
+
+            break;
+        }
         case ActionType_TranslateObjectRelative:
         {
             TranslateObjectRelativeAction* action = (TranslateObjectRelativeAction*)m_curAction;
             action->SetTranslation(cWorldPos);
+
+            action->Execute();
+
+            break;
+        }
+        case ActionType_RotateObjectRelative:
+        {
+            RotateObjectRelativeAction* action = (RotateObjectRelativeAction*)m_curAction;
+            action->SetRotation(cWorldPos);
+
+            action->Execute();
+
+            break;
+        }
+        case ActionType_ScaleObjectRelative:
+        {
+            ScaleObjectRelativeAction* action = (ScaleObjectRelativeAction*)m_curAction;
+            action->SetScale(cWorldPos);
 
             action->Execute();
 

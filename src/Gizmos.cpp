@@ -6,11 +6,13 @@
 
 #include "Camera.h"
 #include "Datastore.h"
+#include "LocalModel.h"
 #include "ShaderPixel.h"
 #include "ShaderProgram.h"
 #include "Shaders/GizmosPixel.h"
 #include "Shaders/GizmosVertex.h"
 #include "ShaderVertex.h"
+#include "TransformVisualizer.h"
 
 Gizmos* Gizmos::Instance = nullptr;
 
@@ -99,7 +101,7 @@ void Gizmos::DrawAll()
         glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, nullptr);
     }
 }
-void Gizmos::DrawAll(Camera* a_camera, const glm::vec2& a_winSize)
+void Gizmos::DrawAll(const Camera* a_camera, const glm::vec2& a_winSize)
 {
     const unsigned int indexCount = Instance->m_indices.size();
     const unsigned int vertexCount = Instance->m_vertices.size();
@@ -128,6 +130,32 @@ void Gizmos::DrawAll(Camera* a_camera, const glm::vec2& a_winSize)
     
         glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, nullptr);
     }
+}
+
+void Gizmos::DrawModel(const glm::mat4& a_transform, const Vertex* a_vertices, unsigned int a_vertexCount, const unsigned int* a_indices, unsigned int a_indexCount, const glm::vec4& a_color)
+{
+    Instance->m_vertices.reserve(a_vertexCount);
+    Instance->m_indices.reserve(a_indexCount);
+
+    const unsigned int startIndex = Instance->m_vertices.size();
+
+    for (unsigned int i = 0; i < a_vertexCount; ++i)
+    {
+        Instance->m_vertices.emplace_back(GizmoVertex{ a_transform * a_vertices[i].Position, a_color });
+    }
+    for (unsigned int i = 0; i < a_indexCount; ++i)
+    {
+        Instance->m_indices.emplace_back(a_indices[i] + startIndex);
+    }
+}
+void Gizmos::DrawModel(const glm::mat4& a_transform, const LocalModel* a_model, const glm::vec4& a_color)
+{
+    const unsigned int vertexCount = a_model->GetVertexCount();
+    const Vertex* vertices = a_model->GetVertices();
+    const unsigned int indexCount = a_model->GetIndexCount();
+    const unsigned int* indicies = a_model->GetIndices();
+
+    DrawModel(a_transform, vertices, vertexCount, indicies, indexCount, a_color);    
 }
 
 void Gizmos::DrawLine(const glm::vec3& a_start, const glm::vec3& a_end, float a_width, const glm::vec4& a_color)
@@ -273,8 +301,25 @@ void Gizmos::DrawTriangle(const glm::vec3& a_position, const glm::vec3& a_dir, c
     Instance->m_indices.emplace_back(indexB);
     Instance->m_indices.emplace_back(indexC);
 }
+
 void Gizmos::DrawTranslation(const glm::vec3& a_position, const glm::vec3& a_dir, float a_scale)
 {
+    constexpr glm::mat4 iden = glm::identity<glm::mat4>();
+
+    const glm::mat4 transform = glm::translate(iden, a_position) * glm::scale(iden, glm::vec3(a_scale));
+
+    const LocalModel* handle = TransformVisualizer::GetTranslationHandle();
+
+    constexpr float halfPi = glm::pi<float>() * 0.5f;
+
+    const glm::mat4 rightTransform = transform * glm::toMat4(glm::angleAxis(-halfPi, glm::vec3(0, 0, 1)));
+    const glm::mat4 upTransform = transform;
+    const glm::mat4 forwardTransform = transform * glm::toMat4(glm::angleAxis(halfPi, glm::vec3(1, 0, 0)));
+
+    Gizmos::DrawModel(glm::translate(iden, glm::vec3(a_scale, 0, 0)) * rightTransform, handle, glm::vec4(1, 0, 0, 1));
+    Gizmos::DrawModel(glm::translate(iden, glm::vec3(0, a_scale, 0)) * upTransform, handle, glm::vec4(0, 1, 0, 1));
+    Gizmos::DrawModel(glm::translate(iden, glm::vec3(0, 0, a_scale)) * forwardTransform, handle, glm::vec4(0, 0, 1, 1));
+
     const glm::vec3 endX = a_position + glm::vec3(a_scale, 0, 0);
     const glm::vec3 endY = a_position + glm::vec3(0, a_scale, 0);
     const glm::vec3 endZ = a_position + glm::vec3(0, 0, a_scale);
@@ -282,14 +327,25 @@ void Gizmos::DrawTranslation(const glm::vec3& a_position, const glm::vec3& a_dir
     Gizmos::DrawLine(a_position, endX, a_dir, 0.01f, glm::vec4(1, 0, 0, 1));
     Gizmos::DrawLine(a_position, endY, a_dir, 0.01f, glm::vec4(0, 1, 0, 1));
     Gizmos::DrawLine(a_position, endZ, a_dir, 0.01f, glm::vec4(0, 0, 1, 1));
-
-    Gizmos::DrawTriangle(endX, glm::vec3(1, 0, 0), a_dir, a_scale * 0.5f, glm::vec4(1, 0, 0, 1));
-    Gizmos::DrawTriangle(endY, glm::vec3(0, 1, 0), a_dir, a_scale * 0.5f, glm::vec4(0, 1, 0, 1));
-    Gizmos::DrawTriangle(endZ, glm::vec3(0, 0, 1), a_dir, a_scale * 0.5f, glm::vec4(0, 0, 1, 1));
 }
-
 void Gizmos::DrawScale(const glm::vec3& a_position, const glm::vec3& a_dir, float a_scale)
 {
+    constexpr glm::mat4 iden = glm::identity<glm::mat4>();
+
+    const glm::mat4 transform = glm::translate(iden, a_position) * glm::scale(iden, glm::vec3(a_scale));
+
+    const LocalModel* handle = TransformVisualizer::GetScaleHandle();
+
+    constexpr float halfPi = glm::pi<float>() * 0.5f;
+
+    const glm::mat4 rightTransform = transform * glm::toMat4(glm::angleAxis(-halfPi, glm::vec3(0, 0, 1)));
+    const glm::mat4 upTransform = transform;
+    const glm::mat4 forwardTransform = transform * glm::toMat4(glm::angleAxis(halfPi, glm::vec3(1, 0, 0)));
+
+    Gizmos::DrawModel(glm::translate(iden, glm::vec3(a_scale, 0, 0)) * rightTransform, handle, glm::vec4(1, 0, 0, 1));
+    Gizmos::DrawModel(glm::translate(iden, glm::vec3(0, a_scale, 0)) * upTransform, handle, glm::vec4(0, 1, 0, 1));
+    Gizmos::DrawModel(glm::translate(iden, glm::vec3(0, 0, a_scale)) * forwardTransform, handle, glm::vec4(0, 0, 1, 1));
+
     const glm::vec3 endX = a_position + glm::vec3(a_scale, 0, 0);
     const glm::vec3 endY = a_position + glm::vec3(0, a_scale, 0);
     const glm::vec3 endZ = a_position + glm::vec3(0, 0, a_scale);
@@ -297,8 +353,22 @@ void Gizmos::DrawScale(const glm::vec3& a_position, const glm::vec3& a_dir, floa
     Gizmos::DrawLine(a_position, endX, a_dir, 0.01f, glm::vec4(1, 0, 0, 1));
     Gizmos::DrawLine(a_position, endY, a_dir, 0.01f, glm::vec4(0, 1, 0, 1));
     Gizmos::DrawLine(a_position, endZ, a_dir, 0.01f, glm::vec4(0, 0, 1, 1));
+}
+void Gizmos::DrawRotation(const glm::vec3& a_position, const glm::vec3& a_dir, float a_scale)
+{
+    constexpr glm::mat4 iden = glm::identity<glm::mat4>();
 
-    Gizmos::DrawCircleFilled(endX, a_dir, a_scale * 0.25f, 15, glm::vec4(1, 0, 0, 1));
-    Gizmos::DrawCircleFilled(endY, a_dir, a_scale * 0.25f, 15, glm::vec4(0, 1, 0, 1));
-    Gizmos::DrawCircleFilled(endZ, a_dir, a_scale * 0.25f, 15, glm::vec4(0, 0, 1, 1));
+    const glm::mat4 transform = glm::translate(iden, a_position) * glm::scale(iden, glm::vec3(a_scale));
+
+    constexpr float halfPi = glm::pi<float>() * 0.5f;
+
+    const glm::mat4 rightTransform = transform * glm::toMat4(glm::angleAxis(-halfPi, glm::vec3(0, 0, 1)));
+    const glm::mat4 upTransform = transform;
+    const glm::mat4 forwardTransform = transform * glm::toMat4(glm::angleAxis(halfPi, glm::vec3(1, 0, 0)));
+
+    const LocalModel* handle = TransformVisualizer::GetRotationHandle();
+
+    Gizmos::DrawModel(rightTransform, handle, glm::vec4(1, 0, 0, 1));
+    Gizmos::DrawModel(upTransform, handle, glm::vec4(0, 1, 0, 1));
+    Gizmos::DrawModel(forwardTransform, handle, glm::vec4(0, 0, 1, 1));
 }

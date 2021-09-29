@@ -24,11 +24,23 @@ public:
     {
         return m_translation;
     }
+    inline const glm::vec3& Translation() const
+    {
+        return m_translation;
+    }
     inline glm::quat& Quaternion()
     {
         return m_rotation;
     }
+    inline const glm::quat& Quaternion() const
+    {
+        return m_rotation;
+    }
     inline glm::vec3& Scale()
+    {
+        return m_scale;
+    }
+    inline const glm::vec3& Scale() const
     {
         return m_scale;
     }

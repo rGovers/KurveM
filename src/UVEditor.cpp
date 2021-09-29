@@ -13,7 +13,7 @@
 #include "SelectionControl.h"
 #include "Workspace.h"
 
-const float BorderSize = 0.9f;
+const float BorderSize = 0.85f;
 
 UVEditor::UVEditor(Workspace* a_workspace, Editor* a_editor)
 {

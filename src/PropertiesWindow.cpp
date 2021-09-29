@@ -335,7 +335,7 @@ void PropertiesWindow::ObjectTab()
     }
     }
 
-    glm::vec3 scale = m_transform->Scale();
+    glm::vec3 scale = transform->Scale();
     if (ImGui::DragFloat3("Scale", (float *)&scale, 0.01f))
     {
         switch (m_workspace->GetCurrentActionType())

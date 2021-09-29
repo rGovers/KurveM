@@ -6,7 +6,7 @@
 #include "LongTasks/TriangulateCurveLongTask.h"
 #include "Workspace.h"
 
-MoveNodeAction::MoveNodeAction(Workspace* a_workspace, unsigned int* a_nodeIndices, unsigned int a_nodeCount, CurveModel* a_curveModel, const glm::vec3& a_startPos, const glm::vec3& a_axis)
+MoveNodeAction::MoveNodeAction(Workspace* a_workspace, const unsigned int* a_nodeIndices, unsigned int a_nodeCount, CurveModel* a_curveModel, const glm::vec3& a_startPos, const glm::vec3& a_axis)
 {
     m_workspace = a_workspace;
 
@@ -50,7 +50,7 @@ bool MoveNodeAction::Execute()
         
     const float len = glm::length(endAxis);
 
-    if (len != 0)
+    if (len > 0)
     {
         const glm::vec3 scaledAxis = m_axis * len;
 

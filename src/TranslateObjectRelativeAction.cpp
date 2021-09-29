@@ -8,7 +8,7 @@ TranslateObjectRelativeAction::TranslateObjectRelativeAction(const glm::vec3& a_
 {
 
 }
-TranslateObjectRelativeAction::TranslateObjectRelativeAction(const glm::vec3& a_curPos, const glm::vec3& a_axis, Object** a_objects, unsigned int a_objectCount)
+TranslateObjectRelativeAction::TranslateObjectRelativeAction(const glm::vec3& a_curPos, const glm::vec3& a_axis, Object* const* a_objects, unsigned int a_objectCount)
 {
     m_objectCount = a_objectCount;
 
@@ -22,8 +22,10 @@ TranslateObjectRelativeAction::TranslateObjectRelativeAction(const glm::vec3& a_
 
     for (unsigned int i = 0; i < m_objectCount; ++i)
     {
-        m_objects[i] = a_objects[i];
-        m_oldPos[i] = m_objects[i]->GetTransform()->Translation();
+        Object* obj = a_objects[i];
+
+        m_objects[i] = obj;
+        m_oldPos[i] = obj->GetTransform()->Translation();
     }
 }
 TranslateObjectRelativeAction::~TranslateObjectRelativeAction()
@@ -47,7 +49,7 @@ bool TranslateObjectRelativeAction::Execute()
         
     const float len = glm::length(endAxis);
 
-    if (len != 0)
+    if (len > 0)
     {
         const glm::vec3 scaledAxis = m_axis * len;
 

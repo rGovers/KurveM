@@ -5,7 +5,10 @@
 
 #include <vector>
 
+struct Vertex;
+
 class Camera;
+class LocalModel;
 class ShaderProgram;
 
 struct GizmoVertex
@@ -39,7 +42,10 @@ public:
 
     static void Clear();
     static void DrawAll();
-    static void DrawAll(Camera* a_camera, const glm::vec2& a_winSize); 
+    static void DrawAll(const Camera* a_camera, const glm::vec2& a_winSize); 
+
+    static void DrawModel(const glm::mat4& a_transform, const Vertex* a_vertices, unsigned int a_vertexCount, const unsigned int* a_indices, unsigned int a_indexCount, const glm::vec4& a_color);
+    static void DrawModel(const glm::mat4& a_transform, const LocalModel* a_model, const glm::vec4& a_color);
 
     static void DrawLine(const glm::vec3& a_start, const glm::vec3& a_end, float a_width, const glm::vec4& a_color);
     static void DrawLine(const glm::vec3& a_start, const glm::vec3& a_end, const glm::vec3& a_up, float a_width, const glm::vec4& a_color);
@@ -52,4 +58,5 @@ public:
 
     static void DrawTranslation(const glm::vec3& a_position, const glm::vec3& a_dir, float a_scale);
     static void DrawScale(const glm::vec3& a_position, const glm::vec3& a_dir, float a_scale);
+    static void DrawRotation(const glm::vec3& a_position, const glm::vec3& a_dir, float a_scale);
 };
