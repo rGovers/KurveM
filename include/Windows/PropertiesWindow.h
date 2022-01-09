@@ -24,6 +24,7 @@ enum e_ObjectPropertiesTab
     ObjectPropertiesTab_Animate,
     ObjectPropertiesTab_Curve,
     ObjectPropertiesTab_Object,
+    ObjectPropertiesTab_Path,
     ObjectPropertiesTab_End,
 };
 
@@ -58,6 +59,7 @@ private:
     void ObjectTab();
     void AnimateTab();
     void CurveTab();
+    void PathTab();
 
     void PropertiesTabButton(const char* a_label, const char* a_path, e_ObjectPropertiesTab a_propertiesTab, const char* a_tooltip);
 

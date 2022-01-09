@@ -31,6 +31,8 @@ enum e_ActionType
     ActionType_SetCurveArmature,
     ActionType_SetCurveSmartStep,
     ActionType_SetCurveSteps,
+    ActionType_SetPathPathSteps,
+    ActionType_SetPathShapeSteps,
     ActionType_TranslateObject,
     ActionType_TranslateObjectRelative,
     ActionType_End

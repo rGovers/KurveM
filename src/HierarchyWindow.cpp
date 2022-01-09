@@ -295,6 +295,10 @@ void HierarchyWindow::Update(double a_delta)
 
             ImGui::Separator();
 
+            m_workspace->CreatePathObjectMenuList(nullptr);
+
+            ImGui::Separator();
+
             m_workspace->ImportObjectMenuList(nullptr);
 
             ImGui::Separator();

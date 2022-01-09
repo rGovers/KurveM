@@ -7,11 +7,14 @@
 #include "Actions/SetCurveArmatureAction.h"
 #include "Actions/SetCurveSmartStepAction.h"
 #include "Actions/SetCurveStepsAction.h"
+#include "Actions/SetPathPathStepsAction.h"
+#include "Actions/SetPathShapeStepsAction.h"
 #include "Actions/TranslateObjectAction.h"
 #include "imgui.h"
 #include "ImGuiExt.h"
 #include "LongTasks/TriangulateCurveLongTask.h"
 #include "Object.h"
+#include "PathModel.h"
 #include "Transform.h"
 #include "Workspace.h"
 
@@ -20,6 +23,7 @@ const char* RotationMode_String[] = { "Axis Angle", "Quaternion", "Euler Angle" 
 #define ANIMATE_TOOLTIP "Contains object animation settings"
 #define OBJECT_TOOLTIP "Contains object settings"
 #define CURVE_TOOLTIP "Contains curve model settings"
+#define PATH_TOOLTIP "Contains path model settings"
 
 PropertiesWindow::PropertiesWindow(Workspace* a_workspace, Editor* a_editor)
 {
@@ -633,6 +637,103 @@ void PropertiesWindow::CurveTab()
         delete[] curveObjects;
     }
 }
+void PropertiesWindow::PathTab()
+{
+    Object* obj = m_workspace->GetSelectedObject();
+
+    if (obj != nullptr)
+    {
+        PathModel* model = obj->GetPathModel();
+        if (model != nullptr)
+        {
+            const unsigned int objectCount = m_workspace->GetSelectedObjectCount();
+            Object** objs = m_workspace->GetSelectedObjectArray();
+
+            unsigned int pathObjectCount = 0;
+            Object** pathObjs = new Object*[objectCount];
+            for (unsigned int i = 0; i < objectCount; ++i)
+            {
+                if (objs[i]->GetObjectType() == ObjectType_PathModel)
+                {
+                    pathObjs[pathObjectCount++] = objs[i];
+                }
+            }
+            
+            int shapeSteps = model->GetShapeSteps();
+            if (ImGui::InputInt("Shape Steps", &shapeSteps))
+            {
+                shapeSteps = glm::max(shapeSteps, 1);
+
+                switch (m_workspace->GetCurrentActionType())
+                {
+                case ActionType_SetPathShapeSteps:
+                {
+                    SetPathShapeStepsAction* action = (SetPathShapeStepsAction*)m_workspace->GetCurrentAction();
+                
+                    action->SetSteps(shapeSteps);
+                    action->Execute();
+
+                    break;
+                }
+                default:
+                {
+                    Action* action = new SetPathShapeStepsAction(m_workspace, pathObjs, pathObjectCount, shapeSteps);
+                    if (!m_workspace->PushAction(action))
+                    {
+                        printf("Error Setting Path Shape Steps \n");
+
+                        delete action;
+                    }
+                    else
+                    {
+                        m_workspace->SetCurrentAction(action);
+                    }
+
+                    break;
+                }
+                }
+            }
+
+            int pathSteps = model->GetPathSteps();
+            if (ImGui::InputInt("Path Steps", &pathSteps))
+            {
+                pathSteps = glm::max(pathSteps, 1);
+
+                switch (m_workspace->GetCurrentActionType())
+                {
+                case ActionType_SetPathPathSteps:
+                {
+                    SetPathPathStepsAction* action = (SetPathPathStepsAction*)m_workspace->GetCurrentAction();
+                
+                    action->SetSteps(pathSteps);
+                    action->Execute();
+
+                    break;
+                }
+                default:
+                {
+                    Action* action = new SetPathPathStepsAction(m_workspace, pathObjs, pathObjectCount, pathSteps);
+                    if (!m_workspace->PushAction(action))
+                    {
+                        printf("Error Setting Path Path Steps \n");
+
+                        delete action;
+                    }
+                    else
+                    {
+                        m_workspace->SetCurrentAction(action);
+                    }
+
+                    break;
+                }
+                }
+            }
+
+            delete[] objs;
+            delete[] pathObjs;
+        }
+    }
+}
 
 void PropertiesWindow::Update(double a_delta)
 {
@@ -668,6 +769,12 @@ void PropertiesWindow::Update(double a_delta)
 
                 break;
             }
+            case ObjectType_PathModel:
+            {
+                PropertiesTabButton("Curve", "Textures/PROPERTIES_PATH.png", ObjectPropertiesTab_Path, PATH_TOOLTIP);
+
+                break;
+            }
             }
 
             ImGui::EndGroup();
@@ -687,6 +794,12 @@ void PropertiesWindow::Update(double a_delta)
             case ObjectPropertiesTab_Curve:
             {
                 CurveTab();
+
+                break;
+            }
+            case ObjectPropertiesTab_Path:
+            {
+                PathTab();
 
                 break;
             }
