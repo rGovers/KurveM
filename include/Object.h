@@ -13,6 +13,7 @@ class Animation;
 class Camera;
 class CurveModel;
 class Model;
+class PathModel;
 class ShaderProgram;
 class ShaderStorageBuffer;
 class Texture;
@@ -25,6 +26,7 @@ enum e_ObjectType
 {
     ObjectType_Empty,
     ObjectType_CurveModel,
+    ObjectType_PathModel,
     ObjectType_ReferenceImage,
     ObjectType_Armature,
     ObjectType_ArmatureNode
@@ -71,6 +73,7 @@ private:
     ShaderProgram*       m_referenceProgram;
 
     CurveModel*          m_curveModel;
+    PathModel*           m_pathModel;
 
 protected:
 
@@ -129,6 +132,15 @@ public:
     inline e_ObjectType GetObjectType() const
     {
         return m_objectType;
+    }
+
+    inline PathModel* GetPathModel() const
+    {
+        return m_pathModel;
+    }
+    inline void SetPathModel(PathModel* a_pathModel)
+    {
+        m_pathModel = a_pathModel;
     }
 
     inline CurveModel* GetCurveModel() const

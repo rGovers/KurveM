@@ -5,6 +5,7 @@
 
 #include "CurveModel.h"
 #include "LongTasks/TriangulateCurveLongTask.h"
+#include "LongTasks/TriangulatePathLongTask.h"
 #include "Object.h"
 #include "PrimitiveGenerator.h"
 #include "Workspace.h"
@@ -55,6 +56,14 @@ const char* CreateObjectAction::GetName() const
     case CreateObjectType_CubeCurve:
     {
         return "Curve Cube";
+    }
+    case CreateObjectType_CylinderPath:
+    {
+        return "Path Cylinder";
+    }
+    case CreateObjectType_ConePath:
+    {
+        return "Path Cone";
     }
     case CreateObjectType_ReferenceImage:
     {
@@ -110,6 +119,15 @@ bool CreateObjectAction::Execute()
     unsigned int faceCount = 0;
     CurveFace* facePtr;
 
+    PathNode* pathNodePtr;
+    unsigned int pathIndexCount = 0;
+    unsigned int* pathIndicesPtr;
+    
+    unsigned int shapeNodeCount = 0;
+    BezierCurveNode2* shapeNodePtr;
+    unsigned int shapeIndexCount = 0;
+    unsigned int* shapeIndicesPtr;
+
     e_ObjectType objectType = ObjectType_Empty;
 
     switch (m_objectType)
@@ -143,6 +161,22 @@ bool CreateObjectAction::Execute()
             PrimitiveGenerator::CreateCurveCube(&nodePtr, &nodeCount, &facePtr, &faceCount);
 
             objectType = ObjectType_CurveModel;
+
+            break;
+        }
+        case CreateObjectType_CylinderPath:
+        {
+            PrimitiveGenerator::CreatePathCylinder(&pathNodePtr, &nodeCount, &pathIndicesPtr, &pathIndexCount, &shapeNodePtr, &shapeNodeCount, &shapeIndicesPtr, &shapeIndexCount);
+
+            objectType = ObjectType_PathModel;
+
+            break;
+        }
+        case CreateObjectType_ConePath:
+        {
+            PrimitiveGenerator::CreatePathCone(&pathNodePtr, &nodeCount, &pathIndicesPtr, &pathIndexCount, &shapeNodePtr, &shapeNodeCount, &shapeIndicesPtr, &shapeIndexCount);
+
+            objectType = ObjectType_PathModel;
 
             break;
         }
@@ -190,6 +224,21 @@ bool CreateObjectAction::Execute()
             m_workspace->PushLongTask(new TriangulateCurveLongTask(model));
 
             m_object->SetCurveModel(model);
+        }
+
+        break;
+    }
+    case ObjectType_PathModel:
+    {
+        if (nodeCount != 0 && pathIndexCount != 0 && shapeNodeCount != 0 && shapeIndexCount != 0)
+        {
+            PathModel* model = new PathModel(m_workspace);
+
+            model->SetModelData(pathNodePtr, nodeCount, pathIndicesPtr, pathIndexCount, shapeNodePtr, shapeNodeCount, shapeIndicesPtr, shapeIndexCount);
+
+            m_workspace->PushLongTask(new TriangulatePathLongTask(model));
+
+            m_object->SetPathModel(model);
         }
 
         break;

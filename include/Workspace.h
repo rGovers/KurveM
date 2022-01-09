@@ -112,6 +112,7 @@ public:
     bool Redo(); 
 
     void CreateCurveObjectMenuList(Object* a_parent);
+    void CreatePathObjectMenuList(Object* a_parent);
     void ImportObjectMenuList(Object* a_parent);
 
     inline bool IsShutingDown() const

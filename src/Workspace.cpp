@@ -986,6 +986,39 @@ void Workspace::CreateCurveObjectMenuList(Object* a_parent)
         ImGui::EndMenu();
     }
 }
+void Workspace::CreatePathObjectMenuList(Object* a_parent)
+{
+    ImGuiExt::Image("Textures/OBJECT_PATH.png", glm::vec2(16, 16));
+
+    ImGui::SameLine();
+
+    if (ImGui::BeginMenu("New Path Object"))
+    {
+        if (ImGui::MenuItem("Cylinder"))
+        {
+            Action* action = new CreateObjectAction(this, a_parent, CreateObjectType_CylinderPath);
+            if (!PushAction(action))
+            {
+                printf("Error Creating Path Object(Cylinder) \n");
+
+                delete action;
+            }
+        }
+
+        if (ImGui::MenuItem("Cone"))
+        {
+            Action* action = new CreateObjectAction(this, a_parent, CreateObjectType_ConePath);
+            if (!PushAction(action))
+            {
+                printf("Error Creating Path Object(Cone) \n");
+
+                delete action;
+            }
+        }
+
+        ImGui::EndMenu();
+    }
+}
 void Workspace::ImportObjectMenuList(Object* a_parent)
 {
     ImGuiExt::Image("Textures/OBJECT_REFERENCEIMAGE.png", glm::vec2(16, 16));

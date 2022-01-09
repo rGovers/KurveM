@@ -130,7 +130,7 @@ public:
     {
         return m_steps;
     }
-    void SetSteps(int a_value)
+    inline void SetSteps(int a_value)
     {
         m_steps = a_value;
     }

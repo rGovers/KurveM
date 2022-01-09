@@ -12,7 +12,12 @@ enum e_CreateObjectType
     CreateObjectType_PlaneCurve,
     CreateObjectType_SphereCurve,
     CreateObjectType_CubeCurve,
+
+    CreateObjectType_CylinderPath,
+    CreateObjectType_ConePath,
+
     CreateObjectType_ReferenceImage,
+    
     CreateObjectType_Armature
 };
 

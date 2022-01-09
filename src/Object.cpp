@@ -8,6 +8,7 @@
 #include "CurveModel.h"
 #include "Datastore.h"
 #include "Model.h"
+#include "PathModel.h"
 #include "ShaderPixel.h"
 #include "ShaderProgram.h"
 #include "Shaders/AnimatorStandardPixel.h"
@@ -93,6 +94,11 @@ Object::~Object()
     {
         delete m_curveModel;
         m_curveModel = nullptr;
+    }
+    if (m_pathModel != nullptr)
+    {
+        delete m_pathModel;
+        m_pathModel = nullptr;
     }
 
     if (m_name != nullptr)
@@ -308,6 +314,30 @@ void Object::DrawBase(Camera* a_camera, const glm::vec2& a_winSize)
 
                 if (model != nullptr)
                 {   
+                    const unsigned int programHandle = m_baseProgram->GetHandle();
+                    glUseProgram(programHandle);
+
+                    const unsigned int vao = model->GetVAO();
+                    glBindVertexArray(vao);
+
+                    glUniformMatrix4fv(0, 1, false, (float*)&view);
+                    glUniformMatrix4fv(1, 1, false, (float*)&proj);
+                    glUniformMatrix4fv(2, 1, false, (float*)&world);
+
+                    glDrawElements(GL_TRIANGLES, model->GetIndexCount(), GL_UNSIGNED_INT, nullptr);
+                }
+            }
+
+            break;
+        }
+        case ObjectType_PathModel:
+        {
+            if (m_pathModel != nullptr)
+            {
+                const Model* model = m_pathModel->GetDisplayModel();
+
+                if (model != nullptr)
+                {
                     const unsigned int programHandle = m_baseProgram->GetHandle();
                     glUseProgram(programHandle);
 

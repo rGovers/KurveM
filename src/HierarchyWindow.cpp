@@ -94,6 +94,14 @@ bool HierarchyWindow::ObjectHeirachyGUI(Object* a_object, bool* a_blockMenu)
 
         break;
     }
+    case ObjectType_PathModel:
+    {
+        ImGuiExt::Image("Textures/OBJECT_PATH.png", glm::vec2(16, 16));
+
+        ImGui::SameLine();
+
+        break;
+    }
     case ObjectType_ReferenceImage:
     {
         ImGuiExt::Image("Textures/OBJECT_REFERENCEIMAGE.png", glm::vec2(16, 16));
@@ -173,6 +181,10 @@ bool HierarchyWindow::ObjectHeirachyGUI(Object* a_object, bool* a_blockMenu)
             ImGui::Separator();
 
             m_workspace->CreateCurveObjectMenuList(a_object);
+
+            ImGui::Separator();
+
+            m_workspace->CreatePathObjectMenuList(a_object);
 
             ImGui::Separator();
 

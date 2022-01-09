@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CurveModel.h"
+#include "PathModel.h"
 
 class PrimitiveGenerator
 {
@@ -20,4 +21,7 @@ public:
     static void CreateCurvePlane(Node3Cluster** a_nodePtr, unsigned int* a_nodeCount, CurveFace** a_facePtr, unsigned int* a_faceCount);
     static void CreateCurveSphere(Node3Cluster** a_nodePtr, unsigned int* a_nodeCount, CurveFace** a_facePtr, unsigned int* a_faceCount);
     static void CreateCurveCube(Node3Cluster** a_nodePtr, unsigned int* a_nodeCount, CurveFace** a_facePtr, unsigned int* a_faceCount);
+
+    static void CreatePathCylinder(PathNode** a_nodePtr, unsigned int* a_nodeCount, unsigned int** a_nodeIndicesPtr, unsigned int* a_nodeIndexCount, BezierCurveNode2** a_shapeNodePtr, unsigned int* a_shapeNodeCount, unsigned int** a_shapeIndicesPtr, unsigned int* a_shapeIndexCount);
+    static void CreatePathCone(PathNode** a_nodePtr, unsigned int* a_nodeCount, unsigned int** a_nodeIndicesPtr, unsigned int* a_nodeIndexCount, BezierCurveNode2** a_shapeNodePtr, unsigned int* a_shapeNodeCount, unsigned int** a_shapeIndicesPtr, unsigned int* a_shapeIndexCount);
 };
