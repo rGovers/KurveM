@@ -56,4 +56,7 @@ bool TriangulatePathLongTask::Execute()
 void TriangulatePathLongTask::PostExecute()
 {
     m_pathModel->PostTriangulate(m_indices, m_indexCount, m_vertices, m_vertexCount);
+
+    delete[] m_indices;
+    delete[] m_vertices;
 }

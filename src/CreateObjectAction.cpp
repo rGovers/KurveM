@@ -219,7 +219,7 @@ bool CreateObjectAction::Execute()
         {
             CurveModel* model = new CurveModel(m_workspace);
 
-            model->SetModelData(nodePtr, nodeCount, facePtr, faceCount);
+            model->PassModelData(nodePtr, nodeCount, facePtr, faceCount);
 
             m_workspace->PushLongTask(new TriangulateCurveLongTask(model));
 
@@ -234,7 +234,7 @@ bool CreateObjectAction::Execute()
         {
             PathModel* model = new PathModel(m_workspace);
 
-            model->SetModelData(pathNodePtr, nodeCount, pathIndicesPtr, pathIndexCount, shapeNodePtr, shapeNodeCount, shapeIndicesPtr, shapeIndexCount);
+            model->PassModelData(pathNodePtr, nodeCount, pathIndicesPtr, pathIndexCount, shapeNodePtr, shapeNodeCount, shapeIndicesPtr, shapeIndexCount);
 
             m_workspace->PushLongTask(new TriangulatePathLongTask(model));
 

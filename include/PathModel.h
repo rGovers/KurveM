@@ -2,6 +2,7 @@
 
 #include "BezierCurveNode2.h"
 #include "BezierCurveNode3.h"
+#include "tinyxml2.h"
 
 struct Vertex;
 
@@ -121,10 +122,15 @@ public:
         return m_model;
     }
 
-    void SetModelData(PathNode* a_nodes, unsigned int a_nodeCount, unsigned int* a_nodeIndices, unsigned int a_nodeIndexCount, BezierCurveNode2* a_shapeNodes, unsigned int a_shapeNodeCount, unsigned int* a_shapeIndices, unsigned int a_shapeIndexCount);
-
     void GetModelData(int a_shapeSteps, int a_pathSteps, unsigned int** a_indices, unsigned int* a_indexCount, Vertex** a_vertices, unsigned int* a_vertexCount) const;
+
+    void SetModelData(const PathNode* a_nodes, unsigned int a_nodeCount, const unsigned int* a_nodeIndices, unsigned int a_nodeIndexCount, const BezierCurveNode2* a_shapeNodes, unsigned int a_shapeNodeCount, const unsigned int* a_shapeIndices, unsigned int a_shapeIndexCount);
+    void PassModelData(PathNode* a_nodes, unsigned int a_nodeCount, unsigned int* a_nodeIndices, unsigned int a_nodeIndexCount, BezierCurveNode2* a_shapeNodes, unsigned int a_shapeNodeCount, unsigned int* a_shapeIndices, unsigned int a_shapeIndexCount);
+    void Triangulate();
 
     void PreTriangulate(unsigned int** a_indices, unsigned int* a_indexCount, Vertex** a_vertices, unsigned int* a_vertexCount) const;
     void PostTriangulate(unsigned int* a_indices, unsigned int a_indexCount, Vertex* a_vertices, unsigned int a_vertexCount);
+
+    void Serialize(tinyxml2::XMLDocument* a_doc, tinyxml2::XMLElement* a_parent) const;
+    void ParseData(const tinyxml2::XMLElement* a_element);
 };

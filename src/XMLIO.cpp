@@ -34,12 +34,20 @@ void XMLIO::ReadVec2(const tinyxml2::XMLElement* a_element, glm::vec2* a_value)
         }
         else 
         {
-            printf("ReadVec2: Invalid Element: ");
+            printf("XMLIO::ReadVec2: Invalid Element: ");
             printf(str);
             printf("\n");
 
         }
     }
+}
+glm::vec2 XMLIO::GetVec2(const tinyxml2::XMLElement* a_element, const glm::vec2& a_default)
+{
+    glm::vec2 val = a_default;
+
+    ReadVec2(a_element, &val);
+
+    return val;
 }
 
 void XMLIO::WriteVec3(tinyxml2::XMLDocument* a_doc, tinyxml2::XMLElement* a_parent, const char* a_name, const glm::vec3& a_value, const glm::vec3& a_default)
@@ -87,12 +95,20 @@ void XMLIO::ReadVec3(const tinyxml2::XMLElement* a_element, glm::vec3* a_value)
         }
         else 
         {
-            printf("ReadVec3: Invalid Element: ");
+            printf("XMLIO::ReadVec3: Invalid Element: ");
             printf(str);
             printf("\n");
 
         }
     }
+}
+glm::vec3 XMLIO::GetVec3(const tinyxml2::XMLElement* a_element, const glm::vec3& a_default)
+{
+    glm::vec3 val = a_default;
+
+    ReadVec3(a_element, &val);
+
+    return val;
 }
 
 void XMLIO::WriteQuat(tinyxml2::XMLDocument* a_doc, tinyxml2::XMLElement* a_parent, const char* a_name, const glm::quat& a_value)
@@ -140,11 +156,19 @@ void XMLIO::ReadQuat(const tinyxml2::XMLElement* a_element, glm::quat* a_value)
         }
         else
         {
-            printf("ReadQuat: Invalid Element: ");
+            printf("XMLIO::ReadQuat: Invalid Element: ");
             printf(str);
             printf("\n");
         }
     }
 
     *a_value = glm::normalize(*a_value);
+}
+glm::quat XMLIO::GetQuat(const tinyxml2::XMLElement* a_element)
+{
+    glm::quat qt = glm::identity<glm::quat>();
+
+    ReadQuat(a_element, &qt);
+
+    return qt;
 }

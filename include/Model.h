@@ -27,7 +27,7 @@ private:
 protected:
 
 public:
-    Model(Vertex* a_vertices, unsigned int* a_indices, unsigned int a_vertexCount, unsigned int a_indexCount);
+    Model(const Vertex* a_vertices, const unsigned int* a_indices, unsigned int a_vertexCount, unsigned int a_indexCount);
     virtual ~Model();
 
     static void Init();

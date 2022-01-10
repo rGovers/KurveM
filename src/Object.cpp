@@ -684,6 +684,10 @@ void Object::Serialize(tinyxml2::XMLDocument* a_doc, tinyxml2::XMLElement* a_ele
     {
         m_curveModel->Serialize(a_doc, a_element);
     }
+    if (m_pathModel != nullptr)
+    {
+        m_pathModel->Serialize(a_doc, a_element);
+    }
 }
 
 Object* Object::ParseData(Workspace* a_workspace, const tinyxml2::XMLElement* a_element, Object* a_parent, std::list<ObjectBoneGroup>* a_boneGroups, std::unordered_map<long long, long long>* a_idMap)
@@ -750,7 +754,6 @@ Object* Object::ParseData(Workspace* a_workspace, const tinyxml2::XMLElement* a_
 
             obj->m_curveModel = new CurveModel(a_workspace);
             obj->m_curveModel->ParseData(iter, &bones);
-            obj->m_curveModel->Triangulate();
 
             if (bones.size() > 0)
             {
@@ -760,6 +763,13 @@ Object* Object::ParseData(Workspace* a_workspace, const tinyxml2::XMLElement* a_
 
                 a_boneGroups->emplace_back(boneGroup);
             }
+        }
+        else if (strcmp(str, "PathModel") == 0)
+        {
+            obj->m_objectType = ObjectType_PathModel;
+
+            obj->m_pathModel = new PathModel(a_workspace);
+            obj->m_pathModel->ParseData(iter);
         }
         else
         {
@@ -784,14 +794,22 @@ void Object::PostParseData(const std::list<ObjectBoneGroup>& a_bones, const std:
                 if (iter->ID == m_id)
                 {
                     m_curveModel->PostParseData(iter->Bones, a_idMap);
-                    m_curveModel->Triangulate();
-
+                
                     break;
                 }
             }
+
+            m_curveModel->Triangulate();
         }
 
         break;
+    }
+    case ObjectType_PathModel:
+    {
+        if (m_pathModel != nullptr)
+        {
+            m_pathModel->Triangulate();
+        }
     }
     }    
 }

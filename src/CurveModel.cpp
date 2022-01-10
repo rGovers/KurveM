@@ -427,7 +427,35 @@ void CurveModel::DestroyNodes(unsigned int a_start, unsigned int a_end)
     m_nodeCount = size;
 }
 
-void CurveModel::SetModelData(Node3Cluster* a_nodes, unsigned int a_nodeCount, CurveFace* a_faces, unsigned int a_faceCount)
+void CurveModel::SetModelData(const Node3Cluster* a_nodes, unsigned int a_nodeCount, const CurveFace* a_faces, unsigned int a_faceCount)
+{
+    if (m_nodes != nullptr)
+    {
+        delete[] m_nodes;
+        m_nodes = nullptr;
+    }
+    if (m_faces != nullptr)
+    {
+        delete[] m_faces;
+        m_faces = nullptr;
+    }
+
+    m_nodeCount = a_nodeCount;
+    m_faceCount = a_faceCount;
+
+    m_nodes = new Node3Cluster[m_nodeCount];
+    for (unsigned int i = 0; i < m_nodeCount; ++i)
+    {
+        m_nodes[i] = a_nodes[i];
+    }
+
+    m_faces = new CurveFace[m_faceCount];
+    for (unsigned int i = 0; i < m_faceCount; ++i)
+    {
+        m_faces[i] = a_faces[i];
+    }
+}
+void CurveModel::PassModelData(Node3Cluster* a_nodes, unsigned int a_nodeCount, CurveFace* a_faces, unsigned int a_faceCount)
 {
     if (m_nodes != nullptr)
     {
@@ -446,14 +474,6 @@ void CurveModel::SetModelData(Node3Cluster* a_nodes, unsigned int a_nodeCount, C
     m_nodeCount = a_nodeCount;
     m_faceCount = a_faceCount;
 }
-void CurveModel::PassModelData(Node3Cluster* a_nodes, unsigned int a_nodeCount, CurveFace* a_faces, unsigned int a_faceCount)
-{
-    m_nodes = a_nodes;
-    m_faces = a_faces;
-
-    m_nodeCount = a_nodeCount;
-    m_faceCount = a_faceCount;
-}
 void CurveModel::Triangulate()
 {
     unsigned int vertexCount;
@@ -463,6 +483,9 @@ void CurveModel::Triangulate()
 
     PreTriangulate(&indices, &indexCount, &vertices, &vertexCount);
     PostTriangulate(indices, indexCount, vertices, vertexCount);
+
+    delete[] vertices;
+    delete[] indices;
 }
 
 void GetBoneData(const BezierCurveNode3& a_nodeA, const BezierCurveNode3& a_nodeB, float a_lerp, glm::vec4* a_weights, glm::vec4* a_bones, unsigned int a_boneCount, const std::unordered_map<long long, unsigned int>& a_idMap)
@@ -1204,7 +1227,7 @@ void CurveModel::PreTriangulate(unsigned int** a_indices, unsigned int* a_indexC
 {
     GetModelData(m_stepAdjust, m_steps, a_indices, a_indexCount, a_vertices, a_vertexCount);
 }
-void CurveModel::PostTriangulate(unsigned int* a_indices, unsigned int a_indexCount, Vertex* a_vertices, unsigned int a_vertexCount)
+void CurveModel::PostTriangulate(const unsigned int* a_indices, unsigned int a_indexCount, const Vertex* a_vertices, unsigned int a_vertexCount)
 {
     if (m_displayModel != nullptr)
     {
@@ -1216,9 +1239,6 @@ void CurveModel::PostTriangulate(unsigned int* a_indices, unsigned int a_indexCo
     {
         m_displayModel = new Model(a_vertices, a_indices, a_vertexCount, a_indexCount);
     }
-
-    delete[] a_vertices;
-    delete[] a_indices;
 }
 
 void CurveModel::Serialize(tinyxml2::XMLDocument* a_doc, tinyxml2::XMLElement* a_parent) const
@@ -1366,11 +1386,11 @@ void CurveModel::ParseData(const tinyxml2::XMLElement* a_element, std::list<Bone
 
                         if (strcmp(iStr, "Index") == 0)
                         {
-                            face.Index[index++] = iIter->IntText();
+                            face.Index[index++] = iIter->UnsignedText();
                         }
                         else if (strcmp(iStr, "ClusterIndex") == 0)
                         {
-                            face.ClusterIndex[cIndex++] = iIter->IntText();
+                            face.ClusterIndex[cIndex++] = iIter->UnsignedText();
                         }
                         else 
                         {
@@ -1439,19 +1459,11 @@ void CurveModel::ParseData(const tinyxml2::XMLElement* a_element, std::list<Bone
 
                                 if (strcmp(cStr, "HandlePosition") == 0)
                                 {
-                                    glm::vec3 hPos = glm::vec3(0);
-
-                                    XMLIO::ReadVec3(cIter, &hPos);
-
-                                    n.Node.SetHandlePosition(hPos);
+                                    n.Node.SetHandlePosition(XMLIO::GetVec3(cIter));
                                 }
                                 else if (strcmp(cStr, "UV") == 0)
                                 {
-                                    glm::vec2 uv = glm::vec2(0);
-
-                                    XMLIO::ReadVec2(cIter, &uv);
-
-                                    n.Node.SetUV(uv);
+                                    n.Node.SetUV(XMLIO::GetVec2(cIter));
                                 }
                                 else if (strcmp(cStr, "Bones") == 0)
                                 {
@@ -1607,10 +1619,10 @@ void CurveModel::PostParseData(const std::list<BoneGroup>& a_bones, const std::u
 }
 
 void SplitVertices(Vertex* a_vertices, unsigned int a_vertexCount, 
-glm::vec4** a_positions, unsigned int* a_posCount, std::unordered_map<unsigned int, unsigned int>* a_posMap,
-glm::vec3** a_normals, unsigned int* a_normalCount, std::unordered_map<unsigned int, unsigned int>* a_normMap,
-glm::vec2** a_uvs, unsigned int* a_uvCount, std::unordered_map<unsigned int, unsigned int>* a_uvMap,
-glm::vec4** a_bones = nullptr, glm::vec4** a_weights = nullptr)
+    glm::vec4** a_positions, unsigned int* a_posCount, std::unordered_map<unsigned int, unsigned int>* a_posMap,
+    glm::vec3** a_normals, unsigned int* a_normalCount, std::unordered_map<unsigned int, unsigned int>* a_normMap,
+    glm::vec2** a_uvs, unsigned int* a_uvCount, std::unordered_map<unsigned int, unsigned int>* a_uvMap,
+    glm::vec4** a_bones = nullptr, glm::vec4** a_weights = nullptr)
 {
     *a_posCount = 0;
     *a_normalCount = 0;

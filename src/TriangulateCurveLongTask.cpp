@@ -58,4 +58,7 @@ bool TriangulateCurveLongTask::Execute()
 void TriangulateCurveLongTask::PostExecute()
 {
     m_curveModel->PostTriangulate(m_indices, m_indexCount, m_vertices, m_vertexCount);
+
+    delete[] m_indices;
+    delete[] m_vertices;
 }

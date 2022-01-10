@@ -18,7 +18,7 @@ Model::Model()
 
     m_indices = 0;
 }
-Model::Model(Vertex* a_vertices, unsigned int* a_indices, unsigned int a_vertexCount, unsigned int a_indexCount)
+Model::Model(const Vertex* a_vertices, const unsigned int* a_indices, unsigned int a_vertexCount, unsigned int a_indexCount)
 {
     glGenBuffers(1, &m_vbo);
     glGenBuffers(1, &m_ibo);
