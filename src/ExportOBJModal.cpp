@@ -87,7 +87,7 @@ const char* ExportOBJModal::GetName()
 
 glm::vec2 ExportOBJModal::GetSize()
 {
-    return glm::vec2(640, 480);
+    return glm::vec2(1280, 720);
 }
 
 bool ExportOBJModal::Execute()
@@ -108,17 +108,20 @@ bool ExportOBJModal::Execute()
 
     ImGui::BeginGroup();
 
+    ImGui::PushItemWidth(150.0f);
+    
     ImGui::Checkbox("Export Selected Objects", &m_exportSelected);
 
     ImGui::Separator();
 
     ImGui::Checkbox("Smart Step", &m_smartStep);
 
-    ImGui::PushItemWidth(100.0f);
     if (ImGui::InputInt("Resolution", &m_step))
     {
         m_step = glm::max(m_step, 1);
     }
+
+    ImGui::PopItemWidth();
 
     ImGui::EndGroup();
 

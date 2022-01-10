@@ -106,7 +106,7 @@ public:
     void SaveAs(const char* a_dir);
 
     void ExportOBJ(const char* a_dir, bool a_selectedObjects, bool a_smartStep, int a_steps) const;
-    void ExportCollada(const char* a_dir, bool a_selectedObjects, bool a_smartStep, int a_steps, const char* a_author, const char* a_copyright) const;
+    void ExportCollada(const char* a_dir, bool a_selectedObjects, bool a_smartStep, int a_steps, int a_pathSteps, int a_shapeSteps, const char* a_author, const char* a_copyright) const;
 
     bool Undo();
     bool Redo(); 

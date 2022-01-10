@@ -16,7 +16,7 @@ void ExportColladaModal::Overwrite(bool a_value)
     {
         m_ret = false;
 
-        m_workspace->ExportCollada(m_fPath, m_exportSelected, m_smartStep, m_step, m_author, m_copyright);
+        m_workspace->ExportCollada(m_fPath, m_exportSelected, m_smartStep, m_curveStep, m_pathStep, m_shapeStep, m_author, m_copyright);
     }
 }
 
@@ -53,6 +53,7 @@ ExportColladaModal::ExportColladaModal(Workspace* a_workspace, const char* a_pat
 
             continue;
         }
+
         m_path[i] = a_path[i];
     }
 
@@ -65,8 +66,11 @@ ExportColladaModal::ExportColladaModal(Workspace* a_workspace, const char* a_pat
 
     m_ret = true;
 
-    m_step = 10;
+    m_curveStep = 10;
     m_smartStep = false;
+
+    m_pathStep = 5;
+    m_shapeStep = 2;
 
     FileDialog::GenerateFilesAndDirs(&m_dirs, &m_files, m_path, ".dae");
 }
@@ -94,7 +98,7 @@ const char* ExportColladaModal::GetName()
 
 glm::vec2 ExportColladaModal::GetSize()
 {
-    return glm::vec2(640, 480);
+    return glm::vec2(1280, 720);
 }
 
 bool ExportColladaModal::Execute()
@@ -115,22 +119,40 @@ bool ExportColladaModal::Execute()
 
     ImGui::BeginGroup();
 
+    ImGui::PushItemWidth(150.0f);
+
+    ImGui::InputText("Author", m_author, PATHSIZE);
+    ImGui::InputText("Copyright", m_copyright, PATHSIZE);
+
+    ImGui::Separator();
+
     ImGui::Checkbox("Export Selected Objects", &m_exportSelected);
 
     ImGui::Separator();
 
+    ImGui::Text("Curve Model Settings");
+
     ImGui::Checkbox("Smart Step", &m_smartStep);
 
-    ImGui::PushItemWidth(100.0f);
-    if (ImGui::InputInt("Resolution", &m_step))
+    if (ImGui::InputInt("Curve Resolution", &m_curveStep))
     {
-        m_step = glm::max(m_step, 1);
+        m_curveStep = glm::max(m_curveStep, 1);
     }
 
     ImGui::Separator();
 
-    ImGui::InputText("Author", m_author, PATHSIZE);
-    ImGui::InputText("Copyright", m_copyright, PATHSIZE);
+    ImGui::Text("Path Model Settings");
+
+    if (ImGui::InputInt("Path Resolution", &m_pathStep))
+    {
+        m_pathStep = glm::max(m_pathStep, 1);
+    }
+    if (ImGui::InputInt("Shape Resolution", &m_shapeStep))
+    {
+        m_shapeStep = glm::max(m_shapeStep, 1);
+    }
+
+    ImGui::PopItemWidth();
 
     ImGui::EndGroup();
 
@@ -196,7 +218,7 @@ bool ExportColladaModal::Execute()
             }
             else
             {
-                m_workspace->ExportCollada(m_fPath, m_exportSelected, m_smartStep, m_step, m_author, m_copyright);
+                m_workspace->ExportCollada(m_fPath, m_exportSelected, m_smartStep, m_curveStep, m_pathStep, m_shapeStep, m_author, m_copyright);
 
                 return false;
             }

@@ -545,10 +545,30 @@ void Object::WriteOBJ(std::ofstream* a_file, bool a_smartStep, int a_steps) cons
         return m_curveModel->WriteOBJ(a_file, a_smartStep, a_steps);
     }
 }
-tinyxml2::XMLElement* Object::WriteCollada(tinyxml2::XMLDocument* a_doc, tinyxml2::XMLElement* a_geometryElement, tinyxml2::XMLElement* a_controllerElement, tinyxml2::XMLElement* a_parentElement, bool a_stepAdjust, int a_steps) const
+tinyxml2::XMLElement* GenerateColladaNodeElement(tinyxml2::XMLDocument* a_doc, tinyxml2::XMLElement* a_parent, const char* a_id, const char* a_name, const char* a_type)
 {
-    char* name = GetNameNoWhitespace();
-    char* idStr = GetIDName();
+    tinyxml2::XMLElement* nodeElement = a_doc->NewElement("node");
+    a_parent->InsertEndChild(nodeElement);
+    nodeElement->SetAttribute("id", a_id);
+    nodeElement->SetAttribute("name", a_name);
+    nodeElement->SetAttribute("type", a_type);
+
+    return nodeElement;
+}
+tinyxml2::XMLElement* GenerateColladaGeometryElement(tinyxml2::XMLDocument* a_doc, tinyxml2::XMLElement* a_parent, const char* a_id, const char* a_name)
+{
+    tinyxml2::XMLElement* geometryElement = a_doc->NewElement("geometry");
+    a_parent->InsertEndChild(geometryElement);
+
+    geometryElement->SetAttribute("id", a_id);
+    geometryElement->SetAttribute("name", a_name);
+
+    return geometryElement;
+}
+tinyxml2::XMLElement* Object::WriteCollada(tinyxml2::XMLDocument* a_doc, tinyxml2::XMLElement* a_geometryElement, tinyxml2::XMLElement* a_controllerElement, tinyxml2::XMLElement* a_parentElement, bool a_stepAdjust, int a_steps, int a_pathSteps, int a_shapeSteps) const
+{
+    const char* name = GetNameNoWhitespace();
+    const char* idStr = GetIDName();
 
     tinyxml2::XMLElement* nodeElement = nullptr;
 
@@ -556,21 +576,13 @@ tinyxml2::XMLElement* Object::WriteCollada(tinyxml2::XMLDocument* a_doc, tinyxml
     {
     case ObjectType_Armature:
     {
-        nodeElement = a_doc->NewElement("node");
-        a_parentElement->InsertEndChild(nodeElement);
-        nodeElement->SetAttribute("id", idStr);
-        nodeElement->SetAttribute("name", name);
-        nodeElement->SetAttribute("type", "NODE");
+        nodeElement = GenerateColladaNodeElement(a_doc, a_parentElement, idStr, name, "NODE");
 
         break;
     }
     case ObjectType_ArmatureNode:
     {
-        nodeElement = a_doc->NewElement("node");
-        a_parentElement->InsertEndChild(nodeElement);
-        nodeElement->SetAttribute("id", idStr);
-        nodeElement->SetAttribute("name", name);
-        nodeElement->SetAttribute("type", "JOINT");
+        nodeElement = GenerateColladaNodeElement(a_doc, a_parentElement, idStr, name, "JOINT");
 
         break;
     }
@@ -578,11 +590,8 @@ tinyxml2::XMLElement* Object::WriteCollada(tinyxml2::XMLDocument* a_doc, tinyxml
     {
         if (m_curveModel != nullptr)
         {
-            tinyxml2::XMLElement* geometryElement = a_doc->NewElement("geometry");
-            a_geometryElement->InsertEndChild(geometryElement);
-
-            geometryElement->SetAttribute("id", idStr);
-            geometryElement->SetAttribute("name", name);
+            tinyxml2::XMLElement* geometryElement = GenerateColladaGeometryElement(a_doc, a_geometryElement, idStr, name);
+            nodeElement = GenerateColladaNodeElement(a_doc, a_parentElement, idStr, name, "NODE");
 
             tinyxml2::XMLElement* controllerElement = nullptr;
             const Object* armObject = m_curveModel->GetArmature();
@@ -601,12 +610,6 @@ tinyxml2::XMLElement* Object::WriteCollada(tinyxml2::XMLDocument* a_doc, tinyxml
             char* outRoot;
 
             m_curveModel->WriteCollada(a_doc, geometryElement, controllerElement, idStr, name, a_stepAdjust, a_steps, &outRoot);
-
-            nodeElement = a_doc->NewElement("node");
-            a_parentElement->InsertEndChild(nodeElement);
-            nodeElement->SetAttribute("id", idStr);
-            nodeElement->SetAttribute("name", name);
-            nodeElement->SetAttribute("type", "NODE");
 
             if (armObject != nullptr)
             {
@@ -627,6 +630,22 @@ tinyxml2::XMLElement* Object::WriteCollada(tinyxml2::XMLDocument* a_doc, tinyxml
                 geometryInstanceElement->SetAttribute("url", ("#" + std::string(idStr)).c_str());
             }
         }  
+
+        break;
+    }
+    case ObjectType_PathModel:
+    {
+        if (m_pathModel != nullptr)
+        {
+            tinyxml2::XMLElement* geometryElement = GenerateColladaGeometryElement(a_doc, a_geometryElement, idStr, name);
+            nodeElement = GenerateColladaNodeElement(a_doc, a_parentElement, idStr, name, "NODE");
+            
+            m_pathModel->WriteCollada(a_doc, geometryElement, idStr, name, a_pathSteps, a_shapeSteps);
+
+            tinyxml2::XMLElement* geometryInstanceElement = a_doc->NewElement("instace_geomety");
+            nodeElement->InsertEndChild(geometryInstanceElement);
+            geometryInstanceElement->SetAttribute("url", ("#" + std::string(idStr)).c_str());
+        }
 
         break;
     }

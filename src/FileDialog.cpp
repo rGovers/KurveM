@@ -157,7 +157,7 @@ bool FileDialog::PartialExplorer(const std::list<char*>& a_dirs, const std::list
     const ImGuiStyle style = ImGui::GetStyle();
     const ImVec2 region = ImGui::GetContentRegionAvail();
 
-    if (ImGui::BeginChild("Dir", { region.x - style.FramePadding.x - 200.0f, region.y - ImGui::GetFrameHeightWithSpacing() * 2 }))
+    if (ImGui::BeginChild("Dir", { region.x - style.FramePadding.x - 300.0f, region.y - ImGui::GetFrameHeightWithSpacing() * 2 }))
     {
         if (std::filesystem::exists(a_path))
         {

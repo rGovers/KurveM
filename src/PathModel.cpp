@@ -1,5 +1,6 @@
 #include "PathModel.h"
 
+#include "MeshExporter.h"
 #include "Model.h"
 #include "XMLIO.h"
 
@@ -264,6 +265,11 @@ Next:;
             const unsigned int indexB = indexMap[(i + 0U) * shapeVertexCount + (j + 1U)];
             const unsigned int indexC = indexMap[(i + 1U) * shapeVertexCount + (j + 0U)];
             const unsigned int indexD = indexMap[(i + 1U) * shapeVertexCount + (j + 1U)];
+
+            if (indexA == indexD)
+            {
+                continue;
+            }
 
             // Points merged makes a Tri
             if (indexA == indexB || indexA == indexC)
@@ -640,4 +646,21 @@ void PathModel::ParseData(const tinyxml2::XMLElement* a_element)
             printf("\n");
         }
     }
+}
+void PathModel::WriteCollada(tinyxml2::XMLDocument* a_doc, tinyxml2::XMLElement* a_parent, const char* a_id, const char* a_name, int a_pathSteps, int a_shapeSteps) const
+{
+    tinyxml2::XMLElement* meshElement = a_doc->NewElement("mesh");
+    a_parent->InsertEndChild(meshElement);
+
+    Vertex* vertices;
+    unsigned int* indices;
+    unsigned int indexCount;
+    unsigned int vertexCount;
+
+    GetModelData(a_shapeSteps, a_pathSteps, &indices, &indexCount, &vertices, &vertexCount);
+
+    MeshExporter::ExportColladaMesh(a_doc, meshElement, vertices, vertexCount, indices, indexCount, a_name);
+
+    delete[] vertices;
+    delete[] indices;
 }
