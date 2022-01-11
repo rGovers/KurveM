@@ -530,7 +530,7 @@ void Object::DrawWeight(Camera* a_camera, const glm::vec2& a_winSize, unsigned i
     }
 }
 
-void Object::WriteOBJ(std::ofstream* a_file, bool a_smartStep, int a_steps) const
+void Object::WriteOBJ(std::ofstream* a_file, bool a_smartStep, int a_steps, int a_pathSteps, int a_shapeSteps) const
 {
     if (m_curveModel != nullptr)
     {
@@ -542,7 +542,20 @@ void Object::WriteOBJ(std::ofstream* a_file, bool a_smartStep, int a_steps) cons
 
         a_file->write("\n", 1);
 
-        return m_curveModel->WriteOBJ(a_file, a_smartStep, a_steps);
+        m_curveModel->WriteOBJ(a_file, a_smartStep, a_steps);
+    }
+
+    if (m_pathModel != nullptr)
+    {
+        a_file->write("o ", 2);
+        a_file->write(m_name, strlen(m_name));
+
+        const std::string str = std::to_string(m_id);
+        a_file->write(str.c_str(), str.length());
+
+        a_file->write("\n", 1);
+
+        m_pathModel->WriteOBJ(a_file, a_pathSteps, a_shapeSteps);
     }
 }
 tinyxml2::XMLElement* GenerateColladaNodeElement(tinyxml2::XMLDocument* a_doc, tinyxml2::XMLElement* a_parent, const char* a_id, const char* a_name, const char* a_type)

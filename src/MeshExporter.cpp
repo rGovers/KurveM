@@ -88,6 +88,104 @@ NormFound:;
 UVFound:;
     }
 }
+
+void MeshExporter::ExportOBJMesh(std::ofstream* a_file, const Vertex* a_vertices, unsigned int a_vertexCount, const unsigned int* a_indices, unsigned int a_indexCount)
+{
+    a_file->write("\n", 1);
+
+    const char* vertexPosComment = "# Vertex Data \n";
+    a_file->write(vertexPosComment, strlen(vertexPosComment));
+
+    glm::vec4* posVerts;
+    glm::vec3* normVerts;
+    glm::vec2* uvVerts;
+
+    unsigned int posCount;
+    unsigned int normCount;
+    unsigned int uvCount;
+
+    std::unordered_map<unsigned int, unsigned int> posMap;
+    std::unordered_map<unsigned int, unsigned int> normMap;
+    std::unordered_map<unsigned int, unsigned int> uvMap;
+
+    SplitVertices(a_vertices, a_vertexCount, &posVerts, &posCount, &posMap, &normVerts, &normCount, &normMap, &uvVerts, &uvCount, &uvMap);
+
+    for (unsigned int i = 0; i < posCount; ++i)
+    {
+        const glm::vec4 pos = posVerts[i];
+
+        a_file->write("v", 1);
+        for (int j = 0; j < 4; ++j)
+        {
+            const std::string str = " " + std::to_string(pos[j]);
+            a_file->write(str.c_str(), str.length());
+        }
+        
+        a_file->write("\n", 1);
+    }
+
+    a_file->write("\n", 1);
+
+    for (unsigned int i = 0; i < normCount; ++i)
+    {
+        const glm::vec3 norm = -normVerts[i];
+
+        a_file->write("vn", 2);
+        for (int j = 0; j < 3; ++j)
+        {
+            const std::string str = " " + std::to_string(norm[j]);
+            a_file->write(str.c_str(), str.length());
+        }
+
+        a_file->write("\n", 1);
+    }
+
+    a_file->write("\n", 1);
+
+    for (unsigned int i = 0; i < uvCount; ++i)
+    {
+        const glm::vec2 uv = uvVerts[i];
+
+        a_file->write("vt", 2);
+        for (int j = 0; j < 2; ++j)
+        {
+            const std::string str = " " + std::to_string(uv[j]);
+            a_file->write(str.c_str(), str.length());
+        }
+
+        a_file->write("\n", 1);
+    }
+
+    a_file->write("\n", 1);
+
+    const char* facesComment = "# Index Data \n";
+    a_file->write(facesComment, strlen(facesComment));
+
+    for (unsigned int i = 0; i < a_indexCount; i += 3)
+    {
+        a_file->write("f ", 2);
+        
+        for (int j = 0; j < 3; ++j)
+        {
+            const unsigned int index = a_indices[i + j];
+
+            const std::string pStr = std::to_string(posMap[index] + 1);
+            const std::string nStr = std::to_string(normMap[index] + 1);
+            const std::string uStr = std::to_string(uvMap[index] + 1);
+
+            const std::string str = pStr + "/" + uStr + '/' + nStr + " ";
+
+            a_file->write(str.c_str(), str.length());
+        }
+
+        a_file->write("\n", 1);    
+    }
+
+    delete[] posVerts;
+    delete[] normVerts;
+    delete[] uvVerts;
+}
+
 void MeshExporter::ExportColladaMesh(tinyxml2::XMLDocument* a_doc, tinyxml2::XMLElement* a_parent, 
     const Vertex* a_vertices, unsigned int a_vertexCount, const unsigned int* a_indices, unsigned int a_indexCount, 
     const char* a_name)

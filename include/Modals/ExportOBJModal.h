@@ -22,7 +22,10 @@ private:
     bool             m_ret;
 
     bool             m_smartStep;
-    int              m_step;
+    int              m_curveStep;
+
+    int              m_pathStep;
+    int              m_shapeStep;
 
     bool             m_exportSelected;
 

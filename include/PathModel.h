@@ -4,6 +4,8 @@
 #include "BezierCurveNode3.h"
 #include "tinyxml2.h"
 
+#include <fstream>
+
 struct Vertex;
 
 class Model;
@@ -134,5 +136,6 @@ public:
     void Serialize(tinyxml2::XMLDocument* a_doc, tinyxml2::XMLElement* a_parent) const;
     void ParseData(const tinyxml2::XMLElement* a_element);
 
+    void WriteOBJ(std::ofstream* a_file, int a_pathSteps, int a_shapeSteps) const;
     void WriteCollada(tinyxml2::XMLDocument* a_doc, tinyxml2::XMLElement* a_parent, const char* a_id, const char* a_name, int a_pathSteps, int a_shapeSteps) const;
 };

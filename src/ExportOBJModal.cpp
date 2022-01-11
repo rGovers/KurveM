@@ -15,7 +15,7 @@ void ExportOBJModal::Overwrite(bool a_value)
     {
         m_ret = false;
 
-        m_workspace->ExportOBJ(m_fPath, m_exportSelected, m_smartStep, m_step);
+        m_workspace->ExportOBJ(m_fPath, m_exportSelected, m_smartStep, m_curveStep, m_pathStep, m_shapeStep);
     }
 }
 
@@ -59,8 +59,12 @@ ExportOBJModal::ExportOBJModal(Workspace* a_workspace, const char* a_path)
     m_name = new char[PATHSIZE] { 0 };
 
     m_exportSelected = false;
+
     m_smartStep = true;
-    m_step = 10;
+    m_curveStep = 10;
+
+    m_pathStep = 5;
+    m_shapeStep = 2;
 
     m_ret = true;
 
@@ -114,11 +118,27 @@ bool ExportOBJModal::Execute()
 
     ImGui::Separator();
 
+    ImGui::Text("Curve Model Settings");
+
     ImGui::Checkbox("Smart Step", &m_smartStep);
 
-    if (ImGui::InputInt("Resolution", &m_step))
+    if (ImGui::InputInt("Curve Resolution", &m_curveStep))
     {
-        m_step = glm::max(m_step, 1);
+        m_curveStep = glm::max(m_curveStep, 1);
+    }
+
+    ImGui::Separator();
+
+    ImGui::Text("Path Model Settings");
+
+    if (ImGui::InputInt("Shape Resolution", &m_shapeStep))
+    {
+        m_shapeStep = glm::max(m_shapeStep, 1);
+    }
+
+    if (ImGui::InputInt("Path Resolution", &m_pathStep))
+    {
+        m_pathStep = glm::max(m_pathStep, 1);
     }
 
     ImGui::PopItemWidth();
@@ -187,7 +207,7 @@ bool ExportOBJModal::Execute()
             }
             else
             {
-                m_workspace->ExportOBJ(m_fPath, m_exportSelected, m_smartStep, m_step);
+                m_workspace->ExportOBJ(m_fPath, m_exportSelected, m_smartStep, m_curveStep, m_pathStep, m_shapeStep);
 
                 return false;
             }

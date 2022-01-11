@@ -65,6 +65,10 @@ const char* CreateObjectAction::GetName() const
     {
         return "Path Cone";
     }
+    case CreateObjectType_TorusPath:
+    {
+        return "Path Torus";
+    }
     case CreateObjectType_ReferenceImage:
     {
         const char* strPtr = m_texPath;
@@ -175,6 +179,14 @@ bool CreateObjectAction::Execute()
         case CreateObjectType_ConePath:
         {
             PrimitiveGenerator::CreatePathCone(&pathNodePtr, &nodeCount, &pathIndicesPtr, &pathIndexCount, &shapeNodePtr, &shapeNodeCount, &shapeIndicesPtr, &shapeIndexCount);
+
+            objectType = ObjectType_PathModel;
+
+            break;
+        }
+        case CreateObjectType_TorusPath:
+        {
+            PrimitiveGenerator::CreatePathTorus(&pathNodePtr, &nodeCount, &pathIndicesPtr, &pathIndexCount, &shapeNodePtr, &shapeNodeCount, &shapeIndicesPtr, &shapeIndexCount);
 
             objectType = ObjectType_PathModel;
 

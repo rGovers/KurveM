@@ -165,7 +165,7 @@ public:
     void DrawAnimator(Camera* a_camera, const glm::vec2& a_winSize);
     void DrawWeight(Camera* a_camera, const glm::vec2& a_winSize, unsigned int a_bone, unsigned int a_boneCount);
 
-    void WriteOBJ(std::ofstream* a_file, bool a_smartStep, int a_steps) const;
+    void WriteOBJ(std::ofstream* a_file, bool a_smartStep, int a_steps, int a_pathSteps, int a_shapeSteps) const;
     tinyxml2::XMLElement* WriteCollada(tinyxml2::XMLDocument* a_doc, tinyxml2::XMLElement* a_geometryElement, tinyxml2::XMLElement* a_controllerElement, tinyxml2::XMLElement* a_parentElement, bool a_stepAdjust, int a_steps, int a_pathSteps, int a_shapeSteps) const;
     void Serialize(tinyxml2::XMLDocument* a_doc, tinyxml2::XMLElement* a_element) const;
 

@@ -184,8 +184,8 @@ void PathModel::GetModelData(int a_shapeSteps, int a_pathSteps, unsigned int** a
     std::vector<Vertex> dirtyVertices;
     for (unsigned int i = 0; i < pathLines; ++i)
     {
-        const PathNode nodeA = m_pathNodes[m_pathIndices[(i * 2) + 0U]];
-        const PathNode nodeB = m_pathNodes[m_pathIndices[(i * 2) + 1U]];
+        const PathNode nodeA = m_pathNodes[m_pathIndices[i * 2 + 0U]];
+        const PathNode nodeB = m_pathNodes[m_pathIndices[i * 2 + 1U]];
 
         for (unsigned int j = 0; j <= a_pathSteps; ++j)
         {
@@ -198,16 +198,28 @@ void PathModel::GetModelData(int a_shapeSteps, int a_pathSteps, unsigned int** a
             const glm::vec3 forward = glm::normalize(nextPos - pos);
             const float rot = glm::mix(nodeA.Rotation, nodeB.Rotation, lerp);
 
-            const glm::quat qt = glm::angleAxis(rot, forward);
+            glm::vec3 up = glm::vec3(0, 1, 0);
+            if (glm::dot(up, forward) >= 0.95f)
+            {
+                up = glm::vec3(0, 0, 1);
+            }
+            // Need to apply rotation around the axis to allow the rotation property to work this should theoretically allow it
+            const glm::vec3 right = glm::normalize(glm::angleAxis(rot, forward) * glm::cross(up, forward));
+            up = glm::cross(forward, right);
+
+            // Using a rotation matrix because quaternions do not work well with a axis with no rotation
+            // Deliberatly mixing axis to correct perspective
+            // Forward axis is relative to the next curve point
+            const glm::mat3 rotMat = glm::mat3(right, forward, up);
 
             const glm::vec2 scale = glm::mix(nodeA.Scale, nodeB.Scale, lerp);
 
-            const glm::mat4 mat = glm::scale(iden, glm::vec3(scale.x, 1.0f, scale.y)) * glm::translate(iden, pos) * glm::toMat4(qt);
+            const glm::mat4 mat = glm::scale(iden, glm::vec3(scale.x, 1.0f, scale.y)) * glm::translate(iden, pos) * glm::mat4(rotMat);
 
             for (unsigned int k = 0; k < shapeVertexCount; ++k)
             {
                 const glm::vec3 pos = mat * shapeVertices[k].Position; 
-                const glm::vec3 norm = qt * shapeVertices[k].Normal;
+                const glm::vec3 norm = rotMat * shapeVertices[k].Normal;
 
                 dirtyVertices.emplace_back(Vertex{ glm::vec4(pos, 1.0f), norm });
             }
@@ -275,26 +287,26 @@ Next:;
             if (indexA == indexB || indexA == indexC)
             {
                 indices.emplace_back(indexB);
-                indices.emplace_back(indexC);
                 indices.emplace_back(indexD);
+                indices.emplace_back(indexC);
             }  
             // Points merged makes a Tri
             else if (indexD == indexC || indexD == indexB)
             {
                 indices.emplace_back(indexA);
-                indices.emplace_back(indexC);
                 indices.emplace_back(indexB);
+                indices.emplace_back(indexC);
             }
             // Makes a Quad
             else
             {
                 indices.emplace_back(indexA);
-                indices.emplace_back(indexC);
                 indices.emplace_back(indexB);
+                indices.emplace_back(indexC);
 
                 indices.emplace_back(indexB);
-                indices.emplace_back(indexC);
                 indices.emplace_back(indexD);
+                indices.emplace_back(indexC);
             }
         }
     }
@@ -646,6 +658,21 @@ void PathModel::ParseData(const tinyxml2::XMLElement* a_element)
             printf("\n");
         }
     }
+}
+
+void PathModel::WriteOBJ(std::ofstream* a_file, int a_pathSteps, int a_shapeSteps) const
+{
+    unsigned int* indices;
+    Vertex* vertices;
+    unsigned int indexCount;
+    unsigned int vertexCount;
+
+    GetModelData(a_shapeSteps, a_pathSteps, &indices, &indexCount, &vertices, &vertexCount);
+
+    MeshExporter::ExportOBJMesh(a_file, vertices, vertexCount, indices, indexCount);
+
+    delete[] vertices;
+    delete[] indices;
 }
 void PathModel::WriteCollada(tinyxml2::XMLDocument* a_doc, tinyxml2::XMLElement* a_parent, const char* a_id, const char* a_name, int a_pathSteps, int a_shapeSteps) const
 {

@@ -391,23 +391,23 @@ void Workspace::SaveAs(const char* a_dir)
     }
 }
 
-void SaveOBJObject(std::ofstream* a_file, const Object* a_obj, bool a_smartStep, int a_steps)
+void SaveOBJObject(std::ofstream* a_file, const Object* a_obj, bool a_smartStep, int a_steps, int a_pathSteps, int a_shapeSteps)
 {
     if (a_obj != nullptr)
     {
         a_file->write("\n", 1);
 
-        a_obj->WriteOBJ(a_file, a_smartStep, a_steps);
+        a_obj->WriteOBJ(a_file, a_smartStep, a_steps, a_pathSteps, a_shapeSteps);
 
         const std::list<Object*> children = a_obj->GetChildren();
 
         for (auto iter = children.begin(); iter != children.end(); ++iter)
         {
-            SaveOBJObject(a_file, *iter, a_smartStep, a_steps);
+            SaveOBJObject(a_file, *iter, a_smartStep, a_steps, a_pathSteps, a_shapeSteps);
         }
     }    
 }
-void Workspace::ExportOBJ(const char* a_dir, bool a_selectedObjects, bool a_smartStep, int a_steps) const
+void Workspace::ExportOBJ(const char* a_dir, bool a_selectedObjects, bool a_smartStep, int a_steps, int a_pathSteps, int a_shapeSteps) const
 {
     std::ofstream file;
 
@@ -418,14 +418,14 @@ void Workspace::ExportOBJ(const char* a_dir, bool a_selectedObjects, bool a_smar
         {
             for (auto iter = m_selectedObjects.begin(); iter != m_selectedObjects.end(); ++iter)
             {
-                (*iter)->WriteOBJ(&file, a_smartStep, a_steps);
+                (*iter)->WriteOBJ(&file, a_smartStep, a_steps, a_pathSteps, a_shapeSteps);
             }
         }
         else
         {
             for (auto iter = m_objectList.begin(); iter != m_objectList.end(); ++iter)
             {
-                SaveOBJObject(&file, *iter, a_smartStep, a_steps);
+                SaveOBJObject(&file, *iter, a_smartStep, a_steps, a_pathSteps, a_shapeSteps);
             }
         }
 
@@ -1011,6 +1011,17 @@ void Workspace::CreatePathObjectMenuList(Object* a_parent)
             if (!PushAction(action))
             {
                 printf("Error Creating Path Object(Cone) \n");
+
+                delete action;
+            }
+        }
+
+        if (ImGui::MenuItem("Torus"))
+        {
+            Action* action = new CreateObjectAction(this, a_parent, CreateObjectType_TorusPath);
+            if (!PushAction(action))
+            {
+                printf("Error Creating Path Object(Torus) \n");
 
                 delete action;
             }
