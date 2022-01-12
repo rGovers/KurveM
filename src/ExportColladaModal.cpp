@@ -1,5 +1,6 @@
 #include "Modals/ExportColladaModal.h"
 
+#include <fstream>
 #include <string.h>
 
 #include "FileDialog.h"

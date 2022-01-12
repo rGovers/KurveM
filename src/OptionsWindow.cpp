@@ -6,6 +6,7 @@
 #include "Actions/SetAnimationFramerateAction.h"
 #include "Actions/SetAnimationLengthAction.h"
 #include "Animation.h"
+#include "CurveModel.h"
 #include "imgui.h"
 #include "ImGuiExt.h"
 #include "Modals/ConfirmModal.h"

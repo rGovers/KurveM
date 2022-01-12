@@ -2,6 +2,7 @@
 
 #include "Actions/AddCurveNodeWeightAction.h"
 #include "Camera.h"
+#include "CurveModel.h"
 #include "Gizmos.h"
 #include "Object.h"
 #include "SelectionControl.h"

@@ -1,5 +1,7 @@
 #include "Modals/CreateAnimationModal.h"
 
+#include <stdio.h>
+
 #include "Actions/CreateAnimationAction.h"
 #include "imgui.h"
 #include "Modals/ErrorModal.h"

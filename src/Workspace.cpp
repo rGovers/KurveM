@@ -11,6 +11,7 @@
 #include "Actions/CreateObjectAction.h"
 #include "Actions/DeleteObjectAction.h"
 #include "Application.h"
+#include "CurveModel.h"
 #include "Datastore.h"
 #include "Gizmos.h"
 #include "ImGuiExt.h"

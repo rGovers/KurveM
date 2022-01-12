@@ -8,7 +8,7 @@
 class CurveModel;
 class Workspace;
 
-class MoveNodeAction : public Action
+class MoveCurveNodeAction : public Action
 {
 private:
     Workspace*    m_workspace;
@@ -27,8 +27,8 @@ private:
 protected:
 
 public:
-    MoveNodeAction(Workspace* a_workspace, const unsigned int* a_nodeIndices, unsigned int a_nodeCount, CurveModel* a_curveModel, const glm::vec3& a_startPos, const glm::vec3& a_axis);
-    ~MoveNodeAction();
+    MoveCurveNodeAction(Workspace* a_workspace, const unsigned int* a_nodeIndices, unsigned int a_nodeCount, CurveModel* a_curveModel, const glm::vec3& a_startPos, const glm::vec3& a_axis);
+    ~MoveCurveNodeAction();
 
     inline void SetPosition(const glm::vec3& a_pos)
     {

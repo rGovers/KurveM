@@ -15,7 +15,6 @@ class Workspace;
 #include <list>
 
 #include "Actions/Action.h"
-#include "CurveModel.h"
 
 enum e_EditorMode
 {

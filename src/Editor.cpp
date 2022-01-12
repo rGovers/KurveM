@@ -8,8 +8,9 @@
 #include "Actions/ExtrudeNodeAction.h"
 #include "Actions/FlipFaceAction.h"
 #include "Actions/InsertFaceAction.h"
-#include "Actions/MoveNodeAction.h"
-#include "Actions/MoveNodeHandleAction.h"
+#include "Actions/MoveCurveNodeAction.h"
+#include "Actions/MoveCurveNodeHandleAction.h"
+#include "Actions/MovePathNodeAction.h"
 #include "Actions/RotateNodeAction.h"
 #include "Actions/RotateObjectRelativeAction.h"
 #include "Actions/ScaleNodeAction.h"
@@ -20,6 +21,7 @@
 #include "Camera.h"
 #include "CameraController.h"
 #include "ColorTheme.h"
+#include "CurveModel.h"
 #include "Datastore.h"
 #include "EditorInputController.h"
 #include "Editors/AnimateEditor.h"
@@ -271,8 +273,9 @@ bool Editor::IsEditorModeEnabled(e_EditorMode a_editorMode) const
 
                 switch (obj->GetObjectType())
                 {
-                case ObjectType_CurveModel:
                 case ObjectType_Armature:
+                case ObjectType_CurveModel:
+                case ObjectType_PathModel:
                 {
                     return obj->IsVisible();
                 }
@@ -516,8 +519,8 @@ void Editor::Update(double a_delta, const glm::vec2& a_winPos, const glm::vec2& 
                 {
                 case ActionType_ExtrudeArmatureNode:
                 case ActionType_ExtrudeNode:
-                case ActionType_MoveNodeHandle:
-                case ActionType_MoveNode:
+                case ActionType_MoveCurveNodeHandle:
+                case ActionType_MoveCurveNode:
                 case ActionType_RotateObjectRelative:
                 case ActionType_TranslateObjectRelative:
                 {
@@ -592,23 +595,30 @@ void Editor::Update(double a_delta, const glm::vec2& a_winPos, const glm::vec2& 
 
             break;
         }
-        case ActionType_MoveNodeHandle:
+        case ActionType_MoveCurveNode:
         {
-            MoveNodeHandleAction* action = (MoveNodeHandleAction*)m_curAction;
+            MoveCurveNodeAction* action = (MoveCurveNodeAction*)m_curAction;
+            action->SetPosition(cWorldPos);
+
+            action->Execute();
+
+            break;
+        }
+        case ActionType_MoveCurveNodeHandle:
+        {
+            MoveCurveNodeHandleAction* action = (MoveCurveNodeHandleAction*)m_curAction;
             action->SetCursorPos(curCursorPos);
 
             action->Execute();
 
             break;
         }
-        case ActionType_MoveNode:
+        case ActionType_MovePathNode:
         {
-            MoveNodeAction* action = (MoveNodeAction*)m_curAction;
-            action->SetPosition(cWorldPos);
+            MovePathNodeAction* action = (MovePathNodeAction*)m_curAction;
+            action->SetPostion(cWorldPos);
 
             action->Execute();
-
-            break;
         }
         case ActionType_RotateNode:
         {

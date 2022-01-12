@@ -1,4 +1,4 @@
-#include "Actions/MoveNodeAction.h"
+#include "Actions/MoveCurveNodeAction.h"
 
 #include <vector>
 
@@ -6,7 +6,7 @@
 #include "LongTasks/TriangulateCurveLongTask.h"
 #include "Workspace.h"
 
-MoveNodeAction::MoveNodeAction(Workspace* a_workspace, const unsigned int* a_nodeIndices, unsigned int a_nodeCount, CurveModel* a_curveModel, const glm::vec3& a_startPos, const glm::vec3& a_axis)
+MoveCurveNodeAction::MoveCurveNodeAction(Workspace* a_workspace, const unsigned int* a_nodeIndices, unsigned int a_nodeCount, CurveModel* a_curveModel, const glm::vec3& a_startPos, const glm::vec3& a_axis)
 {
     m_workspace = a_workspace;
 
@@ -29,22 +29,22 @@ MoveNodeAction::MoveNodeAction(Workspace* a_workspace, const unsigned int* a_nod
         m_oldPos[i] = nodes[m_nodeIndices[i]].Nodes[0].Node.GetPosition();
     }
 }
-MoveNodeAction::~MoveNodeAction()
+MoveCurveNodeAction::~MoveCurveNodeAction()
 {
     delete[] m_nodeIndices;
     delete[] m_oldPos;
 }  
 
-e_ActionType MoveNodeAction::GetActionType()
+e_ActionType MoveCurveNodeAction::GetActionType()
 {
-    return ActionType_MoveNode;
+    return ActionType_MoveCurveNode;
 }
 
-bool MoveNodeAction::Redo()
+bool MoveCurveNodeAction::Redo()
 {
     return Execute();
 }
-bool MoveNodeAction::Execute()
+bool MoveCurveNodeAction::Execute()
 {
     const glm::vec3 endAxis = m_endPos - m_startPos;
         
@@ -72,7 +72,7 @@ bool MoveNodeAction::Execute()
 
     return true;
 }
-bool MoveNodeAction::Revert()
+bool MoveCurveNodeAction::Revert()
 {
     Node3Cluster* nodes = m_curveModel->GetNodes();
 

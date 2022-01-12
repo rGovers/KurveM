@@ -10,6 +10,7 @@
 #include "Actions/SetPathPathStepsAction.h"
 #include "Actions/SetPathShapeStepsAction.h"
 #include "Actions/TranslateObjectAction.h"
+#include "CurveModel.h"
 #include "imgui.h"
 #include "ImGuiExt.h"
 #include "LongTasks/TriangulateCurveLongTask.h"

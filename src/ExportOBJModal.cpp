@@ -1,5 +1,7 @@
 #include "Modals/ExportOBJModal.h"
 
+#include <fstream>
+
 #include "FileDialog.h"
 #include "imgui.h"
 #include "imgui_internal.h"
