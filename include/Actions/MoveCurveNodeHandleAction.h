@@ -30,7 +30,7 @@ public:
     MoveCurveNodeHandleAction(Workspace* a_workspace, unsigned int a_nodeIndex, unsigned int a_clusterIndex, CurveModel* a_curveModel, const glm::vec2& a_startCursorPos, const glm::vec3& a_xAxis, const glm::vec3& a_yAxis);
     ~MoveCurveNodeHandleAction();
 
-    void SetCursorPos(const glm::vec2& a_cursorPos)
+    inline void SetCursorPos(const glm::vec2& a_cursorPos)
     {
         m_cursorPos = a_cursorPos;
     }

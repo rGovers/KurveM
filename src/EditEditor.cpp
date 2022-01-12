@@ -7,6 +7,7 @@
 #include "Actions/MoveCurveNodeAction.h"
 #include "Actions/MoveCurveNodeHandleAction.h"
 #include "Actions/MovePathNodeAction.h"
+#include "Actions/MovePathNodeHandleAction.h"
 #include "Actions/RotateNodeAction.h"
 #include "Actions/RotateObjectRelativeAction.h"
 #include "Actions/ScaleNodeAction.h"
@@ -261,6 +262,27 @@ bool EditEditor::IsInteractingPathNode(const Camera* a_camera, const glm::vec3& 
 
         break;
     }
+    }
+
+    return false;
+}
+bool EditEditor::IsInteractingPathNodeHandle(const PathNode& a_node, unsigned int a_nodeIndex, PathModel* a_model, const glm::mat4& a_viewProj, const glm::vec2& a_cursorPos, const glm::mat4& a_transform, const glm::vec3& a_up, const glm::vec3& a_right)
+{
+    if (SelectionControl::NodeHandleInPoint(a_viewProj, a_cursorPos, 0.025f, a_transform, a_node.Node))
+    {
+        Action* action = new MovePathNodeHandleAction(m_workspace, a_nodeIndex, a_model, a_cursorPos, a_right, a_up);
+        if (!m_workspace->PushAction(action))
+        {
+            printf("Error moving node handle \n");
+
+            delete action;
+        }
+        else
+        {
+            m_editor->SetCurrentAction(action);
+        }
+
+        return true;
     }
 
     return false;
@@ -777,7 +799,15 @@ void EditEditor::LeftClicked(Camera* a_camera, const glm::vec2& a_cursorPos, con
                     !IsInteractingPathNode(a_camera, fPos, glm::vec3(0, 1, 0), a_cursorPos, a_winSize, model, viewProj) &&
                     !IsInteractingPathNode(a_camera, fPos, glm::vec3(1, 0, 0), a_cursorPos, a_winSize, model, viewProj))
                 {
-                    
+                    for (auto iter = selectedNodes.begin(); iter != selectedNodes.end(); ++iter)
+                    {
+                        const unsigned int nodeIndex = *iter;
+
+                        if (IsInteractingPathNodeHandle(nodes[nodeIndex], nodeIndex, model, viewProj, a_cursorPos, transformMat, camUp, camRight))
+                        {
+                            break;
+                        }
+                    }   
                 }
             }
 
@@ -944,6 +974,7 @@ NextCurveNode:;
                 switch (actionType)
                 {
                 case ActionType_MovePathNode:
+                case ActionType_MovePathNodeHandle:
                 {
                     m_editor->SetCurrentAction(nullptr);
 

@@ -11,6 +11,7 @@
 #include "Actions/MoveCurveNodeAction.h"
 #include "Actions/MoveCurveNodeHandleAction.h"
 #include "Actions/MovePathNodeAction.h"
+#include "Actions/MovePathNodeHandleAction.h"
 #include "Actions/RotateNodeAction.h"
 #include "Actions/RotateObjectRelativeAction.h"
 #include "Actions/ScaleNodeAction.h"
@@ -619,6 +620,17 @@ void Editor::Update(double a_delta, const glm::vec2& a_winPos, const glm::vec2& 
             action->SetPostion(cWorldPos);
 
             action->Execute();
+
+            break;
+        }
+        case ActionType_MovePathNodeHandle:
+        {
+            MovePathNodeHandleAction* action = (MovePathNodeHandleAction*)m_curAction;
+            action->SetCursorPos(curCursorPos);
+
+            action->Execute();
+
+            break;
         }
         case ActionType_RotateNode:
         {
