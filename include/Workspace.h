@@ -3,14 +3,15 @@
 #include <list>
 #include <thread>
 
-#include "Editor.h"
+#include "EditorControls/Editor.h"
 #include "imgui.h"
+#include "Object.h"
 
 class Action;
 class Animation;
 class LongTask;
 class Modal;
-class Object;
+class ShapeEditor;
 class UVEditor;
 class Window;
 
@@ -39,6 +40,7 @@ private:
 
     Editor*                      m_editor;
     UVEditor*                    m_uvEditor;
+    ShapeEditor*                 m_shapeEditor;
                      
     int                          m_barSize;
 
@@ -152,6 +154,7 @@ public:
         return m_selectedObjects;
     }
     Object** GetSelectedObjectArray() const;
+    e_ObjectType GetSelectedObjectType() const;
 
     void ClearSelectedObjects();
     void AddSelectedObject(Object* a_object);

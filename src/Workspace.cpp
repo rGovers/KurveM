@@ -13,6 +13,8 @@
 #include "Application.h"
 #include "CurveModel.h"
 #include "Datastore.h"
+#include "EditorControls/ShapeEditor.h"
+#include "EditorControls/UVEditor.h"
 #include "Gizmos.h"
 #include "ImGuiExt.h"
 #include "imgui_internal.h"
@@ -26,12 +28,12 @@
 #include "Model.h"
 #include "Object.h"
 #include "TransformVisualizer.h"
-#include "UVEditor.h"
 #include "Windows/AnimatorWindow.h"
 #include "Windows/EditorWindow.h"
 #include "Windows/HierarchyWindow.h"
 #include "Windows/OptionsWindow.h"
 #include "Windows/PropertiesWindow.h"
+#include "Windows/ShapeEditorWindow.h"
 #include "Windows/ToolbarWindow.h"
 #include "Windows/UVEditorWindow.h"
 
@@ -98,7 +100,7 @@ char* Workspace::GetHomePath() const
 #else
     const char* tmp = getenv("HOME");
 
-    int len = strlen(tmp) + 1;
+    const int len = strlen(tmp) + 1;
 
     char* home = new char[len];
 
@@ -142,6 +144,7 @@ Workspace::Workspace()
     New();
 
     m_editor = new Editor(this);
+    m_shapeEditor = new ShapeEditor(this, m_editor);
     m_uvEditor = new UVEditor(this, m_editor);
 
     m_windows.emplace_back(new AnimatorWindow(this, m_editor));
@@ -149,6 +152,7 @@ Workspace::Workspace()
     m_windows.emplace_back(new HierarchyWindow(this, m_editor));
     m_windows.emplace_back(new OptionsWindow(this, m_editor));
     m_windows.emplace_back(new PropertiesWindow(this, m_editor));
+    m_windows.emplace_back(new ShapeEditorWindow(this, m_editor, m_shapeEditor));
     m_windows.emplace_back(new ToolbarWindow(this, m_editor));
     m_windows.emplace_back(new UVEditorWindow(this, m_editor, m_uvEditor));
 }
@@ -184,6 +188,7 @@ Workspace::~Workspace()
     Model::Destroy();
 
     delete m_editor;
+    delete m_shapeEditor;
     delete m_uvEditor;
 }
 
@@ -673,6 +678,15 @@ Object** Workspace::GetSelectedObjectArray() const
     
     return nullptr;
 }
+e_ObjectType Workspace::GetSelectedObjectType() const
+{
+    if (m_selectedObjects.size() > 0)
+    {
+        return (*m_selectedObjects.begin())->GetObjectType();
+    }
+
+    return ObjectType_Empty;
+}
 
 void Workspace::PushModal(Modal* a_modal)
 {
@@ -783,6 +797,7 @@ void Workspace::ClearSelectedObjects()
     if (m_editor != nullptr)
     {
         m_editor->ClearSelectedNodes();
+        m_shapeEditor->ClearSelectedNodes();
     }
 
     m_curAction = nullptr;
@@ -800,6 +815,7 @@ void Workspace::AddSelectedObject(Object* a_object)
     m_selectedObjects.emplace_back(a_object);
 
     m_editor->ClearSelectedNodes();
+    m_shapeEditor->ClearSelectedNodes();
 
     m_curAction = nullptr;
 }
@@ -816,6 +832,7 @@ void Workspace::RemoveSelectedObject(Object* a_object)
     }
 
     m_editor->ClearSelectedNodes();
+    m_shapeEditor->ClearSelectedNodes();
 
     m_curAction = nullptr;
 }
@@ -874,12 +891,14 @@ void Workspace::DefaultWindowConfig()
     const ImGuiID dockRightBottom = ImGui::DockBuilderSplitNode(dockRightTop, ImGuiDir_Down, 0.25f, nullptr, &dockRightTop);
     const ImGuiID dockBottom = ImGui::DockBuilderSplitNode(dockMainID, ImGuiDir_Down, 0.2f, nullptr, &dockMainID);
     const ImGuiID dockTop = ImGui::DockBuilderSplitNode(dockMainID, ImGuiDir_Up, topSideScale, nullptr, &dockMainID);
+    const ImGuiID dockRight = ImGui::DockBuilderSplitNode(dockMainID, ImGuiDir_Right, 0.5f, nullptr, &dockMainID);
     const ImGuiID dockLeft = ImGui::DockBuilderSplitNode(dockMainID, ImGuiDir_Left, leftSideScale, nullptr, &dockMainID);
 
     ImGui::DockBuilderDockWindow("Options", dockTop);
 
     ImGui::DockBuilderDockWindow("Editor", dockMainID);
     ImGui::DockBuilderDockWindow("UV Editor", dockMainID);
+    ImGui::DockBuilderDockWindow("Shape Editor", dockRight);
 
     ImGui::DockBuilderDockWindow("Hierarchy", dockRightTop);
     ImGui::DockBuilderDockWindow("Properties", dockRightBottom);
@@ -917,11 +936,13 @@ void Workspace::UVWindowConfig()
     const ImGuiID dockBottom = ImGui::DockBuilderSplitNode(dockMainID, ImGuiDir_Down, 0.2f, nullptr, &dockMainID);
     const ImGuiID dockRight = ImGui::DockBuilderSplitNode(dockMainID, ImGuiDir_Right, rightSideScale, nullptr, &dockMainID);
     const ImGuiID dockLeft = ImGui::DockBuilderSplitNode(dockMainID, ImGuiDir_Left, leftSideScale, nullptr, &dockMainID);
+    const ImGuiID dockMidBottom = ImGui::DockBuilderSplitNode(dockMainID, ImGuiDir_Down, 0.5f, nullptr, &dockMainID);
 
     ImGui::DockBuilderDockWindow("Options", dockTop);
 
     ImGui::DockBuilderDockWindow("Editor", dockMainID);
     ImGui::DockBuilderDockWindow("UV Editor", dockRight);
+    ImGui::DockBuilderDockWindow("Shape Editor", dockMidBottom);
 
     ImGui::DockBuilderDockWindow("Toolbar", dockLeft);
     ImGui::DockBuilderDockWindow("Hierarchy", dockLeft);

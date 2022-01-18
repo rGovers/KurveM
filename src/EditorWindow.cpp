@@ -3,7 +3,7 @@
 #include "Actions/CreateObjectAction.h"
 #include "Actions/FlipFaceAction.h"
 #include "Actions/InsertFaceAction.h"
-#include "Editor.h"
+#include "EditorControls/Editor.h"
 #include "imgui.h"
 #include "ImGuiExt.h"
 #include "Object.h"

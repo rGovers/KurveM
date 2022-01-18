@@ -2,7 +2,7 @@
 
 #include "Windows/Window.h"
 
-#include "Editor.h"
+#include "EditorControls/Editor.h"
 
 class Workspace;
 

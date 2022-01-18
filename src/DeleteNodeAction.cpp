@@ -3,7 +3,7 @@
 #include <vector>
 #include <unordered_map>
 
-#include "Editor.h"
+#include "EditorControls/Editor.h"
 #include "LongTasks/TriangulateCurveLongTask.h"
 #include "Workspace.h"
 

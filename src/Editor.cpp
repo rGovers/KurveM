@@ -1,4 +1,4 @@
-#include "Editor.h"
+#include "EditorControls/Editor.h"
 
 #include <glad/glad.h>
 #include <glm/gtx/quaternion.hpp>

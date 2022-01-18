@@ -4,7 +4,7 @@
 #include "Actions/ScaleObjectRelativeAction.h"
 #include "Actions/TranslateObjectRelativeAction.h"
 #include "Camera.h"
-#include "Editor.h"
+#include "EditorControls/Editor.h"
 #include "Gizmos.h"
 #include "Object.h"
 #include "SelectionControl.h"

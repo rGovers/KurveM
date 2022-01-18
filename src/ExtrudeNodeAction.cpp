@@ -1,7 +1,7 @@
 #include "Actions/ExtrudeNodeAction.h"
 
 #include "CurveModel.h"
-#include "Editor.h"
+#include "EditorControls/Editor.h"
 #include "LongTasks/TriangulateCurveLongTask.h"
 #include "Workspace.h"
 

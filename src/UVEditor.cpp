@@ -1,11 +1,11 @@
-#include "UVEditor.h"
+#include "EditorControls/UVEditor.h"
 
 #include <glad/glad.h>
 
 #include "Actions/MoveUVAction.h"
 #include "ColorTheme.h"
 #include "CurveModel.h"
-#include "Editor.h"
+#include "EditorControls/Editor.h"
 #include "Gizmos.h"
 #include "imgui.h"
 #include "Object.h"
@@ -13,7 +13,7 @@
 #include "SelectionControl.h"
 #include "Workspace.h"
 
-const float BorderSize = 0.85f;
+constexpr float BorderSize = 0.85f;
 
 UVEditor::UVEditor(Workspace* a_workspace, Editor* a_editor)
 {

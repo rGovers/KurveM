@@ -1,10 +1,10 @@
 #include "Windows/UVEditorWindow.h"
 
-#include "Editor.h"
+#include "EditorControls/Editor.h"
+#include "EditorControls/UVEditor.h"
 #include "imgui.h"
 #include "RenderTexture.h"
 #include "Texture.h"
-#include "UVEditor.h"
 
 UVEditorWindow::UVEditorWindow(Workspace* a_workspace, Editor* a_editor, UVEditor* a_uvEditor)
 {
@@ -19,8 +19,7 @@ UVEditorWindow::~UVEditorWindow()
 
 void UVEditorWindow::Update(double a_delta)
 {
-    bool open = m_editor->GetEditorMode() == EditorMode_Edit;
-    if (open)
+    if (m_editor->GetEditorMode() == EditorMode_Edit)
     {
         if (ImGui::Begin("UV Editor", nullptr, ImGuiWindowFlags_NoFocusOnAppearing))
         {
@@ -36,6 +35,7 @@ void UVEditorWindow::Update(double a_delta)
 
             ImGui::Image((ImTextureID)texture->GetHandle(), size);
         }
+        
         ImGui::End();
     }   
 }

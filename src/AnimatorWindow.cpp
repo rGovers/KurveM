@@ -4,7 +4,7 @@
 #include "Actions/RemoveAnimationNodeAction.h"
 #include "Animation.h"
 #include "ColorTheme.h"
-#include "Editor.h"
+#include "EditorControls/Editor.h"
 #include "imgui.h"
 #include "ImGuiExt.h"
 #include "Object.h"

@@ -15,7 +15,7 @@
 #include "Camera.h"
 #include "ColorTheme.h"
 #include "CurveModel.h"
-#include "Editor.h"
+#include "EditorControls/Editor.h"
 #include "Gizmos.h"
 #include "Object.h"
 #include "PathModel.h"
@@ -471,17 +471,6 @@ bool EditEditor::SelectArmatureNodes(Object* a_node, const glm::mat4& a_viewProj
     return ret;
 }
 
-void DrawCurve(int a_steps, const glm::mat4& a_modelMatrix, const BezierCurveNode3& a_nodeA, const BezierCurveNode3& a_nodeB)
-{
-    for (int i = 0; i < a_steps; ++i)
-    {
-        const glm::vec3 pointA = (a_modelMatrix * glm::vec4(BezierCurveNode3::GetPoint(a_nodeA, a_nodeB, (float)i / a_steps), 1)).xyz();
-        const glm::vec3 pointB = (a_modelMatrix * glm::vec4(BezierCurveNode3::GetPoint(a_nodeA, a_nodeB, (float)(i + 1) / a_steps), 1)).xyz();
-
-        Gizmos::DrawLine(pointA, pointB, 0.0025f, ColorTheme::Active);
-    }
-}
-
 void EditEditor::DrawObject(Camera* a_camera, Object* a_object, const glm::vec2& a_winSize)
 {
     const Transform* camTransform = a_camera->GetTransform();
@@ -568,9 +557,9 @@ NextArmatureDrawNodeLoop:;
                         sNodes[j] = nodes[face.Index[j]].Nodes[face.ClusterIndex[j]].Node;
                     }
 
-                    DrawCurve(steps, modelMatrix, sNodes[FaceIndex_3Point_AB], sNodes[FaceIndex_3Point_BA]);
-                    DrawCurve(steps, modelMatrix, sNodes[FaceIndex_3Point_AC], sNodes[FaceIndex_3Point_CA]);
-                    DrawCurve(steps, modelMatrix, sNodes[FaceIndex_3Point_BC], sNodes[FaceIndex_3Point_CB]);
+                    Gizmos::DrawCurve(steps, modelMatrix, sNodes[FaceIndex_3Point_AB], sNodes[FaceIndex_3Point_BA], ColorTheme::Active);
+                    Gizmos::DrawCurve(steps, modelMatrix, sNodes[FaceIndex_3Point_AC], sNodes[FaceIndex_3Point_CA], ColorTheme::Active);
+                    Gizmos::DrawCurve(steps, modelMatrix, sNodes[FaceIndex_3Point_BC], sNodes[FaceIndex_3Point_CB], ColorTheme::Active);
 
                     break;
                 }
@@ -583,10 +572,10 @@ NextArmatureDrawNodeLoop:;
                         sNodes[j] = nodes[face.Index[j]].Nodes[face.ClusterIndex[j]].Node;
                     }
 
-                    DrawCurve(steps, modelMatrix, sNodes[FaceIndex_4Point_AB], sNodes[FaceIndex_4Point_BA]);
-                    DrawCurve(steps, modelMatrix, sNodes[FaceIndex_4Point_BD], sNodes[FaceIndex_4Point_DB]);
-                    DrawCurve(steps, modelMatrix, sNodes[FaceIndex_4Point_DC], sNodes[FaceIndex_4Point_CD]);
-                    DrawCurve(steps, modelMatrix, sNodes[FaceIndex_4Point_CA], sNodes[FaceIndex_4Point_AC]);
+                    Gizmos::DrawCurve(steps, modelMatrix, sNodes[FaceIndex_4Point_AB], sNodes[FaceIndex_4Point_BA], ColorTheme::Active);
+                    Gizmos::DrawCurve(steps, modelMatrix, sNodes[FaceIndex_4Point_BD], sNodes[FaceIndex_4Point_DB], ColorTheme::Active);
+                    Gizmos::DrawCurve(steps, modelMatrix, sNodes[FaceIndex_4Point_DC], sNodes[FaceIndex_4Point_CD], ColorTheme::Active);
+                    Gizmos::DrawCurve(steps, modelMatrix, sNodes[FaceIndex_4Point_CA], sNodes[FaceIndex_4Point_AC], ColorTheme::Active);
                 }
                 }
             }
@@ -649,7 +638,7 @@ NextCurveDrawNodeLoop:;
             const PathNode nodeA = pathNodes[indices[i * 2U + 0U]];
             const PathNode nodeB = pathNodes[indices[i * 2U + 1U]];
 
-            DrawCurve(steps, modelMatrix, nodeA.Node, nodeB.Node);
+            Gizmos::DrawCurve(steps, modelMatrix, nodeA.Node, nodeB.Node, ColorTheme::Active);
         }
 
         const std::list<unsigned int> selectedNodes = m_editor->GetSelectedNodes();

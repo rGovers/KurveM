@@ -4,6 +4,7 @@
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtx/quaternion.hpp>
 
+#include "BezierCurveNode3.h"
 #include "Camera.h"
 #include "Datastore.h"
 #include "LocalModel.h"
@@ -221,6 +222,21 @@ void Gizmos::DrawLine(const glm::vec3& a_start, const glm::vec3& a_end, const gl
     Instance->m_indices.emplace_back(indexD);
 }
 
+void Gizmos::DrawCurve(int a_steps, const BezierCurveNode3& a_nodeA, const BezierCurveNode3& a_nodeB, const glm::vec4& a_color)
+{
+    DrawCurve(a_steps, glm::identity<glm::mat4>(), a_nodeA, a_nodeB, a_color);
+}
+void Gizmos::DrawCurve(int a_steps, const glm::mat4& a_modelMatrix, const BezierCurveNode3& a_nodeA, const BezierCurveNode3& a_nodeB, const glm::vec4& a_color)
+{
+    for (int i = 0; i < a_steps; ++i)
+    {
+        const glm::vec4 pointA = a_modelMatrix * glm::vec4(BezierCurveNode3::GetPoint(a_nodeA, a_nodeB, (float)i / a_steps), 1);
+        const glm::vec4 pointB = a_modelMatrix * glm::vec4(BezierCurveNode3::GetPoint(a_nodeA, a_nodeB, (float)(i + 1) / a_steps), 1);
+
+        Gizmos::DrawLine(pointA, pointB, 0.0025f, a_color);
+    }
+}
+
 void Gizmos::DrawCircle(const glm::vec3& a_position, const glm::vec3& a_dir, float a_radius, float a_width, int a_steps, const glm::vec4& a_color)
 {
     const glm::vec4 vec = glm::vec4(0, a_radius, 0, 1);
@@ -241,16 +257,22 @@ void Gizmos::DrawCircleFilled(const glm::vec3& a_position, const glm::vec3& a_di
     const unsigned int centerIndex = Instance->m_vertices.size();
     Instance->m_vertices.emplace_back(GizmoVertex{ glm::vec4(a_position, 1.0f), a_color });
 
-    const glm::vec4 vec = glm::vec4(0, a_radius, 0, 1);
+    constexpr float pi2 = glm::pi<float>() * 2;
 
-    glm::quat q = glm::angleAxis(glm::pi<float>() * 2.0f, a_dir);
+    glm::vec4 vec = glm::vec4(0.0f, a_radius, 0.0f, 1.0f);
+    if (glm::dot(a_dir, glm::vec3(0.0f, 1.0f, 0.0f)) >= 0.95f)
+    {
+        vec = glm::vec4(0.0f, 0.0f, a_radius, 1.0f);
+    }
+
+    glm::quat q = glm::angleAxis(pi2, a_dir);
     Instance->m_vertices.emplace_back(GizmoVertex{ glm::vec4(a_position + (q * vec).xyz(), 1.0f), a_color });
 
     for (int i = 1; i <= a_steps; ++i)
     {
-        const float angle = (float)i / a_steps * (glm::pi<float>() * 2.0f);
+        const float angle = (float)i / a_steps * pi2;
 
-        glm::quat q = glm::angleAxis(angle, a_dir);
+        q = glm::angleAxis(angle, a_dir);
         
         unsigned int index = Instance->m_vertices.size();
         Instance->m_vertices.emplace_back(GizmoVertex{ glm::vec4(a_position + (q * vec).xyz(), 1.0f), a_color });

@@ -3,7 +3,7 @@
 #include <stdio.h>
 
 #include "Actions/DeleteNodeAction.h"
-#include "Editor.h"
+#include "EditorControls/Editor.h"
 #include "imgui.h"
 #include "Workspace.h"
 

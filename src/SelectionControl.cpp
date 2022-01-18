@@ -1,5 +1,7 @@
 #include "SelectionControl.h"
 
+#include "BezierCurveNode2.h"
+#include "BezierCurveNode3.h"
 #include "Object.h"
 
 bool SelectionControl::PointInMesh(const glm::mat4& a_transform, const Vertex* a_vertices, const unsigned int* a_indices, unsigned int a_indexCount, const glm::vec2& a_point)
@@ -99,20 +101,26 @@ bool SelectionControl::NodeHandleInSelection(const glm::mat4& a_viewProj, const 
 
     return false;
 }
+
 bool SelectionControl::NodeInSelection(const glm::mat4& a_viewProj, const glm::vec2& a_start, const glm::vec2& a_end, const glm::mat4& a_world, const BezierCurveNode3& a_node)
 {
-    const glm::vec4 nodePos = glm::vec4(a_node.GetPosition(), 1);
+    const glm::vec4 nodePos = glm::vec4(a_node.GetPosition(), 1.0f);
 
     glm::vec4 fPos = a_viewProj * a_world * nodePos; 
     fPos /= fPos.w;
 
-    if (fPos.x >= a_start.x && fPos.y >= a_start.y &&
-    fPos.x <= a_end.x && fPos.y <= a_end.y)
-    {
-        return true;
-    }
+    return fPos.x >= a_start.x && fPos.y >= a_start.y && fPos.x <= a_end.x && fPos.y <= a_end.y;
+}
+bool SelectionControl::NodeInSelection(const glm::mat4& a_viewProj, const glm::vec2& a_start, const glm::vec2& a_end, const glm::mat4& a_world, const BezierCurveNode2& a_node, float a_depth)
+{
+    const glm::vec2 pos = a_node.GetPosition();
 
-    return false;
+    const glm::vec4 nodePos = glm::vec4(pos.x, a_depth, pos.y, 1.0f);
+
+    glm::vec4 fPos = a_viewProj * a_world * nodePos; 
+    fPos /= fPos.w;
+
+    return fPos.x >= a_start.x && fPos.y >= a_start.y && fPos.x <= a_end.x && fPos.y <= a_end.y;
 }
 
 bool SelectionControl::ObjectPointInSelection(const Object* a_object, const glm::mat4& a_viewProj, const glm::vec2& a_start, const glm::vec2& a_end)

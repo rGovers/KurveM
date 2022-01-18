@@ -106,6 +106,18 @@ public:
         return m_pathNodes;
     }
 
+    inline BezierCurveNode2* GetShapeNodes() const
+    {
+        return m_shapeNodes;
+    }
+    inline BezierCurveNode2 GetShapeNode(unsigned int a_index) const
+    {
+        return m_shapeNodes[a_index];
+    }
+    inline unsigned int GetShapeNodeCount() const
+    {
+        return m_shapeNodeCount;
+    }
     inline unsigned int GetShapeIndexCount() const
     {
         return m_shapeIndexCount;
