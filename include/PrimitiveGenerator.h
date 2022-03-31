@@ -25,4 +25,5 @@ public:
     static void CreatePathCylinder(PathNode** a_nodePtr, unsigned int* a_nodeCount, unsigned int** a_nodeIndicesPtr, unsigned int* a_nodeIndexCount, BezierCurveNode2** a_shapeNodePtr, unsigned int* a_shapeNodeCount, unsigned int** a_shapeIndicesPtr, unsigned int* a_shapeIndexCount);
     static void CreatePathCone(PathNode** a_nodePtr, unsigned int* a_nodeCount, unsigned int** a_nodeIndicesPtr, unsigned int* a_nodeIndexCount, BezierCurveNode2** a_shapeNodePtr, unsigned int* a_shapeNodeCount, unsigned int** a_shapeIndicesPtr, unsigned int* a_shapeIndexCount);
     static void CreatePathTorus(PathNode** a_nodePtr, unsigned int* a_nodeCount, unsigned int** a_nodeIndicesPtr, unsigned int* a_nodeIndexCount, BezierCurveNode2** a_shapeNodePtr, unsigned int* a_shapeNodeCount, unsigned int** a_shapeIndicesPtr, unsigned int* a_shapeIndexCount);
+    static void CreatePathSpiral(PathNode** a_nodePtr, unsigned int* a_nodeCount, unsigned int** a_nodeIndicesPtr, unsigned int* a_nodeIndexCount, BezierCurveNode2** a_shapeNodePtr, unsigned int* a_shapeNodeCount, unsigned int ** a_shapeIndicesPtr, unsigned int* a_shapeIndexCount);
 };

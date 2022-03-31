@@ -11,14 +11,15 @@ class Workspace;
 class EditorInputController
 {
 private:
-    Workspace* m_workspace;
-    Editor*    m_editor;
+    Workspace*                     m_workspace;
+    Editor*                        m_editor;
+                
+    bool*                          m_states;
 
-    bool       m_deleteDown;
-    bool       m_fDown;
-    bool       m_nDown;
+    std::function<void(Object*)>** m_curveFunctions;
+    std::function<void(Object*)>** m_pathFunctions;
 
-    void KeyDown(GLFWwindow* a_window, int a_key, bool* a_state, Object* a_obj, const std::function<void(Object*)>& a_curveFunction) const;
+    void KeyDown(GLFWwindow* a_window, int a_key, Object* a_obj);
 
 protected:
 

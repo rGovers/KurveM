@@ -52,6 +52,8 @@ void UVEditor::MoveUV(const glm::vec2& a_pos, const glm::vec2& a_cursorPos, cons
             delete m_currentAction;
             m_currentAction = nullptr;
         }
+
+        delete[] indices;
     }
 }
 

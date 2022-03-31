@@ -3,6 +3,8 @@
 #include <glad/glad.h>
 #include <glm/gtx/quaternion.hpp>
 
+#include "Actions/MoveShapeNodeAction.h"
+#include "Actions/MoveShapeHandleAction.h"
 #include "Camera.h"
 #include "ColorTheme.h"
 #include "Datastore.h"
@@ -30,6 +32,7 @@ ShapeEditor::ShapeEditor(Workspace* a_workspace, Editor* a_editor)
     m_currentAction = nullptr;
 
     m_camera = new Camera();
+    m_camera->SetOrthographic(true);
 
     Init();
 }
@@ -42,7 +45,10 @@ ShapeEditor::~ShapeEditor()
 
 void ShapeEditor::Init()
 {
-    constexpr float halfPI = glm::pi<float>() * 0.5f;
+    constexpr float pi = glm::pi<float>();
+    constexpr float halfPI = pi * 0.5f;
+
+    constexpr glm::vec3 right = glm::vec3(1.0f, 0.0f, 0.0f);
 
     m_gridShader = Datastore::GetShaderProgram("SHADER_GRID");
     if (m_gridShader == nullptr)
@@ -58,9 +64,11 @@ void ShapeEditor::Init()
         Datastore::AddShaderProgram("SHADER_GRID", m_gridShader);
     }
 
-    Transform* transform = m_camera->GetTransform();
-    transform->Translation() = { 0.0f, -2.5f, 0.0f };
-    transform->Quaternion() = glm::angleAxis(halfPI, glm::vec3(1.0f, 0.0f, 0.0f));
+    Transform* camTrans = m_camera->GetTransform();
+    camTrans->Translation() = { 0.0f, -2.5f, 0.0f };
+    camTrans->Quaternion() = glm::angleAxis(halfPI, right);
+
+    m_cameraZoom = 1.0f;
 }
 
 e_ActionType ShapeEditor::GetCurrentAction() const
@@ -74,6 +82,8 @@ e_ActionType ShapeEditor::GetCurrentAction() const
 }
 void ShapeEditor::DrawSelection(const BezierCurveNode2& a_node, unsigned int a_index) const
 {
+    constexpr glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
+
     const glm::vec2 pos = a_node.GetPosition();
     for (auto iter = m_selectedIndices.begin(); iter != m_selectedIndices.end(); ++iter)
     {
@@ -82,13 +92,64 @@ void ShapeEditor::DrawSelection(const BezierCurveNode2& a_node, unsigned int a_i
             const glm::vec2 handle = a_node.GetHandlePosition();
 
             Gizmos::DrawLine(glm::vec3(pos.x, 0.0f, pos.y), glm::vec3(handle.x, 0.0f, handle.y), 0.01f, ColorTheme::Active);
-            Gizmos::DrawCircleFilled(glm::vec3(handle.x, 0.0f, handle.y), glm::vec3(0.0f, 1.0f, 0.0f), 0.05f, 10, ColorTheme::Active);
+            Gizmos::DrawCircleFilled(glm::vec3(handle.x, 0.0f, handle.y), up, 0.05f, 10, ColorTheme::Active);
 
             return;
         }
     }
 
-    Gizmos::DrawCircleFilled(glm::vec3(pos.x, 0.0f, pos.y), glm::vec3(0.0f, 1.0f, 0.0f), 0.05f, 10, ColorTheme::InActive);
+    Gizmos::DrawCircleFilled(glm::vec3(pos.x, 0.0f, pos.y), up, 0.05f, 10, ColorTheme::InActive);
+}
+
+bool ShapeEditor::MoveNode(const glm::mat4& a_viewProj, const glm::vec2& a_pos, const glm::vec2& a_cursorPos, e_Axis a_axis, PathModel* a_pathModel)
+{
+    const glm::vec3 axis = AxisControl::GetAxis(a_axis) * 0.5f;
+  
+    glm::vec4 fPos = a_viewProj * glm::vec4(glm::vec3(a_pos.x, 0.0f, a_pos.y) + glm::vec3(axis.x, 0.0f, axis.y), 1.0f);
+    fPos /= fPos.w;
+
+    if (SelectionControl::PointInPoint(fPos.xy(), a_cursorPos, 0.005f))
+    {
+        const unsigned int nodeCount = (unsigned int)m_selectedIndices.size();
+
+        unsigned int* indices = new unsigned int[nodeCount];
+        unsigned int index = 0;
+        for (auto iter = m_selectedIndices.begin(); iter != m_selectedIndices.end(); ++iter)
+        {
+            indices[index++] = *iter;
+        }
+
+        m_currentAction = new MoveShapeNodeAction(m_workspace, indices, nodeCount, a_pathModel, a_cursorPos, axis);
+        if (!m_workspace->PushAction(m_currentAction))
+        {
+            printf("Error moving shape node \n");
+
+            delete m_currentAction;
+            m_currentAction = nullptr;
+        }
+
+        return true;
+    }
+
+    return false;
+}
+bool ShapeEditor::MoveNodeHandle(const glm::mat4& a_viewProj, const BezierCurveNode2& a_node, unsigned int a_index, const glm::vec2& a_cursorPos, PathModel* a_pathModel)
+{
+    if (SelectionControl::NodeHandleInPoint(a_viewProj, a_cursorPos, 0.025f, a_node))
+    {
+        m_currentAction = new MoveShapeNodeHandleAction(m_workspace, a_index, a_pathModel, a_cursorPos);
+        if (!m_workspace->PushAction(m_currentAction))
+        {
+            printf("Error moving shape handle node \n");
+
+            delete m_currentAction;
+            m_currentAction = nullptr;
+        }
+
+        return true;
+    }
+
+    return false;
 }
 
 void ShapeEditor::ClearSelectedNodes()
@@ -138,43 +199,110 @@ void ShapeEditor::Update(double a_delta, const glm::vec2& a_winPos, const glm::v
 
     Gizmos::Clear();
 
-    Transform* transform = m_camera->GetTransform();
+    Transform* camTrans = m_camera->GetTransform();
 
-    const glm::mat4 viewInv = transform->ToMatrix();
+    const glm::mat4 viewInv = camTrans->ToMatrix();
     const glm::mat4 view = glm::inverse(viewInv);
-    const glm::mat4 proj = m_camera->GetProjection(a_winSize);
+    const glm::mat4 proj = m_camera->GetProjection(a_winSize * m_cameraZoom);
+    const glm::mat4 viewProj = proj * view;
 
     if (m_mouseState & 0b1 << 0)
     {
-        const glm::vec2 min = glm::min(m_startCursorPos, curCursorPos);
-        const glm::vec2 max = glm::max(m_startCursorPos, curCursorPos);
+        switch (GetCurrentAction())
+        {
+        case ActionType_MoveShapeNode:
+        {
+            MoveShapeNodeAction* action = (MoveShapeNodeAction*)m_currentAction;
+            action->SetPosition(curCursorPos);
 
-        const glm::vec3 tlWP = m_camera->GetScreenToWorld(glm::vec3(min.x, min.y, -0.99f), a_winSize);
-        const glm::vec3 trWP = m_camera->GetScreenToWorld(glm::vec3(max.x, min.y, -0.99f), a_winSize);
-        const glm::vec3 blWP = m_camera->GetScreenToWorld(glm::vec3(min.x, max.y, -0.99f), a_winSize);
-        const glm::vec3 brWP = m_camera->GetScreenToWorld(glm::vec3(max.x, max.y, -0.99f), a_winSize);
+            action->Execute();
 
-        const glm::vec3 f = viewInv[2].xyz();
+            break;
+        }
+        case ActionType_MoveShapeNodeHandle:
+        {
+            MoveShapeNodeHandleAction* action = (MoveShapeNodeHandleAction*)m_currentAction;
+            action->SetCursorPos(curCursorPos);
 
-        // Gizmos::DrawLine(glm::vec3(1, 0, 0), glm::vec3(-1, 0, 0), f, 0.01f, ColorTheme::Active);
+            action->Execute();
 
-        Gizmos::DrawLine(tlWP, trWP, f, 0.0005f, ColorTheme::Active);
-        Gizmos::DrawLine(trWP, brWP, f, 0.0005f, ColorTheme::Active);
-        Gizmos::DrawLine(brWP, blWP, f, 0.0005f, ColorTheme::Active);
-        Gizmos::DrawLine(blWP, tlWP, f, 0.0005f, ColorTheme::Active);
+            break;
+        }
+        default:
+        {   
+            const glm::vec2 min = glm::min(m_startCursorPos, curCursorPos);
+            const glm::vec2 max = glm::max(m_startCursorPos, curCursorPos);
+
+            const glm::vec3 tlWP = m_camera->GetScreenToWorld(glm::vec3(min.x, min.y, 0.0f), a_winSize * m_cameraZoom);
+            const glm::vec3 trWP = m_camera->GetScreenToWorld(glm::vec3(max.x, min.y, 0.0f), a_winSize * m_cameraZoom);
+            const glm::vec3 blWP = m_camera->GetScreenToWorld(glm::vec3(min.x, max.y, 0.0f), a_winSize * m_cameraZoom);
+            const glm::vec3 brWP = m_camera->GetScreenToWorld(glm::vec3(max.x, max.y, 0.0f), a_winSize * m_cameraZoom);
+
+            const glm::vec3 f = viewInv[2].xyz();
+
+            Gizmos::DrawLine(tlWP, trWP, f, 0.005f, ColorTheme::Active);
+            Gizmos::DrawLine(trWP, brWP, f, 0.005f, ColorTheme::Active);
+            Gizmos::DrawLine(brWP, blWP, f, 0.005f, ColorTheme::Active);
+            Gizmos::DrawLine(blWP, tlWP, f, 0.005f, ColorTheme::Active);
+
+            break;
+        }
+        }   
     }
 
     if (ImGui::IsWindowFocused())
     {
-        transform->Translation().y += io.MouseWheel * 0.25f;
-        if (transform->Translation().y >= -0.5f)
-        {
-            transform->Translation().y = -0.5f;
-        }
+        m_cameraZoom -= io.MouseWheel * 0.025f;
+        m_cameraZoom = glm::min(10.0f, glm::max(0.1f, m_cameraZoom));
 
         if (ImGui::IsMouseDown(ImGuiMouseButton_Left) && !(m_mouseState & 0b1 << 0))
         {
             m_startCursorPos = curCursorPos;
+
+            const Object* object = m_workspace->GetSelectedObject();
+            if (object != nullptr)
+            {
+                PathModel* model = object->GetPathModel();
+                if (model != nullptr)
+                {
+                    const BezierCurveNode2* nodes = model->GetShapeNodes();
+                    const unsigned int indexCount = (unsigned int)m_selectedIndices.size();
+
+                    if (indexCount > 0)
+                    {
+                        glm::vec2 pos = glm::vec2(0);
+
+                        for (auto iter = m_selectedIndices.begin(); iter != m_selectedIndices.end(); ++iter)
+                        {
+                            pos += nodes[*iter].GetPosition();
+                        }
+
+                        pos /= indexCount;
+
+                        switch (m_workspace->GetToolMode())
+                        {
+                        case ToolMode_Translate:
+                        {
+                            if (!MoveNode(viewProj, pos, curCursorPos, Axis_X, model) &&
+                                !MoveNode(viewProj, pos, curCursorPos, Axis_Y, model))
+                            {
+                                for (auto iter = m_selectedIndices.begin(); iter != m_selectedIndices.end(); ++iter)
+                                {
+                                    const unsigned int index = *iter;
+
+                                    if (MoveNodeHandle(viewProj, nodes[index], index, curCursorPos, model))
+                                    {
+                                        break;
+                                    }
+                                }
+                            }
+
+                            break;
+                        }
+                        }
+                    }      
+                }
+            }
 
             m_mouseState |= 0b1 << 0;
         }
@@ -183,8 +311,8 @@ void ShapeEditor::Update(double a_delta, const glm::vec2& a_winPos, const glm::v
         {
             if (m_mouseState & 0b1 << 1)
             {
-                transform->Translation().x += m_prevCursorPos.x - curCursorPos.x;
-                transform->Translation().z += m_prevCursorPos.y - curCursorPos.y;
+                camTrans->Translation().x += m_prevCursorPos.x - curCursorPos.x;
+                camTrans->Translation().z += m_prevCursorPos.y - curCursorPos.y;
             }
 
             m_mouseState |= 0b1 << 1;
@@ -203,32 +331,47 @@ void ShapeEditor::Update(double a_delta, const glm::vec2& a_winPos, const glm::v
         PathModel* model = object->GetPathModel();
         if (model != nullptr)
         {
+            const BezierCurveNode2* nodes = model->GetShapeNodes();
+            const unsigned int nodeCount = model->GetShapeNodeCount();
+
             if (ImGui::IsMouseReleased(ImGuiMouseButton_Left) && m_mouseState & 0b1 << 0)
             {
-                const BezierCurveNode2* nodes = model->GetShapeNodes();
-                const unsigned int nodeCount = model->GetShapeNodeCount();
-
-                const glm::vec2 min = glm::min(m_startCursorPos, curCursorPos);
-                const glm::vec2 max = glm::max(m_startCursorPos, curCursorPos);
-
-                m_selectedIndices.clear();
-
-                for (unsigned int i = 0; i < nodeCount; ++i)
+                const e_ActionType actionType = GetCurrentAction();
+                switch (actionType)
                 {
-                    if (SelectionControl::NodeInSelection(proj * view, min, max, glm::identity<glm::mat4>(), nodes[i]))
-                    {
-                        m_selectedIndices.emplace_back(i);
-                    }
+                case ActionType_MoveShapeNode:
+                case ActionType_MoveShapeNodeHandle:
+                {
+                    m_currentAction = nullptr;
+
+                    break;
                 }
+                default:
+                {
+                    const glm::vec2 min = glm::min(m_startCursorPos, curCursorPos);
+                    const glm::vec2 max = glm::max(m_startCursorPos, curCursorPos);
+
+                    m_selectedIndices.clear();
+
+                    for (unsigned int i = 0; i < nodeCount; ++i)
+                    {
+                        if (SelectionControl::NodeInSelection(viewProj, min, max, glm::identity<glm::mat4>(), nodes[i]))
+                        {
+                            m_selectedIndices.emplace_back(i);
+                        }
+                    }
+
+                    break;
+                }
+                }    
             
                 m_mouseState &= ~(0b1 << 0);
             }
 
             const int shapeSteps = model->GetShapeSteps();
 
-            const BezierCurveNode2* nodes = model->GetShapeNodes();
-            const unsigned int* indices = model->GetPathIndices();
-            const unsigned int indexCount = model->GetPathIndexCount();
+            const unsigned int* indices = model->GetShapeIndices();
+            const unsigned int indexCount = model->GetShapeIndexCount();
             const unsigned int lineCount = indexCount / 2;
 
             for (unsigned int i = 0; i < lineCount; ++i)
@@ -250,10 +393,32 @@ void ShapeEditor::Update(double a_delta, const glm::vec2& a_winPos, const glm::v
                     Gizmos::DrawLine(glm::vec3(pointA.x, 0.0f, pointA.y), glm::vec3(pointB.x, 0.0f, pointB.y), 0.0025f, ColorTheme::Active);
                 }
             }
+
+            const unsigned int selectedCount = (unsigned int)m_selectedIndices.size();
+
+            if (selectedCount > 0)
+            {
+                glm::vec2 pos = glm::vec2(0);
+
+                for (auto iter = m_selectedIndices.begin(); iter != m_selectedIndices.end(); ++iter)
+                {
+                    pos += nodes[*iter].GetPosition();
+                }
+
+                pos /= selectedCount;
+
+                const glm::vec3 pos3 = glm::vec3(pos.x, 0.0f, pos.y);
+                const glm::vec3 up = pos3 + glm::vec3(0.0f, 0.0f, 0.5f);
+                const glm::vec3 right = pos3 + glm::vec3(0.5f, 0.0f, 0.0f);
+
+                Gizmos::DrawLine(pos3, up, 0.01f, glm::vec4(0.0f, 1.0f, 0.0f, 1.0f));
+                Gizmos::DrawLine(pos3, right, 0.01f, glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
+
+                Gizmos::DrawTriangle(up, glm::vec3(0.0f, 0.0f, 1.0f), 0.05f, glm::vec4(0.0f, 1.0f, 0.0f, 1.0f));
+                Gizmos::DrawTriangle(right, glm::vec3(1.0f, 0.0f, 0.0f), 0.05f, glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
+            }
         }
     }
-
-    Gizmos::DrawAll(m_camera, a_winSize);
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);  
@@ -273,6 +438,8 @@ void ShapeEditor::Update(double a_delta, const glm::vec2& a_winPos, const glm::v
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
     glDisable(GL_BLEND);
+
+    Gizmos::DrawAll(m_camera, a_winSize * m_cameraZoom);
 
     // Restore framebuffer state for imgui
     glBindFramebuffer(GL_FRAMEBUFFER, fbCache);

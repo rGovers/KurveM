@@ -86,6 +86,17 @@ bool SelectionControl::NodeHandleInPoint(const glm::mat4& a_viewProj, const glm:
 
     return false;
 }
+bool SelectionControl::NodeHandleInPoint(const glm::mat4& a_viewProj, const glm::vec2& a_point, float a_radius, const BezierCurveNode2& a_node)
+{
+    const glm::vec2 handlePos = a_node.GetHandlePosition();
+
+    glm::vec4 fPos = a_viewProj * glm::vec4(handlePos.x, 0.0f, handlePos.y, 1.0f);
+    fPos /= fPos.w;
+
+    const glm::vec2 diff = a_point - fPos.xy();
+
+    return glm::length(diff) <= a_radius;
+}
 bool SelectionControl::NodeHandleInSelection(const glm::mat4& a_viewProj, const glm::vec2& a_start, const glm::vec2& a_end, const glm::mat4& a_world, const BezierCurveNode3& a_node)
 {
     const glm::vec4 handlePos = glm::vec4(a_node.GetHandlePosition(), 1);

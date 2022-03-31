@@ -187,7 +187,9 @@ void PathModel::GetModelData(int a_shapeSteps, int a_pathSteps, unsigned int** a
         const PathNode nodeA = m_pathNodes[m_pathIndices[i * 2 + 0U]];
         const PathNode nodeB = m_pathNodes[m_pathIndices[i * 2 + 1U]];
 
-        for (unsigned int j = 0; j <= a_pathSteps; ++j)
+        glm::vec3 forward = glm::vec3(0, 0, 1);
+
+        for (unsigned int j = 0; j < a_pathSteps; ++j)
         {
             const float lerp = (j + 0U) / (float)a_pathSteps;
             const float nextLerp = (j + 1U) / (float)a_pathSteps;
@@ -195,11 +197,12 @@ void PathModel::GetModelData(int a_shapeSteps, int a_pathSteps, unsigned int** a
             const glm::vec3 pos = BezierCurveNode3::GetPoint(nodeA.Node, nodeB.Node, lerp);
             const glm::vec3 nextPos = BezierCurveNode3::GetPoint(nodeA.Node, nodeB.Node, nextLerp);
 
-            const glm::vec3 forward = glm::normalize(nextPos - pos);
+            forward = glm::normalize(nextPos - pos);
+            
             const float rot = glm::mix(nodeA.Rotation, nodeB.Rotation, lerp);
 
             glm::vec3 up = glm::vec3(0, 1, 0);
-            if (glm::dot(up, forward) >= 0.95f)
+            if (glm::abs(glm::dot(up, forward)) >= 0.95f)
             {
                 up = glm::vec3(0, 0, 1);
             }
@@ -224,6 +227,32 @@ void PathModel::GetModelData(int a_shapeSteps, int a_pathSteps, unsigned int** a
                 dirtyVertices.emplace_back(Vertex{ glm::vec4(pos, 1.0f), norm });
             }
         }
+
+        const glm::vec3 pos = nodeB.Node.GetPosition();
+        const float rot = nodeB.Rotation;
+
+        glm::vec3 up = glm::vec3(0, 1, 0);
+        if (glm::abs(glm::dot(up, forward)) >= 0.95f)
+        {
+            up = glm::vec3(0, 0, 1);
+        }
+ 
+        const glm::vec3 right = glm::normalize(glm::angleAxis(rot, forward) * glm::cross(up, forward));
+        up = glm::cross(forward, right);
+
+        const glm::mat3 rotMat = glm::mat3(right, forward, up);
+
+        const glm::vec2 scale = nodeB.Scale;
+
+        const glm::mat4 mat = glm::scale(iden, glm::vec3(scale.x, 1.0f, scale.y)) * glm::translate(iden, pos) * glm::mat4(rotMat);
+
+        for (unsigned int k = 0; k < shapeVertexCount; ++k)
+        {
+            const glm::vec3 pos = mat * shapeVertices[k].Position; 
+            const glm::vec3 norm = rotMat * shapeVertices[k].Normal;
+
+            dirtyVertices.emplace_back(Vertex{ glm::vec4(pos, 1.0f), norm });
+        }
     }
 
     std::unordered_map<unsigned int, unsigned int> indexMap;
@@ -244,7 +273,7 @@ void PathModel::GetModelData(int a_shapeSteps, int a_pathSteps, unsigned int** a
 
             const glm::vec3 diff = vert.Position - cVert.Position;
 
-            if (glm::dot(diff, diff) <= 0.0001f)
+            if (glm::dot(diff, diff) <= 0.001f)
             {
                 (*a_vertices)[j].Normal += vert.Normal;
                 indexMap.emplace(i, j);

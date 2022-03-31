@@ -120,19 +120,18 @@ void Wind4Points(Node3Cluster* a_nodes, unsigned int& a_a, unsigned int& a_b, un
     }
 }
 
-bool IsEdgeIndex(const CurveFace& a_face, e_FaceIndex a_faceIndexA, e_FaceIndex a_faceIndexB, unsigned int a_indexA, unsigned int a_indexB)
+inline bool GetIndex(const CurveFace& a_face, e_FaceIndex a_faceIndexA, e_FaceIndex a_faceIndexB, unsigned int a_indexA, unsigned int a_indexB, unsigned int* a_out)
 {
-    return a_face.Index[a_faceIndexA] == a_indexA && a_face.Index[a_faceIndexB] == a_indexB;
-}
-bool GetIndex(const CurveFace& a_face, e_FaceIndex a_faceIndexA, e_FaceIndex a_faceIndexB, unsigned int a_indexA, unsigned int a_indexB, unsigned int* a_out)
-{
-    if (IsEdgeIndex(a_face, a_faceIndexA, a_faceIndexB, a_indexA, a_indexB))
+    const unsigned int indA = a_face.Index[a_faceIndexA];
+    const unsigned int indB = a_face.Index[a_faceIndexB];
+
+    if (indA == a_indexA && indB == a_indexB)
     {
         *a_out = a_face.ClusterIndex[a_faceIndexA];
 
         return true;
     }
-    else if (IsEdgeIndex(a_face, a_faceIndexB, a_faceIndexA, a_indexA, a_indexB))
+    else if (indB == a_indexA && indA == a_indexB)
     {
         *a_out = a_face.ClusterIndex[a_faceIndexB];
 
@@ -209,7 +208,7 @@ unsigned int PushNode(Node3Cluster* a_cluster, unsigned int a_startIndex, unsign
 
     for (unsigned int i = 0; i < size; ++i)
     {
-        if (a_cluster->Nodes[i].Node.GetHandlePosition().x == std::numeric_limits<float>().infinity())
+        if (a_cluster->Nodes[i].Node.GetHandlePosition().x == std::numeric_limits<float>::infinity())
         {
             a_cluster->Nodes[i].FaceCount = 1;
             a_cluster->Nodes[i].Node.SetHandlePosition(a_cluster->Nodes[i].Node.GetPosition());
@@ -338,23 +337,24 @@ bool InsertFaceAction::Execute()
 
         face.FaceMode = FaceMode_4Point;
 
+        // TODO: Fix me
         face.Index[FaceIndex_4Point_AB] = pointA;
         face.Index[FaceIndex_4Point_AC] = pointA;
         face.Index[FaceIndex_4Point_BA] = pointB;
         face.Index[FaceIndex_4Point_BD] = pointB;
-        face.Index[FaceIndex_4Point_CA] = pointC;
-        face.Index[FaceIndex_4Point_CD] = pointC;
-        face.Index[FaceIndex_4Point_DB] = pointD;
-        face.Index[FaceIndex_4Point_DC] = pointD;
+        face.Index[FaceIndex_4Point_CA] = pointD;
+        face.Index[FaceIndex_4Point_CD] = pointD;
+        face.Index[FaceIndex_4Point_DB] = pointC;
+        face.Index[FaceIndex_4Point_DC] = pointC;
 
         face.ClusterIndex[FaceIndex_4Point_AB] = PushNode(&nodes[pointA], pointA, pointB, faces, faceCount);
         face.ClusterIndex[FaceIndex_4Point_AC] = PushNode(&nodes[pointA], pointA, pointC, faces, faceCount);
         face.ClusterIndex[FaceIndex_4Point_BA] = PushNode(&nodes[pointB], pointB, pointA, faces, faceCount);
         face.ClusterIndex[FaceIndex_4Point_BD] = PushNode(&nodes[pointB], pointB, pointD, faces, faceCount);
-        face.ClusterIndex[FaceIndex_4Point_CA] = PushNode(&nodes[pointC], pointC, pointA, faces, faceCount);
-        face.ClusterIndex[FaceIndex_4Point_CD] = PushNode(&nodes[pointC], pointC, pointD, faces, faceCount);
-        face.ClusterIndex[FaceIndex_4Point_DB] = PushNode(&nodes[pointD], pointD, pointB, faces, faceCount);
-        face.ClusterIndex[FaceIndex_4Point_DC] = PushNode(&nodes[pointD], pointD, pointC, faces, faceCount);
+        face.ClusterIndex[FaceIndex_4Point_CA] = PushNode(&nodes[pointD], pointD, pointA, faces, faceCount);
+        face.ClusterIndex[FaceIndex_4Point_CD] = PushNode(&nodes[pointD], pointD, pointC, faces, faceCount);
+        face.ClusterIndex[FaceIndex_4Point_DB] = PushNode(&nodes[pointC], pointC, pointB, faces, faceCount);
+        face.ClusterIndex[FaceIndex_4Point_DC] = PushNode(&nodes[pointC], pointC, pointD, faces, faceCount);
 
         m_curveModel->EmplaceFace(face);
 

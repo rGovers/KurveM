@@ -21,10 +21,12 @@ CameraController::~CameraController()
 
 void CameraController::Update(double a_delta)
 {
+    constexpr glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
+
     const Application* app = Application::GetInstance();
     GLFWwindow* window = app->GetWindow();
 
-    ImGuiIO io = ImGui::GetIO();
+    const ImGuiIO io = ImGui::GetIO();
 
     glm::vec3 mov = glm::vec3(0);
 
@@ -52,6 +54,14 @@ void CameraController::Update(double a_delta)
     {
         mov += camRight;
     }
+    if (glfwGetKey(window, GLFW_KEY_SPACE))
+    {
+        mov -= camUp;
+    }
+    if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT))
+    {
+        mov += camUp;
+    }
 
     camTransform->Translation() += mov * 2.0f * (float)a_delta;
 
@@ -61,11 +71,18 @@ void CameraController::Update(double a_delta)
 
     if (mouseMove.x != -FLT_MAX && mouseMove.y != -FLT_MAX)
     {
-        camTransform->Quaternion() = glm::angleAxis(-camMov.x, glm::vec3(0.0f, 1.0f, 0.0f)) * glm::angleAxis(camMov.y, camRight) * camQuat;
+        camTransform->Quaternion() = glm::angleAxis(-camMov.x, up) * glm::angleAxis(camMov.y, camRight) * camQuat;
     }
 }
 void CameraController::FocusUpdate()
 {
+    constexpr float pi = glm::pi<float>();
+    constexpr float piHalf = pi * 0.5f;
+    constexpr float pi2 = pi * 2;
+
+    constexpr glm::vec3 right = glm::vec3(1.0f, 0.0f, 0.0f);
+    constexpr glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
+
     const Application* app = Application::GetInstance();
     GLFWwindow* window = app->GetWindow();
 
@@ -77,40 +94,38 @@ void CameraController::FocusUpdate()
     const glm::mat4 camRotMatrix = glm::toMat4(camQuat);
 
     const glm::vec3 camForward = camRotMatrix[2].xyz();
-    const glm::vec3 camUp = camRotMatrix[1].xyz();
-    const glm::vec3 camRight = camRotMatrix[0].xyz();
 
     camTransform->Translation() -= camForward * io.MouseWheel * 2.0f;
 
     if (glfwGetKey(window, GLFW_KEY_KP_1))
     {
         camTransform->Translation() = { 0.0f, 0.0f, -10.0f };
-        camTransform->Quaternion() = glm::angleAxis(glm::pi<float>(), glm::normalize(glm::vec3(0.0f, 1.0f, 0.0f))) * glm::angleAxis(glm::pi<float>() * 2.0f, glm::normalize(glm::vec3(1.0f, 0.0f, 0.0f)));
+        camTransform->Quaternion() = glm::angleAxis(pi, up) * glm::angleAxis(pi2, right);
     }
     if (glfwGetKey(window, GLFW_KEY_KP_7))
     {
         camTransform->Translation() = { 0.0f, 0.0f, 10.0f };
-        camTransform->Quaternion() = glm::angleAxis(glm::pi<float>() * 2.0f, glm::normalize(glm::vec3(0.0f, 1.0f, 0.0f))) * glm::angleAxis(glm::pi<float>() * 2.0f, glm::normalize(glm::vec3(1.0f, 0.0f, 0.0f)));
+        camTransform->Quaternion() = glm::angleAxis(pi2, up) * glm::angleAxis(pi2, right);
     }
     if (glfwGetKey(window, GLFW_KEY_KP_8))
     {
         camTransform->Translation() = { 0.0f, -10.0f, 0.0f };
-        camTransform->Quaternion() = glm::angleAxis(glm::pi<float>() * 2.0f, glm::normalize(glm::vec3(0.0f, 1.0f, 0.0f))) * glm::angleAxis(glm::pi<float>() * 0.5f, glm::normalize(glm::vec3(1.0f, 0.0f, 0.0f)));
+        camTransform->Quaternion() = glm::angleAxis(pi2, up) * glm::angleAxis(piHalf, right);
     }
     if (glfwGetKey(window, GLFW_KEY_KP_2))
     {
         camTransform->Translation() = { 0.0f, 10.0f, 0.0f };
-        camTransform->Quaternion() = glm::angleAxis(glm::pi<float>() * 2.0f, glm::normalize(glm::vec3(0.0f, 1.0f, 0.0f))) * glm::angleAxis(glm::pi<float>() * 1.5f, glm::normalize(glm::vec3(1.0f, 0.0f, 0.0f)));
+        camTransform->Quaternion() = glm::angleAxis(pi2, up) * glm::angleAxis(pi + piHalf, right);
     }
     if (glfwGetKey(window, GLFW_KEY_KP_4))
     {
         camTransform->Translation() = { 10.0f, 0.0f, 0.0f };
-        camTransform->Quaternion() = glm::angleAxis(glm::pi<float>() * 0.5f, glm::normalize(glm::vec3(0.0f, 1.0f, 0.0f))) * glm::angleAxis(glm::pi<float>() * 2.0f, glm::normalize(glm::vec3(1.0f, 0.0f, 0.0f)));
+        camTransform->Quaternion() = glm::angleAxis(piHalf, up) * glm::angleAxis(pi2, right);
     }
     if (glfwGetKey(window, GLFW_KEY_KP_6))
     {
         camTransform->Translation() = { -10.0f, 0.0f, 0.0f };
-        camTransform->Quaternion() = glm::angleAxis(glm::pi<float>() * 1.5f, glm::normalize(glm::vec3(0.0f, 1.0f, 0.0f))) * glm::angleAxis(glm::pi<float>() * 2.0f, glm::normalize(glm::vec3(1.0f, 0.0f, 0.0f)));
+        camTransform->Quaternion() = glm::angleAxis(pi + piHalf, up) * glm::angleAxis(pi2, right);
     }
 
     if (glfwGetKey(window, GLFW_KEY_KP_5))

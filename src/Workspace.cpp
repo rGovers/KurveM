@@ -1038,6 +1038,17 @@ void Workspace::CreatePathObjectMenuList(Object* a_parent)
             }
         }
 
+        if (ImGui::MenuItem("Spiral"))
+        {
+            Action* action = new CreateObjectAction(this, a_parent, CreateObjectType_SpiralPath);
+            if (!PushAction(action))
+            {
+                printf("Error Creating Path Object(Spiral) \n");
+
+                delete action;
+            }
+        }
+
         if (ImGui::MenuItem("Torus"))
         {
             Action* action = new CreateObjectAction(this, a_parent, CreateObjectType_TorusPath);

@@ -65,6 +65,10 @@ const char* CreateObjectAction::GetName() const
     {
         return "Path Cone";
     }
+    case CreateObjectType_SpiralPath:
+    {
+        return "Path Spiral";
+    }
     case CreateObjectType_TorusPath:
     {
         return "Path Torus";
@@ -179,6 +183,14 @@ bool CreateObjectAction::Execute()
         case CreateObjectType_ConePath:
         {
             PrimitiveGenerator::CreatePathCone(&pathNodePtr, &nodeCount, &pathIndicesPtr, &pathIndexCount, &shapeNodePtr, &shapeNodeCount, &shapeIndicesPtr, &shapeIndexCount);
+
+            objectType = ObjectType_PathModel;
+
+            break;
+        }
+        case CreateObjectType_SpiralPath:
+        {
+            PrimitiveGenerator::CreatePathSpiral(&pathNodePtr, &nodeCount, &pathIndicesPtr, &pathIndexCount, &shapeNodePtr, &shapeNodeCount, &shapeIndicesPtr, &shapeIndexCount);
 
             objectType = ObjectType_PathModel;
 

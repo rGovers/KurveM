@@ -15,6 +15,7 @@ enum e_CreateObjectType
 
     CreateObjectType_CylinderPath,
     CreateObjectType_ConePath,
+    CreateObjectType_SpiralPath,
     CreateObjectType_TorusPath,
 
     CreateObjectType_ReferenceImage,

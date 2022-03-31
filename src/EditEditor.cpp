@@ -45,7 +45,7 @@ bool EditEditor::IsInteractingCurveNode(const Camera* a_camera, const glm::vec3&
     constexpr glm::mat4 iden = glm::identity<glm::mat4>();
         
     glm::vec3 up = glm::vec3(0, 1, 0);
-    if (glm::dot(up, a_axis) >= 0.9f)
+    if (glm::abs(glm::dot(up, a_axis)) >= 0.95f)
     {
         up = glm::vec3(0, 0, 1);
     }
@@ -220,7 +220,7 @@ bool EditEditor::IsInteractingPathNode(const Camera* a_camera, const glm::vec3& 
     constexpr glm::mat4 iden = glm::identity<glm::mat4>();
 
     glm::vec3 up = glm::vec3(0, 1, 0);
-    if (glm::dot(a_axis, up) >= 0.95f)
+    if (glm::abs(glm::dot(a_axis, up)) >= 0.95f)
     {
         up = glm::vec3(0, 0, 1);
     }

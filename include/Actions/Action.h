@@ -18,6 +18,8 @@ enum e_ActionType
     ActionType_MoveCurveNodeHandle,
     ActionType_MovePathNode,
     ActionType_MovePathNodeHandle,
+    ActionType_MoveShapeNode,
+    ActionType_MoveShapeNodeHandle,
     ActionType_MoveUVAction,
     ActionType_RemoveAnimationNode,
     ActionType_RotateNode,

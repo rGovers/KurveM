@@ -7,34 +7,64 @@ EditorInputController::EditorInputController(Workspace* a_workspace, Editor* a_e
 {
     m_workspace = a_workspace;
     m_editor = a_editor;
+
+    m_states = new bool[GLFW_KEY_LAST];
+
+    m_curveFunctions = new std::function<void(Object*)>*[GLFW_KEY_LAST];
+    m_pathFunctions = new std::function<void(Object*)>*[GLFW_KEY_LAST];
+
+    for (int i = 0; i < GLFW_KEY_LAST; ++i)
+    {
+        m_curveFunctions[i] = nullptr;
+        m_pathFunctions[i] = nullptr;
+    }
+
+    m_curveFunctions[GLFW_KEY_DELETE] = new std::function<void(Object*)>(std::bind(&Editor::CurveDeleteDown, m_editor, std::placeholders::_1));
+    m_curveFunctions[GLFW_KEY_F] = new std::function<void(Object*)>(std::bind(&Editor::CurveFDown, m_editor, std::placeholders::_1));
+    m_curveFunctions[GLFW_KEY_N] = new std::function<void(Object*)>(std::bind(&Editor::CurveNDown, m_editor, std::placeholders::_1));
 }
 EditorInputController::~EditorInputController()
 {
+    delete[] m_states;
 
+    delete[] m_curveFunctions;
+    delete[] m_pathFunctions;
 }
 
-void EditorInputController::KeyDown(GLFWwindow* a_window, int a_key, bool* a_state, Object* a_obj, const std::function<void(Object*)>& a_curveFunction) const
+void EditorInputController::KeyDown(GLFWwindow* a_window, int a_key, Object* a_obj)
 {
     if (glfwGetKey(a_window, a_key))
     {
-        if (!*a_state)
+        if (!m_states[a_key])
         {
             switch (a_obj->GetObjectType())
             {
             case ObjectType_CurveModel:
             {
-                a_curveFunction(a_obj);
+                if (m_curveFunctions[a_key] != nullptr)
+                {
+                    (*m_curveFunctions[a_key])(a_obj);
+                }
+
+                break;
+            }
+            case ObjectType_PathModel:
+            {
+                if (m_pathFunctions[a_key] != nullptr)
+                {
+                    (*m_pathFunctions[a_key])(a_obj);
+                }
 
                 break;
             }
             }
         }
 
-        *a_state = true;
+        m_states[a_key] = true;
     }
     else
     {
-        *a_state = false;
+        m_states[a_key] = false;
     }
 }
 
@@ -47,8 +77,11 @@ void EditorInputController::Update(double a_delta)
 
     if (obj != nullptr)
     {   
-        KeyDown(window, GLFW_KEY_DELETE, &m_deleteDown, obj, std::bind(&Editor::CurveDeleteDown, m_editor, std::placeholders::_1));
-        KeyDown(window, GLFW_KEY_F, &m_fDown, obj, std::bind(&Editor::CurveFDown, m_editor, std::placeholders::_1));
-        KeyDown(window, GLFW_KEY_N, &m_nDown, obj, std::bind(&Editor::CurveNDown, m_editor, std::placeholders::_1));
+        // Start at 32 to avoid invalid keys
+        // System is hacky but works
+        for (int i = 32; i < GLFW_KEY_LAST; ++i)
+        {
+            KeyDown(window, i, obj);
+        }
     }
 }
