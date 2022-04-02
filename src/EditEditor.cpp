@@ -10,7 +10,9 @@
 #include "Actions/MovePathNodeHandleAction.h"
 #include "Actions/RotateNodeAction.h"
 #include "Actions/RotateObjectRelativeAction.h"
+#include "Actions/RotatePathNodeAction.h"
 #include "Actions/ScaleNodeAction.h"
+#include "Actions/ScalePathNodeAction.h"
 #include "Actions/TranslateObjectRelativeAction.h"
 #include "Camera.h"
 #include "ColorTheme.h"
@@ -252,7 +254,7 @@ bool EditEditor::IsInteractingPathNode(const Camera* a_camera, const glm::vec3& 
         {
             const glm::vec3 cPos = a_camera->GetScreenToWorld(glm::vec3(a_cursorPos, 0.9f), a_screenSize);
             const unsigned int nodeCount = m_editor->GetSelectedNodeCount();
-            unsigned int* indices = m_editor->GetSelectedNodesArray();
+            const unsigned int* indices = m_editor->GetSelectedNodesArray();
 
             Action* action = new MovePathNodeAction(m_workspace, indices, nodeCount, a_pathModel, cPos, axis);
             if (m_workspace->PushAction(action))
@@ -261,7 +263,81 @@ bool EditEditor::IsInteractingPathNode(const Camera* a_camera, const glm::vec3& 
             }
             else
             {
-                printf("Error moving node \n");
+                printf("Error moving path node \n");
+
+                delete action;
+            }
+
+            delete[] indices;
+
+            return true;
+        }
+
+        break;
+    }
+    case ToolMode_Rotate:
+    {
+        if (a_axis != Axis_Y)
+        {
+            return false;
+        }
+
+        const glm::mat4 rot = glm::mat4(glm::vec4(right, 0.0f), glm::vec4(axis, 0.0f), glm::vec4(-up, 0.0f), zeroVec4);
+        const glm::mat4 mat = a_viewProj * glm::translate(iden, a_pos) * glm::scale(iden, scaleVec3) * rot;
+
+        const LocalModel* handle = TransformVisualizer::GetRotationHandle();
+
+        if (SelectionControl::PointInMesh(mat, handle, a_cursorPos))
+        {
+            const glm::vec3 cPos = a_camera->GetScreenToWorld(glm::vec3(a_cursorPos, 0.9f), a_screenSize);
+            const unsigned int nodeCount = m_editor->GetSelectedNodeCount();
+            const unsigned int* indices = m_editor->GetSelectedNodesArray();
+
+            Action* action = new RotatePathNodeAction(m_workspace, indices, nodeCount, a_pathModel, cPos, axis);
+            if (m_workspace->PushAction(action))
+            {
+                m_editor->SetCurrentAction(action);
+            }
+            else
+            {
+                printf("Error rotating path node \n");
+
+                delete action;
+            }
+
+            delete[] indices;
+
+            return true;
+        }
+
+        break;
+    }
+    case ToolMode_Scale:
+    {
+        if (a_axis != Axis_X && a_axis != Axis_Z)
+        {
+            return false;
+        }
+
+        const glm::mat4 rot = glm::mat4(glm::vec4(right, 0.0f), glm::vec4(up, 0.0f), glm::vec4(-up, 0.0f), zeroVec4);
+        const glm::mat4 mat = a_viewProj * glm::translate(iden, a_pos + scaledAxis) * glm::scale(iden, scaleVec3) * rot;
+
+        const LocalModel* handle = TransformVisualizer::GetScaleHandle();
+
+        if (SelectionControl::PointInMesh(mat, handle, a_cursorPos))
+        {
+            const glm::vec3 cPos = a_camera->GetScreenToWorld(glm::vec3(a_cursorPos, 0.9f), a_screenSize);
+            const unsigned int nodeCount = m_editor->GetSelectedNodeCount();
+            const unsigned int* indices = m_editor->GetSelectedNodesArray();
+
+            Action* action = new ScalePathNodeAction(m_workspace, indices, nodeCount, a_pathModel, cPos, axis);
+            if (m_workspace->PushAction(action))
+            {
+                m_editor->SetCurrentAction(action);
+            }
+            else
+            {
+                printf("Error scaling path node \n");
 
                 delete action;
             }
@@ -985,6 +1061,8 @@ NextCurveNode:;
                 {
                 case ActionType_MovePathNode:
                 case ActionType_MovePathNodeHandle:
+                case ActionType_RotatePathNode:
+                case ActionType_ScalePathNode:
                 {
                     m_editor->SetCurrentAction(nullptr);
 
@@ -1057,6 +1135,10 @@ NextPathNode:;
 
 void EditEditor::Update(Camera* a_camera, const glm::vec2& a_cursorPos, const glm::vec2& a_screenSize, double a_delta)
 {
+    constexpr glm::mat4 iden = glm::identity<glm::mat4>();
+    constexpr float pi = glm::pi<float>();
+    constexpr float halfPi = pi * 0.5f;
+
     Transform* camTransform = a_camera->GetTransform();
     const glm::mat4 viewInv = camTransform->ToMatrix();
 
@@ -1163,9 +1245,12 @@ void EditEditor::Update(Camera* a_camera, const glm::vec2& a_cursorPos, const gl
             const PathModel* model = obj->GetPathModel();
             if (model != nullptr)
             {
+                constexpr float scale = 0.25f;
+                constexpr glm::vec3 scale3 = glm::vec3(scale);
+
                 const PathNode* nodes = model->GetNodes();
 
-                glm::vec3 pos = glm::vec3(0);
+                glm::vec3 pos = glm::vec3(0.0f);
 
                 const std::list<unsigned int> selectedNodes = m_editor->GetSelectedNodes();
                 for (auto iter = selectedNodes.begin(); iter != selectedNodes.end(); ++iter)
@@ -1176,14 +1261,42 @@ void EditEditor::Update(Camera* a_camera, const glm::vec2& a_cursorPos, const gl
                 pos /= selectedNodes.size();
 
                 const glm::mat4 transformMat = obj->GetGlobalMatrix();
-                const glm::vec4 fPos = transformMat * glm::vec4(pos, 1);
+                const glm::vec4 fPos = transformMat * glm::vec4(pos, 1.0f);
 
                 const e_ToolMode toolMode = m_workspace->GetToolMode();
                 switch (toolMode)
                 {
+                case ToolMode_Rotate:
+                {
+                    const LocalModel* model = TransformVisualizer::GetRotationHandle();
+
+                    Gizmos::DrawModel(glm::translate(iden, fPos.xyz()) * glm::scale(iden, scale3), model, ColorTheme::Active);
+
+                    break;
+                }
+                case ToolMode_Scale:
+                {
+                    const LocalModel* model = TransformVisualizer::GetScaleHandle();
+
+                    const glm::vec3 xAxis = glm::vec3(scale, 0.0f, 0.0f);
+                    const glm::vec3 yAxis = glm::vec3(0.0f, 0.0f, scale);
+
+                    const glm::mat4 transform = glm::translate(iden, fPos.xyz()) * glm::scale(iden, scale3);
+
+                    const glm::mat4 rightTransform = transform * glm::toMat4(glm::angleAxis(-halfPi, glm::vec3(0.0f, 0.0f, 1.0f)));
+                    const glm::mat4 forwardTransform = transform * glm::toMat4(glm::angleAxis(halfPi, glm::vec3(1.0f, 0.0f, 0.0f)));
+
+                    Gizmos::DrawModel(glm::translate(iden, xAxis) * rightTransform, model, glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
+                    Gizmos::DrawModel(glm::translate(iden, yAxis) * forwardTransform, model, glm::vec4(0.0f, 1.0f, 0.0f, 1.0f));
+
+                    Gizmos::DrawLine(fPos, fPos.xyz() + xAxis, viewInv[2], 0.01f, glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
+                    Gizmos::DrawLine(fPos, fPos.xyz() + yAxis, viewInv[2], 0.01f, glm::vec4(0.0f, 1.0f, 0.0f, 1.0f));
+
+                    break;
+                }
                 default:
                 {
-                    Gizmos::DrawTranslation(fPos, viewInv[2], 0.25f);
+                    Gizmos::DrawTranslation(fPos, viewInv[2], scale);
 
                     break;
                 }

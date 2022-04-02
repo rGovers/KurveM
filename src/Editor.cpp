@@ -14,8 +14,10 @@
 #include "Actions/MovePathNodeHandleAction.h"
 #include "Actions/RotateNodeAction.h"
 #include "Actions/RotateObjectRelativeAction.h"
+#include "Actions/RotatePathNodeAction.h"
 #include "Actions/ScaleNodeAction.h"
 #include "Actions/ScaleObjectRelativeAction.h"
+#include "Actions/ScalePathNodeAction.h"
 #include "Actions/TranslateObjectRelativeAction.h"
 #include "Application.h"
 #include "BezierCurveNode3.h"
@@ -520,8 +522,6 @@ void Editor::Update(double a_delta, const glm::vec2& a_winPos, const glm::vec2& 
                 {
                 case ActionType_ExtrudeArmatureNode:
                 case ActionType_ExtrudeNode:
-                case ActionType_MoveCurveNodeHandle:
-                case ActionType_MoveCurveNode:
                 case ActionType_RotateObjectRelative:
                 case ActionType_TranslateObjectRelative:
                 {
@@ -641,9 +641,27 @@ void Editor::Update(double a_delta, const glm::vec2& a_winPos, const glm::vec2& 
 
             break;
         }
+        case ActionType_RotatePathNode:
+        {
+            RotatePathNodeAction* action = (RotatePathNodeAction*)m_curAction;
+            action->SetRotation(cWorldPos);
+
+            action->Execute();
+
+            break;
+        }
         case ActionType_ScaleNode:
         {
             ScaleNodeAction* action = (ScaleNodeAction*)m_curAction;
+            action->SetScale(cWorldPos);
+
+            action->Execute();
+
+            break;
+        }
+        case ActionType_ScalePathNode:
+        {
+            ScalePathNodeAction* action = (ScalePathNodeAction*)m_curAction;
             action->SetScale(cWorldPos);
 
             action->Execute();
