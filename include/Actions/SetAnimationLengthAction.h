@@ -19,7 +19,7 @@ protected:
 
 public:
     SetAnimationLengthAction(Animation* a_animation, float a_length);
-    ~SetAnimationLengthAction();
+    virtual ~SetAnimationLengthAction();
 
     virtual e_ActionType GetActionType();
 

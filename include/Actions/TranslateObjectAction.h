@@ -21,7 +21,7 @@ protected:
 public:
     TranslateObjectAction(const glm::vec3& a_newPos, Object* a_object);
     TranslateObjectAction(const glm::vec3& a_newPos, Object** a_objects, unsigned int a_objectCount);
-    ~TranslateObjectAction();
+    virtual ~TranslateObjectAction();
 
     virtual e_ActionType GetActionType();
 

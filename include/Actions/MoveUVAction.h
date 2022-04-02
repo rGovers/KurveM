@@ -28,7 +28,7 @@ protected:
 
 public:
     MoveUVAction(Workspace* a_workspace, unsigned int* a_nodeIndices, unsigned int a_nodeCount, CurveModel* a_curveModel, const glm::vec2& a_startPos, const glm::vec2& a_axis);
-    ~MoveUVAction();
+    virtual ~MoveUVAction();
 
     void SetPosition(const glm::vec2& a_pos)
     {

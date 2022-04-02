@@ -21,7 +21,7 @@ protected:
 
 public:
     SetCurveArmatureAction(Workspace* a_workspace, Object** a_objects, unsigned int a_objectCount, long long a_id);
-    ~SetCurveArmatureAction();
+    virtual ~SetCurveArmatureAction();
 
     virtual e_ActionType GetActionType();
 

@@ -42,7 +42,7 @@ protected:
 public:
     CreateObjectAction(Workspace* a_workspace, Object* a_parent, e_CreateObjectType a_type = CreateObjectType_Empty);
     CreateObjectAction(Workspace* a_workspace, Object* a_parent, const char* a_texPath);
-    ~CreateObjectAction();
+    virtual ~CreateObjectAction();
 
     virtual e_ActionType GetActionType();
 

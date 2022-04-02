@@ -28,7 +28,7 @@ protected:
 
 public:
     MoveShapeNodeAction(Workspace* a_workspace, const unsigned int* a_indices, unsigned int a_indexCount, PathModel* a_pathModel, const glm::vec2& a_pos, const glm::vec2& a_axis);
-    ~MoveShapeNodeAction();
+    virtual ~MoveShapeNodeAction();
 
     void SetPosition(const glm::vec2& a_pos)
     {

@@ -32,7 +32,7 @@ protected:
 
 public:
     DeleteNodeAction(Workspace* a_workspace, Editor* a_editor, const unsigned int* a_nodeIndices, unsigned int a_nodeCount, CurveModel* a_curveModel);
-    ~DeleteNodeAction();
+    virtual ~DeleteNodeAction();
 
     virtual e_ActionType GetActionType();
 

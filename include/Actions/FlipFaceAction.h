@@ -19,7 +19,7 @@ protected:
 
 public:
     FlipFaceAction(Workspace* a_workspace, unsigned int* a_nodeIndices, unsigned int a_nodeCount, CurveModel* a_curveModel);
-    ~FlipFaceAction();
+    virtual ~FlipFaceAction();
 
     virtual e_ActionType GetActionType();
 

@@ -23,7 +23,7 @@ protected:
 
 public:
     SetCurveSmartStepAction(Workspace* a_workspace, Object** a_objects, unsigned int a_objectCount, bool a_value);
-    ~SetCurveSmartStepAction();
+    virtual ~SetCurveSmartStepAction();
 
     virtual e_ActionType GetActionType();
 

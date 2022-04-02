@@ -22,7 +22,7 @@ protected:
 
 public:
     Application(int a_width, int a_height, const char* a_title);
-    ~Application();
+    virtual ~Application();
 
     void Run();
 

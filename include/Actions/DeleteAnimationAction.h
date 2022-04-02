@@ -17,7 +17,7 @@ protected:
 
 public:
     DeleteAnimationAction(Workspace* a_workspace, Animation* a_animation);
-    ~DeleteAnimationAction();
+    virtual ~DeleteAnimationAction();
 
     virtual e_ActionType GetActionType(); 
 

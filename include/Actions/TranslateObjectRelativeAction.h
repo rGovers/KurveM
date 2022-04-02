@@ -24,7 +24,7 @@ protected:
 public:
     TranslateObjectRelativeAction(const glm::vec3& a_startPos, const glm::vec3& a_axis, Object* a_object);
     TranslateObjectRelativeAction(const glm::vec3& a_startPos, const glm::vec3& a_axis, Object* const* a_objects, unsigned int a_objectCount);
-    ~TranslateObjectRelativeAction();
+    virtual ~TranslateObjectRelativeAction();
 
     virtual e_ActionType GetActionType();
 

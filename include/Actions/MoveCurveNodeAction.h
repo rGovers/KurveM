@@ -28,7 +28,7 @@ protected:
 
 public:
     MoveCurveNodeAction(Workspace* a_workspace, const unsigned int* a_nodeIndices, unsigned int a_nodeCount, CurveModel* a_curveModel, const glm::vec3& a_startPos, const glm::vec3& a_axis);
-    ~MoveCurveNodeAction();
+    virtual ~MoveCurveNodeAction();
 
     inline void SetPosition(const glm::vec3& a_pos)
     {

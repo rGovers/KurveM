@@ -44,6 +44,7 @@ Object::Object(const char* a_name, e_ObjectType a_objectType)
     SetName(a_name);
 
     m_curveModel = nullptr;
+    m_pathModel = nullptr;
 
     m_referencePath = nullptr;
     m_referenceImage = nullptr;

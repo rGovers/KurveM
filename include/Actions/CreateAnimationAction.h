@@ -19,7 +19,7 @@ protected:
 
 public:
     CreateAnimationAction(Workspace* a_workspace, const char* a_name);
-    ~CreateAnimationAction();
+    virtual ~CreateAnimationAction();
 
     virtual e_ActionType GetActionType(); 
 

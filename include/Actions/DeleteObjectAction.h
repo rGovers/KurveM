@@ -19,7 +19,7 @@ protected:
 
 public:
     DeleteObjectAction(Workspace* a_workspace, Object* a_object);
-    ~DeleteObjectAction();
+    virtual ~DeleteObjectAction();
 
     virtual e_ActionType GetActionType();
 

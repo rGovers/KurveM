@@ -27,7 +27,7 @@ protected:
 
 public:
     MovePathNodeHandleAction(Workspace* a_workspace, unsigned int a_nodeIndex, PathModel* a_pathModel, const glm::vec2& a_startCursorPos, const glm::vec3& a_xAxis, const glm::vec3& a_yAxis);
-    ~MovePathNodeHandleAction();
+    virtual ~MovePathNodeHandleAction();
 
     inline void SetCursorPos(const glm::vec2& a_value)
     {

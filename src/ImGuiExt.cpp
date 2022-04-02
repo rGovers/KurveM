@@ -97,7 +97,9 @@ bool ImGuiExt::ToggleButton(const char* a_label, bool a_state, const ImVec2& a_s
 
 bool ImGuiExt::BeginImageCombo(const char* a_label, const char* a_previewPath, const glm::vec2& a_previewSize, const char* a_previewValue, ImGuiComboFlags a_flags)
 {
-    BeginImageCombo(a_label, a_previewPath, ImVec2(a_previewSize.x, a_previewSize.y), a_previewValue, a_flags);
+    // How this worked for several months without me noticing I have no idea 
+    // Fixed now because I noticed it was missing a return
+    return BeginImageCombo(a_label, a_previewPath, ImVec2(a_previewSize.x, a_previewSize.y), a_previewValue, a_flags);
 }
 // Ripped and apapted from ImGui BeginCombo
 bool ImGuiExt::BeginImageCombo(const char* a_label, const char* a_previewPath, const ImVec2& a_previewSize, const char* a_previewValue, ImGuiComboFlags a_flags)

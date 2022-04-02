@@ -27,7 +27,7 @@ protected:
 
 public:
     AddCurveNodeWeightAction(CurveModel* a_model, Workspace* a_workspace);
-    ~AddCurveNodeWeightAction();
+    virtual ~AddCurveNodeWeightAction();
 
     virtual e_ActionType GetActionType();
 

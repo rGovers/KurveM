@@ -21,7 +21,7 @@ protected:
 
 public:
     SetCurveStepsAction(Workspace* a_workspace, Object** a_objects, unsigned int a_objectCount, int a_steps);
-    ~SetCurveStepsAction();
+    virtual ~SetCurveStepsAction();
 
     virtual e_ActionType GetActionType();
 

@@ -15,5 +15,5 @@ protected:
 
 public:
     AppMain();
-    ~AppMain();
+    virtual ~AppMain();
 };

@@ -790,8 +790,6 @@ void Editor::Update(double a_delta, const glm::vec2& a_winPos, const glm::vec2& 
         DrawObject(obj, a_winSize);
     }
 
-    Gizmos::DrawAll(m_camera, a_winSize);
-
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);  
     glEnable(GL_DEPTH_TEST);
@@ -810,6 +808,8 @@ void Editor::Update(double a_delta, const glm::vec2& a_winPos, const glm::vec2& 
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
     glDisable(GL_BLEND);
+
+    Gizmos::DrawAll(m_camera, a_winSize);
 
     // Restore framebuffer state for imgui
     glBindFramebuffer(GL_FRAMEBUFFER, fbCache);

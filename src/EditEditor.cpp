@@ -40,25 +40,30 @@ e_EditorMode EditEditor::GetEditorMode()
     return EditorMode_Edit;
 }
 
-bool EditEditor::IsInteractingCurveNode(const Camera* a_camera, const glm::vec3& a_pos, const glm::vec3& a_axis, const glm::vec2& a_cursorPos, const glm::vec2& a_screenSize, CurveModel* a_model, const glm::mat4& a_viewProj)
+bool EditEditor::IsInteractingCurveNode(const Camera* a_camera, const glm::vec3& a_pos, e_Axis a_axis, const glm::vec2& a_cursorPos, const glm::vec2& a_screenSize, CurveModel* a_model, const glm::mat4& a_viewProj)
 {
-    constexpr glm::mat4 iden = glm::identity<glm::mat4>();
-        
-    glm::vec3 up = glm::vec3(0, 1, 0);
-    if (glm::abs(glm::dot(up, a_axis)) >= 0.95f)
+    constexpr glm::mat4 iden = glm::identity<glm::mat4>();        
+    constexpr float scale = 0.25f;
+    constexpr glm::vec4 vec4Zero = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+
+    const glm::vec3 axis = AxisControl::GetAxis(a_axis);
+    const glm::vec3 scaledAxis = axis * scale;
+
+    glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
+    if (glm::abs(glm::dot(up, axis)) >= 0.95f)
     {
-        up = glm::vec3(0, 0, 1);
+        up = glm::vec3(0.0f, 0.0f, 1.0f);
     }
-    const glm::vec3 right = glm::cross(up, a_axis);
-    up = glm::cross(right, a_axis);
+    const glm::vec3 right = glm::cross(up, axis);
+    up = glm::cross(right, axis);
 
     switch (m_workspace->GetToolMode())
     {
     case ToolMode_Translate:
     {
-        const glm::mat4 rot = glm::mat4(glm::vec4(right, 0), glm::vec4(up, 0), glm::vec4(a_axis, 0), glm::vec4(0, 0, 0, 1));
+        const glm::mat4 rot = glm::mat4(glm::vec4(right, 0.0f), glm::vec4(up, 0.0f), glm::vec4(axis, 0.0f), vec4Zero);
 
-        const glm::mat4 mat = a_viewProj * glm::translate(iden, a_pos + a_axis * 0.25f) * glm::scale(iden, glm::vec3(0.25f)) * rot;
+        const glm::mat4 mat = a_viewProj * glm::translate(iden, a_pos + scaledAxis) * glm::scale(iden, glm::vec3(scale)) * rot;
 
         const LocalModel* handle = TransformVisualizer::GetTranslationHandle();
 
@@ -68,7 +73,7 @@ bool EditEditor::IsInteractingCurveNode(const Camera* a_camera, const glm::vec3&
             const unsigned int nodeCount = m_editor->GetSelectedNodeCount();
             const unsigned int* indices = m_editor->GetSelectedNodesArray();
 
-            Action* action = new MoveCurveNodeAction(m_workspace, indices, nodeCount, a_model, cPos, a_axis);
+            Action* action = new MoveCurveNodeAction(m_workspace, indices, nodeCount, a_model, cPos, axis);
             if (m_workspace->PushAction(action))
             {
                 m_editor->SetCurrentAction(action);   
@@ -89,9 +94,9 @@ bool EditEditor::IsInteractingCurveNode(const Camera* a_camera, const glm::vec3&
     }
     case ToolMode_Rotate:
     {
-        const glm::mat4 rot = glm::mat4(glm::vec4(right, 0), glm::vec4(a_axis, 0), glm::vec4(-up, 0), glm::vec4(0, 0, 0, 1));
+        const glm::mat4 rot = glm::mat4(glm::vec4(right, 0.0f), glm::vec4(axis, 0.0f), glm::vec4(-up, 0.0f), vec4Zero);
 
-        const glm::mat4 mat = a_viewProj * glm::translate(iden, a_pos) * glm::scale(iden, glm::vec3(0.25f)) * rot;
+        const glm::mat4 mat = a_viewProj * glm::translate(iden, a_pos) * glm::scale(iden, glm::vec3(scale)) * rot;
 
         const LocalModel* handle = TransformVisualizer::GetRotationHandle();
 
@@ -101,7 +106,7 @@ bool EditEditor::IsInteractingCurveNode(const Camera* a_camera, const glm::vec3&
             const unsigned int nodeCount = m_editor->GetSelectedNodeCount();
             const unsigned int* indices = m_editor->GetSelectedNodesArray();
 
-            Action* action = new RotateNodeAction(m_workspace, indices, nodeCount, a_model, cPos, a_axis);
+            Action* action = new RotateNodeAction(m_workspace, indices, nodeCount, a_model, cPos, axis);
             if (m_workspace->PushAction(action))
             {
                 m_editor->SetCurrentAction(action);
@@ -122,9 +127,9 @@ bool EditEditor::IsInteractingCurveNode(const Camera* a_camera, const glm::vec3&
     }
     case ToolMode_Scale:
     {
-        const glm::mat4 rot = glm::mat4(glm::vec4(right, 0), glm::vec4(up, 0), glm::vec4(a_axis, 0), glm::vec4(0, 0, 0, 1));
+        const glm::mat4 rot = glm::mat4(glm::vec4(right, 0.0f), glm::vec4(up, 0.0f), glm::vec4(axis, 0.0f), vec4Zero);
 
-        const glm::mat4 mat = a_viewProj * glm::translate(iden, a_pos + a_axis * 0.25f) * glm::scale(iden, glm::vec3(0.25f)) * rot;
+        const glm::mat4 mat = a_viewProj * glm::translate(iden, a_pos + scaledAxis) * glm::scale(iden, glm::vec3(scale)) * rot;
 
         const LocalModel* handle = TransformVisualizer::GetScaleHandle();
 
@@ -134,7 +139,7 @@ bool EditEditor::IsInteractingCurveNode(const Camera* a_camera, const glm::vec3&
             const unsigned int nodeCount = m_editor->GetSelectedNodeCount();
             const unsigned int* indices = m_editor->GetSelectedNodesArray();
 
-            Action* action = new ScaleNodeAction(m_workspace, indices, nodeCount, a_model, cPos, a_axis);
+            Action* action = new ScaleNodeAction(m_workspace, indices, nodeCount, a_model, cPos, axis);
             if (m_workspace->PushAction(action))
             {
                 m_editor->SetCurrentAction(action);
@@ -155,9 +160,9 @@ bool EditEditor::IsInteractingCurveNode(const Camera* a_camera, const glm::vec3&
     }
     case ToolMode_Extrude:
     {
-        const glm::mat4 rot = glm::mat4(glm::vec4(right, 0), glm::vec4(up, 0), glm::vec4(a_axis, 0), glm::vec4(0, 0, 0, 1));
+        const glm::mat4 rot = glm::mat4(glm::vec4(right, 0.0f), glm::vec4(up, 0.0f), glm::vec4(axis, 0.0f), vec4Zero);
 
-        const glm::mat4 mat = a_viewProj * glm::translate(iden, a_pos + a_axis * 0.25f) * glm::scale(iden, glm::vec3(0.25f)) * rot;
+        const glm::mat4 mat = a_viewProj * glm::translate(iden, a_pos + scaledAxis) * glm::scale(iden, glm::vec3(scale)) * rot;
 
         const LocalModel* handle = TransformVisualizer::GetTranslationHandle();
 
@@ -167,7 +172,7 @@ bool EditEditor::IsInteractingCurveNode(const Camera* a_camera, const glm::vec3&
             const unsigned int nodeCount = m_editor->GetSelectedNodeCount();
             unsigned int* indices = m_editor->GetSelectedNodesArray();
 
-            Action* action = new ExtrudeNodeAction(m_workspace, m_editor, indices, nodeCount, a_model, cPos, a_axis);
+            Action* action = new ExtrudeNodeAction(m_workspace, m_editor, indices, nodeCount, a_model, cPos, axis);
             if (m_workspace->PushAction(action))
             {
                 m_editor->SetCurrentAction(action);
@@ -215,25 +220,31 @@ bool EditEditor::IsInteractingCurveNodeHandle(const Node3Cluster& a_node, unsign
     return false;
 }
 
-bool EditEditor::IsInteractingPathNode(const Camera* a_camera, const glm::vec3& a_pos, const glm::vec3& a_axis, const glm::vec2& a_cursorPos, const glm::vec2& a_screenSize, PathModel* a_pathModel, const glm::mat4& a_viewProj)
+bool EditEditor::IsInteractingPathNode(const Camera* a_camera, const glm::vec3& a_pos, e_Axis a_axis, const glm::vec2& a_cursorPos, const glm::vec2& a_screenSize, PathModel* a_pathModel, const glm::mat4& a_viewProj)
 {
     constexpr glm::mat4 iden = glm::identity<glm::mat4>();
+    constexpr float scale = 0.25f;
+    constexpr glm::vec3 scaleVec3 = glm::vec3(scale);
+    constexpr glm::vec4 zeroVec4 = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
 
-    glm::vec3 up = glm::vec3(0, 1, 0);
-    if (glm::abs(glm::dot(a_axis, up)) >= 0.95f)
+    const glm::vec3 axis = AxisControl::GetAxis(a_axis);
+    const glm::vec3 scaledAxis = axis * scale;
+
+    glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
+    if (glm::abs(glm::dot(axis, up)) >= 0.95f)
     {
-        up = glm::vec3(0, 0, 1);
+        up = glm::vec3(0.0f, 0.0f, 1.0f);
     }
-    const glm::vec3 right = glm::cross(up, a_axis);
-    up = glm::cross(right, a_axis);
+    const glm::vec3 right = glm::cross(up, axis);
+    up = glm::cross(right, axis);
 
     switch (m_workspace->GetToolMode())
     {
     case ToolMode_Translate:
     {
-        const glm::mat4 rot = glm::mat4(glm::vec4(right, 0.0f), glm::vec4(up, 0.0f), glm::vec4(a_axis, 0.0f), glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
+        const glm::mat4 rot = glm::mat4(glm::vec4(right, 0.0f), glm::vec4(up, 0.0f), glm::vec4(axis, 0.0f), zeroVec4);
 
-        const glm::mat4 mat = a_viewProj * glm::translate(iden, a_pos + a_axis * 0.25f) * glm::scale(iden, glm::vec3(0.25f)) * rot;
+        const glm::mat4 mat = a_viewProj * glm::translate(iden, a_pos + scaledAxis) * glm::scale(iden, scaleVec3) * rot;
 
         const LocalModel* handle = TransformVisualizer::GetTranslationHandle();
 
@@ -243,7 +254,7 @@ bool EditEditor::IsInteractingPathNode(const Camera* a_camera, const glm::vec3& 
             const unsigned int nodeCount = m_editor->GetSelectedNodeCount();
             unsigned int* indices = m_editor->GetSelectedNodesArray();
 
-            Action* action = new MovePathNodeAction(m_workspace, indices, nodeCount, a_pathModel, cPos, a_axis);
+            Action* action = new MovePathNodeAction(m_workspace, indices, nodeCount, a_pathModel, cPos, axis);
             if (m_workspace->PushAction(action))
             {
                 m_editor->SetCurrentAction(action);   
@@ -288,25 +299,31 @@ bool EditEditor::IsInteractingPathNodeHandle(const PathNode& a_node, unsigned in
     return false;
 }
 
-bool EditEditor::InteractingArmatureNode(const Camera* a_camera, const glm::vec3& a_pos, const glm::vec3& a_axis, const glm::vec2& a_cursorPos, const glm::vec2& a_screenSize, const glm::mat4& a_viewProj)
+bool EditEditor::InteractingArmatureNode(const Camera* a_camera, const glm::vec3& a_pos, e_Axis a_axis, const glm::vec2& a_cursorPos, const glm::vec2& a_screenSize, const glm::mat4& a_viewProj)
 {
     constexpr glm::mat4 iden = glm::identity<glm::mat4>();
-        
-    glm::vec3 up = glm::vec3(0, 1, 0);
-    if (glm::dot(up, a_axis) >= 0.9f)
+    constexpr glm::vec4 vec4zero = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+    constexpr float scale = 0.25f;
+    constexpr glm::vec3 scale3 = glm::vec3(scale);
+
+    const glm::vec3 axis = AxisControl::GetAxis(a_axis);
+    const glm::vec3 scaledAxis = axis * scale;
+
+    glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
+    if (glm::abs(glm::dot(up, axis)) >= 0.95f)
     {
-        up = glm::vec3(0, 0, 1);
+        up = glm::vec3(0.0f, 0.0f, 1.0f);
     }
-    const glm::vec3 right = glm::cross(up, a_axis);
-    up = glm::cross(right, a_axis);
+    const glm::vec3 right = glm::cross(up, axis);
+    up = glm::cross(right, axis);
     
     switch (m_workspace->GetToolMode())
     {
     case ToolMode_Translate:
     {
-        const glm::mat4 rot = glm::mat4(glm::vec4(right, 0), glm::vec4(up, 0), glm::vec4(a_axis, 0), glm::vec4(0, 0, 0, 1));
+        const glm::mat4 rot = glm::mat4(glm::vec4(right, 0.0f), glm::vec4(up, 0.0f), glm::vec4(axis, 0.0f), vec4zero);
 
-        const glm::mat4 mat = a_viewProj * glm::translate(iden, a_pos + a_axis * 0.25f) * glm::scale(iden, glm::vec3(0.25f)) * rot;
+        const glm::mat4 mat = a_viewProj * glm::translate(iden, a_pos + scaledAxis) * glm::scale(iden, scale3) * rot;
 
         const LocalModel* handle = TransformVisualizer::GetTranslationHandle();
 
@@ -317,7 +334,7 @@ bool EditEditor::InteractingArmatureNode(const Camera* a_camera, const glm::vec3
             const int objectCount = m_editor->GetSelectedArmatureObjectsCount();
             Object* const* objs = m_editor->GetSelectedArmatureObjectsArray();
 
-            Action* action = new TranslateObjectRelativeAction(cPos, a_axis, objs, objectCount);
+            Action* action = new TranslateObjectRelativeAction(cPos, axis, objs, objectCount);
 
             if (m_workspace->PushAction(action))
             {
@@ -339,9 +356,9 @@ bool EditEditor::InteractingArmatureNode(const Camera* a_camera, const glm::vec3
     }
     case ToolMode_Rotate:
     {
-        const glm::mat4 rot = glm::mat4(glm::vec4(right, 0), glm::vec4(a_axis, 0), glm::vec4(-up, 0), glm::vec4(0, 0, 0, 1));
+        const glm::mat4 rot = glm::mat4(glm::vec4(right, 0.0f), glm::vec4(axis, 0.0f), glm::vec4(-up, 0.0f), vec4zero);
 
-        const glm::mat4 mat = a_viewProj * glm::translate(iden, a_pos) * glm::scale(iden, glm::vec3(0.25f)) * rot;
+        const glm::mat4 mat = a_viewProj * glm::translate(iden, a_pos) * glm::scale(iden, scale3) * rot;
 
         const LocalModel* handle = TransformVisualizer::GetRotationHandle();
 
@@ -352,7 +369,7 @@ bool EditEditor::InteractingArmatureNode(const Camera* a_camera, const glm::vec3
             const int objectCount = m_editor->GetSelectedArmatureObjectsCount();
             Object* const* objs = m_editor->GetSelectedArmatureObjectsArray();
 
-            Action* action = new RotateObjectRelativeAction(cPos, a_axis, objs, objectCount);
+            Action* action = new RotateObjectRelativeAction(cPos, axis, objs, objectCount);
             if (m_workspace->PushAction(action))
             {
                 m_editor->SetCurrentAction(action);
@@ -373,9 +390,9 @@ bool EditEditor::InteractingArmatureNode(const Camera* a_camera, const glm::vec3
     }
     case ToolMode_Extrude:
     {
-        const glm::mat4 rot = glm::mat4(glm::vec4(right, 0), glm::vec4(up, 0), glm::vec4(a_axis, 0), glm::vec4(0, 0, 0, 1));
+        const glm::mat4 rot = glm::mat4(glm::vec4(right, 0.0f), glm::vec4(up, 0.0f), glm::vec4(axis, 0.0f), vec4zero);
 
-        const glm::mat4 mat = a_viewProj * glm::translate(iden, a_pos + a_axis * 0.25f) * glm::scale(iden, glm::vec3(0.25f)) * rot;
+        const glm::mat4 mat = a_viewProj * glm::translate(iden, a_pos + scaledAxis) * glm::scale(iden, scale3) * rot;
 
         const LocalModel* handle = TransformVisualizer::GetTranslationHandle();
 
@@ -386,7 +403,7 @@ bool EditEditor::InteractingArmatureNode(const Camera* a_camera, const glm::vec3
             const int objectCount = m_editor->GetSelectedArmatureObjectsCount();
             Object** objs = m_editor->GetSelectedArmatureObjectsArray();
 
-            Action* action = new ExtrudeArmatureNodeAction(m_editor, objs, objectCount, cPos, a_axis);
+            Action* action = new ExtrudeArmatureNodeAction(m_editor, objs, objectCount, cPos, axis);
             if (m_workspace->PushAction(action))
             {
                 m_editor->SetCurrentAction(action);
@@ -622,48 +639,52 @@ NextCurveDrawNodeLoop:;
     }
     case ObjectType_PathModel:
     {
-        const PathModel* pathModel = a_object->GetPathModel();
-        const int steps = pathModel->GetPathSteps();
-
-        const unsigned int indexCount = pathModel->GetPathIndexCount();
-        const unsigned int* indices = pathModel->GetPathIndices();
-
-        const unsigned int nodeCount = pathModel->GetPathNodeCount();
-        const PathNode* pathNodes = pathModel->GetNodes();
-
-        const unsigned int pathCount = indexCount / 2;
-
-        for (unsigned int i = 0; i < pathCount; ++i)
+        if (obj == a_object)
         {
-            const PathNode nodeA = pathNodes[indices[i * 2U + 0U]];
-            const PathNode nodeB = pathNodes[indices[i * 2U + 1U]];
+            const PathModel* pathModel = a_object->GetPathModel();
+            const int steps = pathModel->GetPathSteps();
 
-            Gizmos::DrawCurve(steps, modelMatrix, nodeA.Node, nodeB.Node, ColorTheme::Active);
-        }
+            const unsigned int indexCount = pathModel->GetPathIndexCount();
+            const unsigned int* indices = pathModel->GetPathIndices();
 
-        const std::list<unsigned int> selectedNodes = m_editor->GetSelectedNodes();
-        for (unsigned int i = 0; i < nodeCount; ++i)
-        {
-            const BezierCurveNode3 curve = pathNodes[i].Node;
-            const glm::vec4 pos = modelMatrix * glm::vec4(curve.GetPosition(), 1);
+            const unsigned int nodeCount = pathModel->GetPathNodeCount();
+            const PathNode* pathNodes = pathModel->GetNodes();
 
-            for (auto iter = selectedNodes.begin(); iter != selectedNodes.end(); ++iter)
+            const unsigned int pathCount = indexCount / 2;
+
+            for (unsigned int i = 0; i < pathCount; ++i)
             {
-                if (*iter == i)
-                {
-                    const glm::vec4 handlePos = modelMatrix * glm::vec4(curve.GetHandlePosition(), 1);
+                const PathNode nodeA = pathNodes[indices[i * 2U + 0U]];
+                const PathNode nodeB = pathNodes[indices[i * 2U + 1U]];
 
-                    Gizmos::DrawLine(pos, handlePos, camFor, 0.005f, ColorTheme::Active);
-                    Gizmos::DrawCircleFilled(handlePos, camFor, 0.05f, 15, ColorTheme::Active);
-
-                    goto NextPathDrawNodeLoop;
-                }
+                Gizmos::DrawCurve(steps, modelMatrix, nodeA.Node, nodeB.Node, ColorTheme::Active);
             }
 
-            Gizmos::DrawCircleFilled(pos, camFor, 0.025f, 10, ColorTheme::InActive);
+            const std::list<unsigned int> selectedNodes = m_editor->GetSelectedNodes();
+            for (unsigned int i = 0; i < nodeCount; ++i)
+            {
+                const BezierCurveNode3 curve = pathNodes[i].Node;
+                const glm::vec4 pos = modelMatrix * glm::vec4(curve.GetPosition(), 1);
+
+                for (auto iter = selectedNodes.begin(); iter != selectedNodes.end(); ++iter)
+                {
+                    if (*iter == i)
+                    {
+                        const glm::vec4 handlePos = modelMatrix * glm::vec4(curve.GetHandlePosition(), 1);
+
+                        Gizmos::DrawLine(pos, handlePos, camFor, 0.005f, ColorTheme::Active);
+                        Gizmos::DrawCircleFilled(handlePos, camFor, 0.05f, 15, ColorTheme::Active);
+
+                        goto NextPathDrawNodeLoop;
+                    }
+                }
+
+                Gizmos::DrawCircleFilled(pos, camFor, 0.025f, 10, ColorTheme::InActive);
 
 NextPathDrawNodeLoop:;
+            }
         }
+        
 
         break;
     }
@@ -714,11 +735,11 @@ void EditEditor::LeftClicked(Camera* a_camera, const glm::vec2& a_cursorPos, con
 
             pos /= nodeCount;
 
-            if (!InteractingArmatureNode(a_camera, pos, glm::vec3(0, 0, 1), a_cursorPos, a_winSize, viewProj))
+            if (!InteractingArmatureNode(a_camera, pos, Axis_X, a_cursorPos, a_winSize, viewProj))
             {
-                if (!InteractingArmatureNode(a_camera, pos, glm::vec3(0, 1, 0), a_cursorPos, a_winSize, viewProj))
+                if (!InteractingArmatureNode(a_camera, pos, Axis_Y, a_cursorPos, a_winSize, viewProj))
                 {
-                    InteractingArmatureNode(a_camera, pos, glm::vec3(1, 0, 0), a_cursorPos, a_winSize, viewProj);
+                    InteractingArmatureNode(a_camera, pos, Axis_Z, a_cursorPos, a_winSize, viewProj);
                 }
             }            
 
@@ -743,11 +764,11 @@ void EditEditor::LeftClicked(Camera* a_camera, const glm::vec2& a_cursorPos, con
 
                 pos /= selectedNodes.size();
 
-                const glm::vec4 fPos = transformMat * glm::vec4(pos, 1);
+                const glm::vec4 fPos = transformMat * glm::vec4(pos, 1.0f);
 
-                if (!IsInteractingCurveNode(a_camera, fPos, glm::vec3(0, 0, 1), a_cursorPos, a_winSize, model, viewProj) &&
-                    !IsInteractingCurveNode(a_camera, fPos, glm::vec3(0, 1, 0), a_cursorPos, a_winSize, model, viewProj) &&
-                    !IsInteractingCurveNode(a_camera, fPos, glm::vec3(1, 0, 0), a_cursorPos, a_winSize, model, viewProj))
+                if (!IsInteractingCurveNode(a_camera, fPos, Axis_X, a_cursorPos, a_winSize, model, viewProj) &&
+                    !IsInteractingCurveNode(a_camera, fPos, Axis_Y, a_cursorPos, a_winSize, model, viewProj) &&
+                    !IsInteractingCurveNode(a_camera, fPos, Axis_Z, a_cursorPos, a_winSize, model, viewProj))
                 {
                     for (auto iter = selectedNodes.begin(); iter != selectedNodes.end(); ++iter)
                     {
@@ -782,11 +803,11 @@ void EditEditor::LeftClicked(Camera* a_camera, const glm::vec2& a_cursorPos, con
 
                 pos /= selectedNodes.size();
 
-                const glm::vec4 fPos = transformMat * glm::vec4(pos, 1);
+                const glm::vec4 fPos = transformMat * glm::vec4(pos, 1.0f);
 
-                if (!IsInteractingPathNode(a_camera, fPos, glm::vec3(0, 0, 1), a_cursorPos, a_winSize, model, viewProj) &&
-                    !IsInteractingPathNode(a_camera, fPos, glm::vec3(0, 1, 0), a_cursorPos, a_winSize, model, viewProj) &&
-                    !IsInteractingPathNode(a_camera, fPos, glm::vec3(1, 0, 0), a_cursorPos, a_winSize, model, viewProj))
+                if (!IsInteractingPathNode(a_camera, fPos, Axis_X, a_cursorPos, a_winSize, model, viewProj) &&
+                    !IsInteractingPathNode(a_camera, fPos, Axis_Y, a_cursorPos, a_winSize, model, viewProj) &&
+                    !IsInteractingPathNode(a_camera, fPos, Axis_Z, a_cursorPos, a_winSize, model, viewProj))
                 {
                     for (auto iter = selectedNodes.begin(); iter != selectedNodes.end(); ++iter)
                     {

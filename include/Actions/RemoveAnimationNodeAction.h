@@ -23,7 +23,7 @@ protected:
 
 public:
     RemoveAnimationNodeAction(Animation* a_animation, Object* a_object, const AnimationNode& a_node);
-    ~RemoveAnimationNodeAction();
+    virtual ~RemoveAnimationNodeAction();
 
     virtual e_ActionType GetActionType();
 

@@ -23,7 +23,7 @@ protected:
 
 public:
     AddAnimationNodeAction(Animation* a_animation, Object* a_object, const AnimationNode& a_node);
-    ~AddAnimationNodeAction();
+    virtual ~AddAnimationNodeAction();
 
     virtual e_ActionType GetActionType();
 

@@ -20,7 +20,7 @@ protected:
 
 public:
     SetPathPathStepsAction(Workspace* a_workspace, Object* const* a_objects, unsigned int a_objectCount, int a_steps);
-    ~SetPathPathStepsAction();
+    virtual ~SetPathPathStepsAction();
 
     virtual e_ActionType GetActionType();
 

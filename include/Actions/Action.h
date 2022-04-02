@@ -49,6 +49,7 @@ private:
 protected:
     
 public:
+    virtual ~Action() { }
 
     virtual e_ActionType GetActionType() { return ActionType_Null; } 
 

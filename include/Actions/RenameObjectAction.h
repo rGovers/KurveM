@@ -16,7 +16,7 @@ protected:
 
 public:
     RenameObjectAction(const char* a_oldName, const char* a_newName, Object* a_object);
-    ~RenameObjectAction();
+    virtual ~RenameObjectAction();
 
     virtual e_ActionType GetActionType();
 

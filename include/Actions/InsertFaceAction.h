@@ -23,7 +23,7 @@ protected:
 
 public:
     InsertFaceAction(Workspace* a_workspace, unsigned int* a_nodeIndices, unsigned int a_nodeCount, CurveModel* a_curveModel);
-    ~InsertFaceAction();
+    virtual ~InsertFaceAction();
 
     virtual e_ActionType GetActionType();
 

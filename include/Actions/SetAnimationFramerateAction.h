@@ -19,7 +19,7 @@ protected:
 
 public:
     SetAnimationFramerateAction(Animation* a_animation, int a_framerate);
-    ~SetAnimationFramerateAction();
+    virtual ~SetAnimationFramerateAction();
 
     virtual e_ActionType GetActionType();
 

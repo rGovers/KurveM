@@ -3,6 +3,11 @@ project (KurveM)
 
 set(CMAKE_CXX_STANDARD 17)
 
+if (CMAKE_BUILD_TYPE STREQUAL "Debug" AND NOT WIN32)
+    set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=address")
+    set (CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -fsanitize=address")
+endif()
+
 set (KURVEM_VERSION_MAJOR 0)
 set (KURVEM_VERSION_MINOR 1)
 
