@@ -1,4 +1,4 @@
-#include "Actions/RotateNodeAction.h"
+#include "Actions/RotateCurveNodeAction.h"
 
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtx/quaternion.hpp>
@@ -7,7 +7,7 @@
 #include "LongTasks/TriangulateCurveLongTask.h"
 #include "Workspace.h"
 
-RotateNodeAction::RotateNodeAction(Workspace* a_workspace, const unsigned int* a_nodeIndices, unsigned int a_nodeCount, CurveModel* a_curveModel, const glm::vec3& a_startPos, const glm::vec3& a_axis)
+RotateCurveNodeAction::RotateCurveNodeAction(Workspace* a_workspace, const unsigned int* a_nodeIndices, unsigned int a_nodeCount, CurveModel* a_curveModel, const glm::vec3& a_startPos, const glm::vec3& a_axis)
 {
     m_workspace = a_workspace;
 
@@ -41,23 +41,23 @@ RotateNodeAction::RotateNodeAction(Workspace* a_workspace, const unsigned int* a
 
     m_centre /= m_nodeCount;
 }
-RotateNodeAction::~RotateNodeAction() 
+RotateCurveNodeAction::~RotateCurveNodeAction() 
 {
     delete[] m_nodeIndices;
 
     delete[] m_oldPos; 
 }
 
-e_ActionType RotateNodeAction::GetActionType()
+e_ActionType RotateCurveNodeAction::GetActionType()
 {
-    return ActionType_RotateNode;
+    return ActionType_RotateCurveNode;
 }
 
-bool RotateNodeAction::Redo()
+bool RotateCurveNodeAction::Redo()
 {
     return Execute();
 }
-bool RotateNodeAction::Execute()
+bool RotateCurveNodeAction::Execute()
 {
     const glm::vec3 endAxis = m_endPos - m_startPos;
 
@@ -94,7 +94,7 @@ bool RotateNodeAction::Execute()
 
     return true;
 }
-bool RotateNodeAction::Revert()
+bool RotateCurveNodeAction::Revert()
 {
     Node3Cluster* nodes = m_curveModel->GetNodes();
 

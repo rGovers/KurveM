@@ -6,35 +6,37 @@
 #include "Actions/Action.h"
 
 class CurveModel;
+class Editor;
 class Workspace;
 
-class ScaleNodeAction : public Action
+class ExtrudeCurveNodeAction : public Action
 {
 private:
     Workspace*    m_workspace;
+    Editor*       m_editor;
 
     CurveModel*   m_curveModel;
 
     unsigned int  m_nodeCount;
     unsigned int* m_nodeIndices;
 
-    glm::vec3*    m_oldPos;
+    unsigned int  m_startNodeIndex;
+    unsigned int  m_startFaceIndex;
+
     glm::vec3     m_startPos;
     glm::vec3     m_endPos;
 
-    glm::vec3     m_centre;
-
     glm::vec3     m_axis;
-
+    
 protected:
 
 public:
-    ScaleNodeAction(Workspace* a_workspace, const unsigned int* a_nodeIndices, unsigned int a_nodeCount, CurveModel* a_curveModel, const glm::vec3& a_startPos, const glm::vec3& a_axis);
-    virtual ~ScaleNodeAction();
+    ExtrudeCurveNodeAction(Workspace* a_workspace, Editor* a_editor, const unsigned int* a_nodeIndices, unsigned int a_nodeCount, CurveModel* a_curveModel, const glm::vec3& a_startPos, const glm::vec3& a_axis);
+    virtual ~ExtrudeCurveNodeAction();
 
-    inline void SetScale(const glm::vec3& a_pos)
+    void SetPosition(const glm::vec3& a_position)
     {
-        m_endPos = a_pos;
+        m_endPos = a_position;
     }
 
     virtual e_ActionType GetActionType();

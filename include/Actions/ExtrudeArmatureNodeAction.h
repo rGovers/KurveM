@@ -28,7 +28,7 @@ private:
 protected:
 
 public:
-    ExtrudeArmatureNodeAction(Editor* a_editor, Object** a_nodes, unsigned int a_nodeCount, const glm::vec3& a_startPos, const glm::vec3& a_axis);
+    ExtrudeArmatureNodeAction(Editor* a_editor, Object* const* a_nodes, unsigned int a_nodeCount, const glm::vec3& a_startPos, const glm::vec3& a_axis);
     virtual ~ExtrudeArmatureNodeAction();
 
     void SetPosition(const glm::vec3& a_position)

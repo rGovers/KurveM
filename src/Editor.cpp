@@ -5,19 +5,12 @@
 #include <stdio.h>
 
 #include "Actions/ExtrudeArmatureNodeAction.h"
-#include "Actions/ExtrudeNodeAction.h"
 #include "Actions/FlipFaceAction.h"
 #include "Actions/InsertFaceAction.h"
-#include "Actions/MoveCurveNodeAction.h"
 #include "Actions/MoveCurveNodeHandleAction.h"
-#include "Actions/MovePathNodeAction.h"
 #include "Actions/MovePathNodeHandleAction.h"
-#include "Actions/RotateNodeAction.h"
 #include "Actions/RotateObjectRelativeAction.h"
-#include "Actions/RotatePathNodeAction.h"
-#include "Actions/ScaleNodeAction.h"
 #include "Actions/ScaleObjectRelativeAction.h"
-#include "Actions/ScalePathNodeAction.h"
 #include "Actions/TranslateObjectRelativeAction.h"
 #include "Application.h"
 #include "BezierCurveNode3.h"
@@ -516,12 +509,9 @@ void Editor::Update(double a_delta, const glm::vec2& a_winPos, const glm::vec2& 
             {
                 m_startPos = curCursorPos;
 
-                const e_ActionType actionType = GetCurrentActionType();
-
-                switch (actionType)
+                switch (GetCurrentActionType())
                 {
                 case ActionType_ExtrudeArmatureNode:
-                case ActionType_ExtrudeNode:
                 case ActionType_RotateObjectRelative:
                 case ActionType_TranslateObjectRelative:
                 {
@@ -537,6 +527,8 @@ void Editor::Update(double a_delta, const glm::vec2& a_winPos, const glm::vec2& 
                     if (editor->GetEditorMode() == m_editorMode)
                     {
                         editor->LeftClicked(m_camera, curCursorPos, a_winSize);
+
+                        break;
                     }
                 }
             }
@@ -587,24 +579,6 @@ void Editor::Update(double a_delta, const glm::vec2& a_winPos, const glm::vec2& 
 
             break;
         }
-        case ActionType_ExtrudeNode:
-        {
-            ExtrudeNodeAction* action = (ExtrudeNodeAction*)m_curAction;
-            action->SetPosition(cWorldPos);
-
-            action->Execute();
-
-            break;
-        }
-        case ActionType_MoveCurveNode:
-        {
-            MoveCurveNodeAction* action = (MoveCurveNodeAction*)m_curAction;
-            action->SetPosition(cWorldPos);
-
-            action->Execute();
-
-            break;
-        }
         case ActionType_MoveCurveNodeHandle:
         {
             MoveCurveNodeHandleAction* action = (MoveCurveNodeHandleAction*)m_curAction;
@@ -614,55 +588,10 @@ void Editor::Update(double a_delta, const glm::vec2& a_winPos, const glm::vec2& 
 
             break;
         }
-        case ActionType_MovePathNode:
-        {
-            MovePathNodeAction* action = (MovePathNodeAction*)m_curAction;
-            action->SetPostion(cWorldPos);
-
-            action->Execute();
-
-            break;
-        }
         case ActionType_MovePathNodeHandle:
         {
             MovePathNodeHandleAction* action = (MovePathNodeHandleAction*)m_curAction;
             action->SetCursorPos(curCursorPos);
-
-            action->Execute();
-
-            break;
-        }
-        case ActionType_RotateNode:
-        {
-            RotateNodeAction* action = (RotateNodeAction*)m_curAction;
-            action->SetRotation(cWorldPos);
-
-            action->Execute();
-
-            break;
-        }
-        case ActionType_RotatePathNode:
-        {
-            RotatePathNodeAction* action = (RotatePathNodeAction*)m_curAction;
-            action->SetRotation(cWorldPos);
-
-            action->Execute();
-
-            break;
-        }
-        case ActionType_ScaleNode:
-        {
-            ScaleNodeAction* action = (ScaleNodeAction*)m_curAction;
-            action->SetScale(cWorldPos);
-
-            action->Execute();
-
-            break;
-        }
-        case ActionType_ScalePathNode:
-        {
-            ScalePathNodeAction* action = (ScalePathNodeAction*)m_curAction;
-            action->SetScale(cWorldPos);
 
             action->Execute();
 
@@ -695,30 +624,6 @@ void Editor::Update(double a_delta, const glm::vec2& a_winPos, const glm::vec2& 
 
             break;
         }
-        case ActionType_AddCurveNodeWeight:
-        {
-            break;
-        }
-        default:
-        {
-            // Dirty but cannot be stuffed making screen space gizmos
-            const glm::vec2 min = glm::min(m_startPos, curCursorPos);
-            const glm::vec2 max = glm::max(m_startPos, curCursorPos);
-
-            const glm::vec3 tlWP = m_camera->GetScreenToWorld(glm::vec3(min.x, min.y, -0.99f), (int)a_winSize.x, (int)a_winSize.y);
-            const glm::vec3 trWP = m_camera->GetScreenToWorld(glm::vec3(max.x, min.y, -0.99f), (int)a_winSize.x, (int)a_winSize.y);
-            const glm::vec3 blWP = m_camera->GetScreenToWorld(glm::vec3(min.x, max.y, -0.99f), (int)a_winSize.x, (int)a_winSize.y);
-            const glm::vec3 brWP = m_camera->GetScreenToWorld(glm::vec3(max.x, max.y, -0.99f), (int)a_winSize.x, (int)a_winSize.y);
-
-            const glm::vec3 f = viewInv[2].xyz();
-
-            Gizmos::DrawLine(tlWP, trWP, f, 0.0001f, ColorTheme::Active);
-            Gizmos::DrawLine(trWP, brWP, f, 0.0001f, ColorTheme::Active);
-            Gizmos::DrawLine(brWP, blWP, f, 0.0001f, ColorTheme::Active);
-            Gizmos::DrawLine(blWP, tlWP, f, 0.0001f, ColorTheme::Active);
-
-            break;
-        }
         }
 
         for (auto iter = m_editorControls.begin(); iter != m_editorControls.end(); ++iter)
@@ -727,6 +632,8 @@ void Editor::Update(double a_delta, const glm::vec2& a_winPos, const glm::vec2& 
             if (editor->GetEditorMode() == m_editorMode)
             {
                 editor->LeftDown(a_delta, m_camera, m_startPos, curCursorPos, a_winSize);
+
+                break;
             }
         } 
     }
@@ -742,6 +649,8 @@ void Editor::Update(double a_delta, const glm::vec2& a_winPos, const glm::vec2& 
         if (editor->GetEditorMode() == m_editorMode)
         {
             editor->Update(m_camera, curCursorPos, a_winSize, a_delta);
+
+            break;
         }
     }
 

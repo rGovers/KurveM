@@ -1,11 +1,11 @@
-#include "Actions/ExtrudeNodeAction.h"
+#include "Actions/ExtrudeCurveNodeAction.h"
 
 #include "CurveModel.h"
 #include "EditorControls/Editor.h"
 #include "LongTasks/TriangulateCurveLongTask.h"
 #include "Workspace.h"
 
-ExtrudeNodeAction::ExtrudeNodeAction(Workspace* a_workspace, Editor* a_editor, unsigned int* a_nodeIndices, unsigned int a_nodeCount, CurveModel* a_curveModel, const glm::vec3& a_startPos, const glm::vec3& a_axis)
+ExtrudeCurveNodeAction::ExtrudeCurveNodeAction(Workspace* a_workspace, Editor* a_editor, const unsigned int* a_nodeIndices, unsigned int a_nodeCount, CurveModel* a_curveModel, const glm::vec3& a_startPos, const glm::vec3& a_axis)
 {
     m_workspace = a_workspace;
     m_editor = a_editor;
@@ -29,21 +29,21 @@ ExtrudeNodeAction::ExtrudeNodeAction(Workspace* a_workspace, Editor* a_editor, u
         m_nodeIndices[i] = a_nodeIndices[i];
     }
 }
-ExtrudeNodeAction::~ExtrudeNodeAction()
+ExtrudeCurveNodeAction::~ExtrudeCurveNodeAction()
 {
 
 }
 
-e_ActionType ExtrudeNodeAction::GetActionType()
+e_ActionType ExtrudeCurveNodeAction::GetActionType()
 {
-    return ActionType_ExtrudeNode;
+    return ActionType_ExtrudeCurveNode;
 }
 
-bool ExtrudeNodeAction::Redo()
+bool ExtrudeCurveNodeAction::Redo()
 {
     return Execute();
 }
-bool ExtrudeNodeAction::Execute()
+bool ExtrudeCurveNodeAction::Execute()
 {
     if (m_nodeCount < 1)
     {
@@ -96,7 +96,7 @@ bool ExtrudeNodeAction::Execute()
 
     return true;
 }
-bool ExtrudeNodeAction::Revert()
+bool ExtrudeCurveNodeAction::Revert()
 {
     if (m_nodeCount < 1)
     {
@@ -114,8 +114,6 @@ bool ExtrudeNodeAction::Revert()
 
     if (m_startFaceIndex != -1)
     {
-
-
         m_startFaceIndex = -1;
     }
 

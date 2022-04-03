@@ -108,7 +108,7 @@ bool ShapeEditor::MoveNode(const glm::mat4& a_viewProj, const glm::vec2& a_pos, 
     glm::vec4 fPos = a_viewProj * glm::vec4(glm::vec3(a_pos.x, 0.0f, a_pos.y) + glm::vec3(axis.x, 0.0f, axis.y), 1.0f);
     fPos /= fPos.w;
 
-    if (SelectionControl::PointInPoint(fPos.xy(), a_cursorPos, 0.005f))
+    if (SelectionControl::PointInPoint(fPos.xy(), a_cursorPos, 0.01f))
     {
         const unsigned int nodeCount = (unsigned int)m_selectedIndices.size();
 
@@ -135,7 +135,7 @@ bool ShapeEditor::MoveNode(const glm::mat4& a_viewProj, const glm::vec2& a_pos, 
 }
 bool ShapeEditor::MoveNodeHandle(const glm::mat4& a_viewProj, const BezierCurveNode2& a_node, unsigned int a_index, const glm::vec2& a_cursorPos, PathModel* a_pathModel)
 {
-    if (SelectionControl::NodeHandleInPoint(a_viewProj, a_cursorPos, 0.025f, a_node))
+    if (SelectionControl::NodeHandleInPoint(a_viewProj, a_cursorPos, 0.05f, a_node))
     {
         m_currentAction = new MoveShapeNodeHandleAction(m_workspace, a_index, a_pathModel, a_cursorPos);
         if (!m_workspace->PushAction(m_currentAction))

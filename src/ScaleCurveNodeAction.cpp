@@ -1,10 +1,10 @@
-#include "Actions/ScaleNodeAction.h"
+#include "Actions/ScaleCurveNodeAction.h"
 
 #include "CurveModel.h"
 #include "LongTasks/TriangulateCurveLongTask.h"
 #include "Workspace.h"
 
-ScaleNodeAction::ScaleNodeAction(Workspace* a_workspace, const unsigned int* a_nodeIndices, unsigned int a_nodeCount, CurveModel* a_curveModel, const glm::vec3& a_startPos, const glm::vec3& a_axis)
+ScaleCurveNodeAction::ScaleCurveNodeAction(Workspace* a_workspace, const unsigned int* a_nodeIndices, unsigned int a_nodeCount, CurveModel* a_curveModel, const glm::vec3& a_startPos, const glm::vec3& a_axis)
 {
     m_workspace = a_workspace;
 
@@ -38,23 +38,23 @@ ScaleNodeAction::ScaleNodeAction(Workspace* a_workspace, const unsigned int* a_n
 
     m_centre /= m_nodeCount;
 }
-ScaleNodeAction::~ScaleNodeAction()
+ScaleCurveNodeAction::~ScaleCurveNodeAction()
 {
     delete[] m_oldPos;
 
     delete[] m_nodeIndices;
 }
 
-e_ActionType ScaleNodeAction::GetActionType()
+e_ActionType ScaleCurveNodeAction::GetActionType()
 {
-    return ActionType_ScaleNode;
+    return ActionType_ScaleCurveNode;
 }
 
-bool ScaleNodeAction::Redo()
+bool ScaleCurveNodeAction::Redo()
 {
     return Execute();
 }
-bool ScaleNodeAction::Execute()
+bool ScaleCurveNodeAction::Execute()
 {
     const glm::vec3 endAxis = m_endPos - m_startPos;
         
@@ -87,7 +87,7 @@ bool ScaleNodeAction::Execute()
 
     return true;
 }
-bool ScaleNodeAction::Revert()
+bool ScaleCurveNodeAction::Revert()
 {
     Node3Cluster* nodes = m_curveModel->GetNodes();
 

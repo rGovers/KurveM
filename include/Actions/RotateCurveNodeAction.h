@@ -8,7 +8,7 @@
 class CurveModel;
 class Workspace;
 
-class RotateNodeAction : public Action
+class RotateCurveNodeAction : public Action
 {
 private:
     Workspace*    m_workspace;
@@ -28,8 +28,8 @@ private:
 protected:
 
 public:
-    RotateNodeAction(Workspace* a_workspace, const unsigned int* a_nodeIndices, unsigned int a_nodeCount, CurveModel* a_curveModel, const glm::vec3& a_startPos, const glm::vec3& a_axis);
-    virtual ~RotateNodeAction();
+    RotateCurveNodeAction(Workspace* a_workspace, const unsigned int* a_nodeIndices, unsigned int a_nodeCount, CurveModel* a_curveModel, const glm::vec3& a_startPos, const glm::vec3& a_axis);
+    virtual ~RotateCurveNodeAction();
 
     inline void SetRotation(const glm::vec3& a_pos)
     {

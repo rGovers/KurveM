@@ -3,7 +3,7 @@
 #include "Object.h"
 #include "Transform.h"
 
-ExtrudeArmatureNodeAction::ExtrudeArmatureNodeAction(Editor* a_editor, Object** a_nodes, unsigned int a_nodeCount, const glm::vec3& a_startPos, const glm::vec3& a_axis)
+ExtrudeArmatureNodeAction::ExtrudeArmatureNodeAction(Editor* a_editor, Object* const* a_nodes, unsigned int a_nodeCount, const glm::vec3& a_startPos, const glm::vec3& a_axis)
 {
     m_editor = a_editor;
 

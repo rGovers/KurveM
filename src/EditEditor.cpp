@@ -2,18 +2,8 @@
 
 #include <glm/gtx/quaternion.hpp>
 
-#include "Actions/ExtrudeArmatureNodeAction.h"
-#include "Actions/ExtrudeNodeAction.h"
-#include "Actions/MoveCurveNodeAction.h"
 #include "Actions/MoveCurveNodeHandleAction.h"
-#include "Actions/MovePathNodeAction.h"
 #include "Actions/MovePathNodeHandleAction.h"
-#include "Actions/RotateNodeAction.h"
-#include "Actions/RotateObjectRelativeAction.h"
-#include "Actions/RotatePathNodeAction.h"
-#include "Actions/ScaleNodeAction.h"
-#include "Actions/ScalePathNodeAction.h"
-#include "Actions/TranslateObjectRelativeAction.h"
 #include "Camera.h"
 #include "ColorTheme.h"
 #include "CurveModel.h"
@@ -22,6 +12,17 @@
 #include "Object.h"
 #include "PathModel.h"
 #include "SelectionControl.h"
+#include "ToolActions/ToolAction.h"
+#include "ToolActions/ExtrudeArmatureNodeToolAction.h"
+#include "ToolActions/ExtrudeCurveNodeToolAction.h"
+#include "ToolActions/MoveArmatureNodeToolAction.h"
+#include "ToolActions/MoveCurveNodeToolAction.h"
+#include "ToolActions/MovePathNodeToolAction.h"
+#include "ToolActions/RotateArmatureNodeToolAction.h"
+#include "ToolActions/RotateCurveNodeToolAction.h"
+#include "ToolActions/RotatePathNodeToolAction.h"
+#include "ToolActions/ScaleCurveNodeToolAction.h"
+#include "ToolActions/ScalePathNodeToolAction.h"
 #include "Transform.h"
 #include "TransformVisualizer.h"
 #include "Workspace.h"
@@ -29,12 +30,53 @@
 EditEditor::EditEditor(Editor* a_editor, Workspace* a_workspace)
 {
     m_editor = a_editor;
-
     m_workspace = a_workspace;
+
+    m_armatureAction = new ToolAction*[ToolMode_End];
+    m_curveAction = new ToolAction*[ToolMode_End];
+    m_pathAction = new ToolAction*[ToolMode_End];
+
+    for (unsigned int i = 0; i < ToolMode_End; ++i)
+    {
+        m_armatureAction[i] = nullptr;
+        m_curveAction[i] = nullptr;
+        m_pathAction[i] = nullptr;
+    }
+
+    m_armatureAction[ToolMode_Translate] = new MoveArmatureNodeToolAction(m_workspace, m_editor);
+    m_armatureAction[ToolMode_Rotate] = new RotateArmatureNodeToolAction(m_workspace, m_editor);
+    m_armatureAction[ToolMode_Extrude] = new ExtrudeArmatureNodeToolAction(m_workspace, m_editor);
+
+    m_curveAction[ToolMode_Translate] = new MoveCurveNodeToolAction(m_workspace, m_editor);
+    m_curveAction[ToolMode_Rotate] = new RotateCurveNodeToolAction(m_workspace, m_editor);
+    m_curveAction[ToolMode_Scale] = new ScaleCurveNodeToolAction(m_workspace, m_editor);
+    m_curveAction[ToolMode_Extrude] = new ExtrudeCurveNodeToolAction(m_workspace, m_editor);
+
+    m_pathAction[ToolMode_Translate] = new MovePathNodeToolAction(m_workspace, m_editor);
+    m_pathAction[ToolMode_Rotate] = new RotatePathNodeToolAction(m_workspace, m_editor);
+    m_pathAction[ToolMode_Scale] = new ScalePathNodeToolAction(m_workspace, m_editor);
 }
 EditEditor::~EditEditor()
 {
+    for (unsigned int i = 0; i < ToolMode_End; ++i)
+    {
+        if (m_armatureAction[i] != nullptr)
+        {
+            delete m_armatureAction[i];
+        }
+        if (m_curveAction[i] != nullptr)
+        {
+            delete m_curveAction[i];
+        }
+        if (m_pathAction[i] != nullptr)
+        {
+            delete m_pathAction[i];
+        }
+    }
 
+    delete[] m_armatureAction;
+    delete[] m_curveAction;
+    delete[] m_pathAction;
 }
 
 e_EditorMode EditEditor::GetEditorMode()
@@ -42,161 +84,6 @@ e_EditorMode EditEditor::GetEditorMode()
     return EditorMode_Edit;
 }
 
-bool EditEditor::IsInteractingCurveNode(const Camera* a_camera, const glm::vec3& a_pos, e_Axis a_axis, const glm::vec2& a_cursorPos, const glm::vec2& a_screenSize, CurveModel* a_model, const glm::mat4& a_viewProj)
-{
-    constexpr glm::mat4 iden = glm::identity<glm::mat4>();        
-    constexpr float scale = 0.25f;
-    constexpr glm::vec4 vec4Zero = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
-
-    const glm::vec3 axis = AxisControl::GetAxis(a_axis);
-    const glm::vec3 scaledAxis = axis * scale;
-
-    glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
-    if (glm::abs(glm::dot(up, axis)) >= 0.95f)
-    {
-        up = glm::vec3(0.0f, 0.0f, 1.0f);
-    }
-    const glm::vec3 right = glm::cross(up, axis);
-    up = glm::cross(right, axis);
-
-    switch (m_workspace->GetToolMode())
-    {
-    case ToolMode_Translate:
-    {
-        const glm::mat4 rot = glm::mat4(glm::vec4(right, 0.0f), glm::vec4(up, 0.0f), glm::vec4(axis, 0.0f), vec4Zero);
-
-        const glm::mat4 mat = a_viewProj * glm::translate(iden, a_pos + scaledAxis) * glm::scale(iden, glm::vec3(scale)) * rot;
-
-        const LocalModel* handle = TransformVisualizer::GetTranslationHandle();
-
-        if (SelectionControl::PointInMesh(mat, handle, a_cursorPos))
-        {
-            const glm::vec3 cPos = a_camera->GetScreenToWorld(glm::vec3(a_cursorPos, 0.9f), a_screenSize);
-            const unsigned int nodeCount = m_editor->GetSelectedNodeCount();
-            const unsigned int* indices = m_editor->GetSelectedNodesArray();
-
-            Action* action = new MoveCurveNodeAction(m_workspace, indices, nodeCount, a_model, cPos, axis);
-            if (m_workspace->PushAction(action))
-            {
-                m_editor->SetCurrentAction(action);   
-            }
-            else
-            {
-                printf("Error moving node \n");
-
-                delete action;
-            }
-
-            delete[] indices;
-
-            return true;
-        }
-
-        break;
-    }
-    case ToolMode_Rotate:
-    {
-        const glm::mat4 rot = glm::mat4(glm::vec4(right, 0.0f), glm::vec4(axis, 0.0f), glm::vec4(-up, 0.0f), vec4Zero);
-
-        const glm::mat4 mat = a_viewProj * glm::translate(iden, a_pos) * glm::scale(iden, glm::vec3(scale)) * rot;
-
-        const LocalModel* handle = TransformVisualizer::GetRotationHandle();
-
-        if (SelectionControl::PointInMesh(mat, handle, a_cursorPos))
-        {
-            const glm::vec3 cPos = a_camera->GetScreenToWorld(glm::vec3(a_cursorPos, 0.9f), a_screenSize);
-            const unsigned int nodeCount = m_editor->GetSelectedNodeCount();
-            const unsigned int* indices = m_editor->GetSelectedNodesArray();
-
-            Action* action = new RotateNodeAction(m_workspace, indices, nodeCount, a_model, cPos, axis);
-            if (m_workspace->PushAction(action))
-            {
-                m_editor->SetCurrentAction(action);
-            }
-            else
-            {
-                printf("Error rotating node \n");
-
-                delete action;
-            }
-
-            delete[] indices;
-
-            return true;
-        }
-
-        break;
-    }
-    case ToolMode_Scale:
-    {
-        const glm::mat4 rot = glm::mat4(glm::vec4(right, 0.0f), glm::vec4(up, 0.0f), glm::vec4(axis, 0.0f), vec4Zero);
-
-        const glm::mat4 mat = a_viewProj * glm::translate(iden, a_pos + scaledAxis) * glm::scale(iden, glm::vec3(scale)) * rot;
-
-        const LocalModel* handle = TransformVisualizer::GetScaleHandle();
-
-        if (SelectionControl::PointInMesh(mat, handle, a_cursorPos))
-        {
-            const glm::vec3 cPos = a_camera->GetScreenToWorld(glm::vec3(a_cursorPos, 0.9f), a_screenSize);
-            const unsigned int nodeCount = m_editor->GetSelectedNodeCount();
-            const unsigned int* indices = m_editor->GetSelectedNodesArray();
-
-            Action* action = new ScaleNodeAction(m_workspace, indices, nodeCount, a_model, cPos, axis);
-            if (m_workspace->PushAction(action))
-            {
-                m_editor->SetCurrentAction(action);
-            }
-            else
-            {
-                printf("Error scaling node \n");
-
-                delete action;
-            }
-
-            delete[] indices;
-
-            return true;
-        }
-
-        break;
-    }
-    case ToolMode_Extrude:
-    {
-        const glm::mat4 rot = glm::mat4(glm::vec4(right, 0.0f), glm::vec4(up, 0.0f), glm::vec4(axis, 0.0f), vec4Zero);
-
-        const glm::mat4 mat = a_viewProj * glm::translate(iden, a_pos + scaledAxis) * glm::scale(iden, glm::vec3(scale)) * rot;
-
-        const LocalModel* handle = TransformVisualizer::GetTranslationHandle();
-
-        if (SelectionControl::PointInMesh(mat, handle, a_cursorPos))
-        {
-            const glm::vec3 cPos = a_camera->GetScreenToWorld(glm::vec3(a_cursorPos, 0.9f), a_screenSize);
-            const unsigned int nodeCount = m_editor->GetSelectedNodeCount();
-            unsigned int* indices = m_editor->GetSelectedNodesArray();
-
-            Action* action = new ExtrudeNodeAction(m_workspace, m_editor, indices, nodeCount, a_model, cPos, axis);
-            if (m_workspace->PushAction(action))
-            {
-                m_editor->SetCurrentAction(action);
-            }
-            else
-            {
-                printf("Error extruding node \n");
-
-                delete action;
-            }
-
-            delete[] indices;
-
-            return true;
-        }
-
-        break;
-    }
-    }
-
-    return false;
-}
 bool EditEditor::IsInteractingCurveNodeHandle(const Node3Cluster& a_node, unsigned int a_nodeIndex, CurveModel* a_model, const glm::mat4& a_viewProj, const glm::vec2& a_cursorPos, const glm::mat4& a_transform, const glm::vec3& a_up, const glm::vec3& a_right)
 {
     for (auto nodeIter = a_node.Nodes.begin(); nodeIter != a_node.Nodes.end(); ++nodeIter)
@@ -221,138 +108,6 @@ bool EditEditor::IsInteractingCurveNodeHandle(const Node3Cluster& a_node, unsign
 
     return false;
 }
-
-bool EditEditor::IsInteractingPathNode(const Camera* a_camera, const glm::vec3& a_pos, e_Axis a_axis, const glm::vec2& a_cursorPos, const glm::vec2& a_screenSize, PathModel* a_pathModel, const glm::mat4& a_viewProj)
-{
-    constexpr glm::mat4 iden = glm::identity<glm::mat4>();
-    constexpr float scale = 0.25f;
-    constexpr glm::vec3 scaleVec3 = glm::vec3(scale);
-    constexpr glm::vec4 zeroVec4 = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
-
-    const glm::vec3 axis = AxisControl::GetAxis(a_axis);
-    const glm::vec3 scaledAxis = axis * scale;
-
-    glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
-    if (glm::abs(glm::dot(axis, up)) >= 0.95f)
-    {
-        up = glm::vec3(0.0f, 0.0f, 1.0f);
-    }
-    const glm::vec3 right = glm::cross(up, axis);
-    up = glm::cross(right, axis);
-
-    switch (m_workspace->GetToolMode())
-    {
-    case ToolMode_Translate:
-    {
-        const glm::mat4 rot = glm::mat4(glm::vec4(right, 0.0f), glm::vec4(up, 0.0f), glm::vec4(axis, 0.0f), zeroVec4);
-
-        const glm::mat4 mat = a_viewProj * glm::translate(iden, a_pos + scaledAxis) * glm::scale(iden, scaleVec3) * rot;
-
-        const LocalModel* handle = TransformVisualizer::GetTranslationHandle();
-
-        if (SelectionControl::PointInMesh(mat, handle, a_cursorPos))
-        {
-            const glm::vec3 cPos = a_camera->GetScreenToWorld(glm::vec3(a_cursorPos, 0.9f), a_screenSize);
-            const unsigned int nodeCount = m_editor->GetSelectedNodeCount();
-            const unsigned int* indices = m_editor->GetSelectedNodesArray();
-
-            Action* action = new MovePathNodeAction(m_workspace, indices, nodeCount, a_pathModel, cPos, axis);
-            if (m_workspace->PushAction(action))
-            {
-                m_editor->SetCurrentAction(action);   
-            }
-            else
-            {
-                printf("Error moving path node \n");
-
-                delete action;
-            }
-
-            delete[] indices;
-
-            return true;
-        }
-
-        break;
-    }
-    case ToolMode_Rotate:
-    {
-        if (a_axis != Axis_Y)
-        {
-            return false;
-        }
-
-        const glm::mat4 rot = glm::mat4(glm::vec4(right, 0.0f), glm::vec4(axis, 0.0f), glm::vec4(-up, 0.0f), zeroVec4);
-        const glm::mat4 mat = a_viewProj * glm::translate(iden, a_pos) * glm::scale(iden, scaleVec3) * rot;
-
-        const LocalModel* handle = TransformVisualizer::GetRotationHandle();
-
-        if (SelectionControl::PointInMesh(mat, handle, a_cursorPos))
-        {
-            const glm::vec3 cPos = a_camera->GetScreenToWorld(glm::vec3(a_cursorPos, 0.9f), a_screenSize);
-            const unsigned int nodeCount = m_editor->GetSelectedNodeCount();
-            const unsigned int* indices = m_editor->GetSelectedNodesArray();
-
-            Action* action = new RotatePathNodeAction(m_workspace, indices, nodeCount, a_pathModel, cPos, axis);
-            if (m_workspace->PushAction(action))
-            {
-                m_editor->SetCurrentAction(action);
-            }
-            else
-            {
-                printf("Error rotating path node \n");
-
-                delete action;
-            }
-
-            delete[] indices;
-
-            return true;
-        }
-
-        break;
-    }
-    case ToolMode_Scale:
-    {
-        if (a_axis != Axis_X && a_axis != Axis_Z)
-        {
-            return false;
-        }
-
-        const glm::mat4 rot = glm::mat4(glm::vec4(right, 0.0f), glm::vec4(up, 0.0f), glm::vec4(-up, 0.0f), zeroVec4);
-        const glm::mat4 mat = a_viewProj * glm::translate(iden, a_pos + scaledAxis) * glm::scale(iden, scaleVec3) * rot;
-
-        const LocalModel* handle = TransformVisualizer::GetScaleHandle();
-
-        if (SelectionControl::PointInMesh(mat, handle, a_cursorPos))
-        {
-            const glm::vec3 cPos = a_camera->GetScreenToWorld(glm::vec3(a_cursorPos, 0.9f), a_screenSize);
-            const unsigned int nodeCount = m_editor->GetSelectedNodeCount();
-            const unsigned int* indices = m_editor->GetSelectedNodesArray();
-
-            Action* action = new ScalePathNodeAction(m_workspace, indices, nodeCount, a_pathModel, cPos, axis);
-            if (m_workspace->PushAction(action))
-            {
-                m_editor->SetCurrentAction(action);
-            }
-            else
-            {
-                printf("Error scaling path node \n");
-
-                delete action;
-            }
-
-            delete[] indices;
-
-            return true;
-        }
-
-        break;
-    }
-    }
-
-    return false;
-}
 bool EditEditor::IsInteractingPathNodeHandle(const PathNode& a_node, unsigned int a_nodeIndex, PathModel* a_model, const glm::mat4& a_viewProj, const glm::vec2& a_cursorPos, const glm::mat4& a_transform, const glm::vec3& a_up, const glm::vec3& a_right)
 {
     if (SelectionControl::NodeHandleInPoint(a_viewProj, a_cursorPos, 0.025f, a_transform, a_node.Node))
@@ -370,134 +125,6 @@ bool EditEditor::IsInteractingPathNodeHandle(const PathNode& a_node, unsigned in
         }
 
         return true;
-    }
-
-    return false;
-}
-
-bool EditEditor::InteractingArmatureNode(const Camera* a_camera, const glm::vec3& a_pos, e_Axis a_axis, const glm::vec2& a_cursorPos, const glm::vec2& a_screenSize, const glm::mat4& a_viewProj)
-{
-    constexpr glm::mat4 iden = glm::identity<glm::mat4>();
-    constexpr glm::vec4 vec4zero = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
-    constexpr float scale = 0.25f;
-    constexpr glm::vec3 scale3 = glm::vec3(scale);
-
-    const glm::vec3 axis = AxisControl::GetAxis(a_axis);
-    const glm::vec3 scaledAxis = axis * scale;
-
-    glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
-    if (glm::abs(glm::dot(up, axis)) >= 0.95f)
-    {
-        up = glm::vec3(0.0f, 0.0f, 1.0f);
-    }
-    const glm::vec3 right = glm::cross(up, axis);
-    up = glm::cross(right, axis);
-    
-    switch (m_workspace->GetToolMode())
-    {
-    case ToolMode_Translate:
-    {
-        const glm::mat4 rot = glm::mat4(glm::vec4(right, 0.0f), glm::vec4(up, 0.0f), glm::vec4(axis, 0.0f), vec4zero);
-
-        const glm::mat4 mat = a_viewProj * glm::translate(iden, a_pos + scaledAxis) * glm::scale(iden, scale3) * rot;
-
-        const LocalModel* handle = TransformVisualizer::GetTranslationHandle();
-
-        if (SelectionControl::PointInMesh(mat, handle, a_cursorPos))
-        {
-            const glm::vec3 cPos = a_camera->GetScreenToWorld(glm::vec3(a_cursorPos, 0.9f), a_screenSize);
-
-            const int objectCount = m_editor->GetSelectedArmatureObjectsCount();
-            Object* const* objs = m_editor->GetSelectedArmatureObjectsArray();
-
-            Action* action = new TranslateObjectRelativeAction(cPos, axis, objs, objectCount);
-
-            if (m_workspace->PushAction(action))
-            {
-                m_editor->SetCurrentAction(action);
-            }
-            else
-            {
-                printf("Error moving armature node \n");
-
-                delete action;
-            }
-
-            delete[] objs;
-
-            return true;
-        }
-
-        break;
-    }
-    case ToolMode_Rotate:
-    {
-        const glm::mat4 rot = glm::mat4(glm::vec4(right, 0.0f), glm::vec4(axis, 0.0f), glm::vec4(-up, 0.0f), vec4zero);
-
-        const glm::mat4 mat = a_viewProj * glm::translate(iden, a_pos) * glm::scale(iden, scale3) * rot;
-
-        const LocalModel* handle = TransformVisualizer::GetRotationHandle();
-
-        if (SelectionControl::PointInMesh(mat, handle, a_cursorPos))
-        {
-            const glm::vec3 cPos = a_camera->GetScreenToWorld(glm::vec3(a_cursorPos, 0.9f), a_screenSize);
-
-            const int objectCount = m_editor->GetSelectedArmatureObjectsCount();
-            Object* const* objs = m_editor->GetSelectedArmatureObjectsArray();
-
-            Action* action = new RotateObjectRelativeAction(cPos, axis, objs, objectCount);
-            if (m_workspace->PushAction(action))
-            {
-                m_editor->SetCurrentAction(action);
-            }
-            else
-            {
-                printf("Error rotating armature node \n");
-
-                delete action;
-            }
-
-            delete[] objs;
-
-            return true;
-        }
-
-        break;
-    }
-    case ToolMode_Extrude:
-    {
-        const glm::mat4 rot = glm::mat4(glm::vec4(right, 0.0f), glm::vec4(up, 0.0f), glm::vec4(axis, 0.0f), vec4zero);
-
-        const glm::mat4 mat = a_viewProj * glm::translate(iden, a_pos + scaledAxis) * glm::scale(iden, scale3) * rot;
-
-        const LocalModel* handle = TransformVisualizer::GetTranslationHandle();
-
-        if (SelectionControl::PointInMesh(mat, handle, a_cursorPos))
-        {
-            const glm::vec3 cPos = a_camera->GetScreenToWorld(glm::vec3(a_cursorPos, 0.9f), a_screenSize);
-
-            const int objectCount = m_editor->GetSelectedArmatureObjectsCount();
-            Object** objs = m_editor->GetSelectedArmatureObjectsArray();
-
-            Action* action = new ExtrudeArmatureNodeAction(m_editor, objs, objectCount, cPos, axis);
-            if (m_workspace->PushAction(action))
-            {
-                m_editor->SetCurrentAction(action);
-            }
-            else
-            {
-                printf("Error extruding armature node \n");
-
-                delete action;
-            }
-
-            delete[] objs;
-
-            return true;
-        }
-
-        break;
-    }
     }
 
     return false;
@@ -774,7 +401,7 @@ void EditEditor::LeftClicked(Camera* a_camera, const glm::vec2& a_cursorPos, con
 
     const glm::mat4 viewProj = proj * view;
 
-    Transform* camTransform = a_camera->GetTransform();
+    const Transform* camTransform = a_camera->GetTransform();
 
     const glm::quat camQuat = camTransform->Quaternion();
     const glm::mat4 camRotMatrix = glm::toMat4(camQuat);
@@ -782,6 +409,8 @@ void EditEditor::LeftClicked(Camera* a_camera, const glm::vec2& a_cursorPos, con
     const glm::vec3 camForward = camRotMatrix[2];
     const glm::vec3 camUp = camRotMatrix[1];
     const glm::vec3 camRight = camRotMatrix[0];
+
+    const e_ToolMode toolMode = m_workspace->GetToolMode();
 
     const Object* obj = m_workspace->GetSelectedObject();
     if (obj != nullptr)
@@ -808,44 +437,36 @@ void EditEditor::LeftClicked(Camera* a_camera, const glm::vec2& a_cursorPos, con
                     ++nodeCount;
                 }
             }
-
             pos /= nodeCount;
 
-            if (!InteractingArmatureNode(a_camera, pos, Axis_X, a_cursorPos, a_winSize, viewProj))
+            if (m_armatureAction[toolMode] != nullptr)
             {
-                if (!InteractingArmatureNode(a_camera, pos, Axis_Y, a_cursorPos, a_winSize, viewProj))
-                {
-                    InteractingArmatureNode(a_camera, pos, Axis_Z, a_cursorPos, a_winSize, viewProj);
-                }
-            }            
+                m_armatureAction[toolMode]->LeftClicked(a_camera, a_cursorPos, a_winSize);
+            }      
 
             break;
         }
         case ObjectType_CurveModel:
         {
-            const glm::mat4 transformMat = obj->GetGlobalMatrix();
-
             CurveModel* model = obj->GetCurveModel();
             if (model != nullptr)
             {
-                const Node3Cluster* nodes = model->GetNodes();
-
-                glm::vec3 pos = glm::vec3(0);
-
-                const std::list<unsigned int> selectedNodes = m_editor->GetSelectedNodes();
-                for (auto iter = selectedNodes.begin(); iter != selectedNodes.end(); ++iter)
+                if (m_curveAction[toolMode] == nullptr || !m_curveAction[toolMode]->LeftClicked(a_camera, a_cursorPos, a_winSize))
                 {
-                    pos += nodes[*iter].Nodes[0].Node.GetPosition();
-                }
+                    const Node3Cluster* nodes = model->GetNodes();
+                    const glm::mat4 transformMat = obj->GetGlobalMatrix();
+                    glm::vec3 pos = glm::vec3(0);
 
-                pos /= selectedNodes.size();
+                    const std::list<unsigned int> selectedNodes = m_editor->GetSelectedNodes();
+                    for (auto iter = selectedNodes.begin(); iter != selectedNodes.end(); ++iter)
+                    {
+                        pos += nodes[*iter].Nodes[0].Node.GetPosition();
+                    }
 
-                const glm::vec4 fPos = transformMat * glm::vec4(pos, 1.0f);
+                    pos /= selectedNodes.size();
 
-                if (!IsInteractingCurveNode(a_camera, fPos, Axis_X, a_cursorPos, a_winSize, model, viewProj) &&
-                    !IsInteractingCurveNode(a_camera, fPos, Axis_Y, a_cursorPos, a_winSize, model, viewProj) &&
-                    !IsInteractingCurveNode(a_camera, fPos, Axis_Z, a_cursorPos, a_winSize, model, viewProj))
-                {
+                    const glm::vec4 fPos = transformMat * glm::vec4(pos, 1.0f);
+
                     for (auto iter = selectedNodes.begin(); iter != selectedNodes.end(); ++iter)
                     {
                         const unsigned int nodeIndex = *iter;
@@ -862,29 +483,26 @@ void EditEditor::LeftClicked(Camera* a_camera, const glm::vec2& a_cursorPos, con
         }
         case ObjectType_PathModel:
         {
-            const glm::mat4 transformMat = obj->GetGlobalMatrix();
-
             PathModel* model = obj->GetPathModel();
             if (model != nullptr)
             {
-                const PathNode* nodes = model->GetNodes();
-
-                glm::vec3 pos = glm::vec3(0);
-
-                const std::list<unsigned int> selectedNodes = m_editor->GetSelectedNodes();
-                for (auto iter = selectedNodes.begin(); iter != selectedNodes.end(); ++iter)
+                if (m_pathAction[toolMode] == nullptr || !m_pathAction[toolMode]->LeftClicked(a_camera, a_cursorPos, a_winSize))
                 {
-                    pos += nodes[*iter].Node.GetPosition();
-                }
+                    const glm::mat4 transformMat = obj->GetGlobalMatrix();
+                    const PathNode* nodes = model->GetNodes();
 
-                pos /= selectedNodes.size();
+                    glm::vec3 pos = glm::vec3(0);
 
-                const glm::vec4 fPos = transformMat * glm::vec4(pos, 1.0f);
+                    const std::list<unsigned int> selectedNodes = m_editor->GetSelectedNodes();
+                    for (auto iter = selectedNodes.begin(); iter != selectedNodes.end(); ++iter)
+                    {
+                        pos += nodes[*iter].Node.GetPosition();
+                    }
 
-                if (!IsInteractingPathNode(a_camera, fPos, Axis_X, a_cursorPos, a_winSize, model, viewProj) &&
-                    !IsInteractingPathNode(a_camera, fPos, Axis_Y, a_cursorPos, a_winSize, model, viewProj) &&
-                    !IsInteractingPathNode(a_camera, fPos, Axis_Z, a_cursorPos, a_winSize, model, viewProj))
-                {
+                    pos /= selectedNodes.size();
+
+                    const glm::vec4 fPos = transformMat * glm::vec4(pos, 1.0f);
+
                     for (auto iter = selectedNodes.begin(); iter != selectedNodes.end(); ++iter)
                     {
                         const unsigned int nodeIndex = *iter;
@@ -904,7 +522,54 @@ void EditEditor::LeftClicked(Camera* a_camera, const glm::vec2& a_cursorPos, con
 }
 void EditEditor::LeftDown(double a_delta, Camera* a_camera, const glm::vec2& a_start, const glm::vec2& a_currentPos, const glm::vec2& a_winSize)
 {
+    const e_ToolMode toolMode = m_workspace->GetToolMode();
+    
+    const Object* obj = m_workspace->GetSelectedObject();
 
+    const Transform* camTransform = a_camera->GetTransform();
+    const glm::mat4 viewInv = camTransform->ToMatrix();
+
+    bool drawSelection = true;
+
+    switch (obj->GetObjectType())
+    {
+    case ObjectType_Armature:
+    {
+        drawSelection = m_armatureAction[toolMode] == nullptr || !m_armatureAction[toolMode]->LeftDown(a_camera, a_currentPos, a_winSize);
+
+        break;
+    }
+    case ObjectType_CurveModel:
+    {
+        drawSelection = (m_curveAction[toolMode] == nullptr || !m_curveAction[toolMode]->LeftDown(a_camera, a_currentPos, a_winSize)) && m_editor->GetCurrentActionType() != ActionType_MoveCurveNodeHandle;
+
+        break;
+    }
+    case ObjectType_PathModel:
+    {
+        drawSelection = (m_pathAction[toolMode] == nullptr || !m_pathAction[toolMode]->LeftDown(a_camera, a_currentPos, a_winSize)) && m_editor->GetCurrentActionType() != ActionType_MovePathNodeHandle;
+
+        break;
+    }
+    }
+
+    if (drawSelection)
+    {
+        const glm::vec2 min = glm::min(a_start, a_currentPos);
+        const glm::vec2 max = glm::max(a_start, a_currentPos);
+
+        const glm::vec3 tlWP = a_camera->GetScreenToWorld(glm::vec3(min.x, min.y, -0.99f), (int)a_winSize.x, (int)a_winSize.y);
+        const glm::vec3 trWP = a_camera->GetScreenToWorld(glm::vec3(max.x, min.y, -0.99f), (int)a_winSize.x, (int)a_winSize.y);
+        const glm::vec3 blWP = a_camera->GetScreenToWorld(glm::vec3(min.x, max.y, -0.99f), (int)a_winSize.x, (int)a_winSize.y);
+        const glm::vec3 brWP = a_camera->GetScreenToWorld(glm::vec3(max.x, max.y, -0.99f), (int)a_winSize.x, (int)a_winSize.y);
+
+        const glm::vec3 f = viewInv[2].xyz();
+
+        Gizmos::DrawLine(tlWP, trWP, f, 0.0001f, ColorTheme::Active);
+        Gizmos::DrawLine(trWP, brWP, f, 0.0001f, ColorTheme::Active);
+        Gizmos::DrawLine(brWP, blWP, f, 0.0001f, ColorTheme::Active);
+        Gizmos::DrawLine(blWP, tlWP, f, 0.0001f, ColorTheme::Active);
+    }
 }
 void EditEditor::LeftReleased(Camera* a_camera, const glm::vec2& a_start, const glm::vec2& a_end, const glm::vec2& a_winSize)
 {
@@ -918,6 +583,8 @@ void EditEditor::LeftReleased(Camera* a_camera, const glm::vec2& a_start, const 
 
     const ImGuiIO io = ImGui::GetIO();
 
+    const e_ToolMode toolMode = m_workspace->GetToolMode();
+
     const Object* obj = m_workspace->GetSelectedObject();
     if (obj != nullptr)
     {
@@ -928,20 +595,11 @@ void EditEditor::LeftReleased(Camera* a_camera, const glm::vec2& a_start, const 
         {
         case ObjectType_Armature:
         {
-            const e_ActionType actionType = m_editor->GetCurrentActionType();
-            switch (actionType)
+            if (m_armatureAction[toolMode] == nullptr || !m_armatureAction[toolMode]->LeftReleased(a_camera, a_end, a_winSize))
             {
-            case ActionType_TranslateObjectRelative:
-            {
-                m_editor->SetCurrentAction(nullptr);
+                const Object* obj = m_workspace->GetSelectedObject();
 
-                break;
-            }
-            default:
-            {
-                const Object *obj = m_workspace->GetSelectedObject();
-
-                const std::list<Object *> children = obj->GetChildren();
+                const std::list<Object*> children = obj->GetChildren();
 
                 if (!io.KeyCtrl && !io.KeyShift)
                 {
@@ -957,30 +615,23 @@ void EditEditor::LeftReleased(Camera* a_camera, const glm::vec2& a_start, const 
                         SelectArmatureNodes(*iter, viewProj, min, max);
                     }
                 }
-
-                break;
             }
 
             break;
-            }
         }
         case ObjectType_CurveModel:
         {
-            const CurveModel* curveModel = obj->GetCurveModel();
-            if (curveModel != nullptr)
+            if (m_curveAction[toolMode] == nullptr || !m_curveAction[toolMode]->LeftReleased(a_camera, a_end, a_winSize))
             {
-                const unsigned int nodeCount = curveModel->GetNodeCount();
-                const Node3Cluster* nodes = curveModel->GetNodes();
+                const CurveModel* model = obj->GetCurveModel();
+                const unsigned int nodeCount = model->GetNodeCount();
+                const Node3Cluster* nodes = model->GetNodes();
 
                 const e_ActionType actionType = m_editor->GetCurrentActionType();
 
                 switch (actionType)
                 {
-                case ActionType_ExtrudeNode:
-                case ActionType_MoveCurveNode:
                 case ActionType_MoveCurveNodeHandle:
-                case ActionType_RotateNode:
-                case ActionType_ScaleNode:
                 {
                     m_editor->SetCurrentAction(nullptr);
 
@@ -1044,25 +695,20 @@ NextCurveNode:;
                 }
                 }
             }
-
+                
             break;
         }
         case ObjectType_PathModel:
         {
-            const PathModel* pathModel = obj->GetPathModel();
-            if (pathModel != nullptr)
+            if (m_pathAction[toolMode] == nullptr || !m_pathAction[toolMode]->LeftReleased(a_camera, a_end, a_winSize))
             {
-                const unsigned int nodeCount = pathModel->GetPathNodeCount();
-                const PathNode* nodes = pathModel->GetNodes();
+                const PathModel* model = obj->GetPathModel();
+                const unsigned int nodeCount = model->GetPathNodeCount();
+                const PathNode* nodes = model->GetNodes();
 
-                const e_ActionType actionType = m_editor->GetCurrentActionType();
-
-                switch (actionType)
+                switch (m_editor->GetCurrentActionType())
                 {
-                case ActionType_MovePathNode:
                 case ActionType_MovePathNodeHandle:
-                case ActionType_RotatePathNode:
-                case ActionType_ScalePathNode:
                 {
                     m_editor->SetCurrentAction(nullptr);
 
@@ -1139,10 +785,12 @@ void EditEditor::Update(Camera* a_camera, const glm::vec2& a_cursorPos, const gl
     constexpr float pi = glm::pi<float>();
     constexpr float halfPi = pi * 0.5f;
 
-    Transform* camTransform = a_camera->GetTransform();
+    const Transform* camTransform = a_camera->GetTransform();
     const glm::mat4 viewInv = camTransform->ToMatrix();
 
-    Object* obj = m_workspace->GetSelectedObject();
+    const e_ToolMode toolMode = m_workspace->GetToolMode();
+
+    const Object* obj = m_workspace->GetSelectedObject();
     if (obj != nullptr)
     {
         const e_ObjectType objectType = obj->GetObjectType();
@@ -1150,157 +798,27 @@ void EditEditor::Update(Camera* a_camera, const glm::vec2& a_cursorPos, const gl
         {
         case ObjectType_Armature:
         {
-            glm::vec3 pos = glm::vec3(0);
-
-            int nodeCount = 0;
-
-            const std::list<long long> selectedNodes = m_editor->GetSelectedArmatureNodes();
-
-            for (auto iter = selectedNodes.begin(); iter != selectedNodes.end(); ++iter)
+            if (m_armatureAction[toolMode] != nullptr)
             {
-                const Object* obj = m_workspace->GetObject(*iter);
-
-                if (obj != nullptr)
-                {
-                    glm::mat4 mat = obj->GetGlobalMatrix();
-
-                    pos += mat[3].xyz();
-                    ++nodeCount;
-                }
+                m_armatureAction[toolMode]->Draw(a_camera);
             }
 
-            pos /= nodeCount;
-
-            const e_ToolMode toolMode = m_workspace->GetToolMode();
-            switch (toolMode)
-            {
-            case ToolMode_Scale:
-            {
-                Gizmos::DrawScale(pos, viewInv[2], 0.25f);
-
-                break;
-            }
-            case ToolMode_Rotate:
-            {
-                Gizmos::DrawRotation(pos, viewInv[2], 0.25f);
-
-                break;
-            }
-            default:
-            {
-                Gizmos::DrawTranslation(pos, viewInv[2], 0.25f);
-
-                break;
-            }
-            }
+            break;
         }
         case ObjectType_CurveModel:
         {
-            const CurveModel* model = obj->GetCurveModel();
-            if (model != nullptr)
+            if (m_curveAction[toolMode] != nullptr)
             {
-                const Node3Cluster* nodes = model->GetNodes();
-
-                glm::vec3 pos = glm::vec3(0);
-
-                const std::list<unsigned int> selectedNodes = m_editor->GetSelectedNodes();
-                for (auto iter = selectedNodes.begin(); iter != selectedNodes.end(); ++iter)
-                {
-                    pos += nodes[*iter].Nodes[0].Node.GetPosition();
-                }
-
-                pos /= selectedNodes.size();
-
-                const glm::mat4 transformMat = obj->GetGlobalMatrix();
-                const glm::vec4 fPos = transformMat * glm::vec4(pos, 1);
-
-                const e_ToolMode toolMode = m_workspace->GetToolMode();
-                switch (toolMode)
-                {
-                case ToolMode_Scale:
-                {
-                    Gizmos::DrawScale(fPos, viewInv[2], 0.25f);
-
-                    break;
-                }
-                case ToolMode_Rotate:
-                {
-                    Gizmos::DrawRotation(fPos, viewInv[2], 0.25f);
-
-                    break;
-                }
-                default:
-                {   
-                    Gizmos::DrawTranslation(fPos, viewInv[2], 0.25f);
-
-                    break;
-                }
-                }
+                m_curveAction[toolMode]->Draw(a_camera);
             }
 
             break;
         }
         case ObjectType_PathModel:
         {
-            const PathModel* model = obj->GetPathModel();
-            if (model != nullptr)
+            if (m_pathAction[toolMode] != nullptr)
             {
-                constexpr float scale = 0.25f;
-                constexpr glm::vec3 scale3 = glm::vec3(scale);
-
-                const PathNode* nodes = model->GetNodes();
-
-                glm::vec3 pos = glm::vec3(0.0f);
-
-                const std::list<unsigned int> selectedNodes = m_editor->GetSelectedNodes();
-                for (auto iter = selectedNodes.begin(); iter != selectedNodes.end(); ++iter)
-                {
-                    pos += nodes[*iter].Node.GetPosition();
-                }
-
-                pos /= selectedNodes.size();
-
-                const glm::mat4 transformMat = obj->GetGlobalMatrix();
-                const glm::vec4 fPos = transformMat * glm::vec4(pos, 1.0f);
-
-                const e_ToolMode toolMode = m_workspace->GetToolMode();
-                switch (toolMode)
-                {
-                case ToolMode_Rotate:
-                {
-                    const LocalModel* model = TransformVisualizer::GetRotationHandle();
-
-                    Gizmos::DrawModel(glm::translate(iden, fPos.xyz()) * glm::scale(iden, scale3), model, ColorTheme::Active);
-
-                    break;
-                }
-                case ToolMode_Scale:
-                {
-                    const LocalModel* model = TransformVisualizer::GetScaleHandle();
-
-                    const glm::vec3 xAxis = glm::vec3(scale, 0.0f, 0.0f);
-                    const glm::vec3 yAxis = glm::vec3(0.0f, 0.0f, scale);
-
-                    const glm::mat4 transform = glm::translate(iden, fPos.xyz()) * glm::scale(iden, scale3);
-
-                    const glm::mat4 rightTransform = transform * glm::toMat4(glm::angleAxis(-halfPi, glm::vec3(0.0f, 0.0f, 1.0f)));
-                    const glm::mat4 forwardTransform = transform * glm::toMat4(glm::angleAxis(halfPi, glm::vec3(1.0f, 0.0f, 0.0f)));
-
-                    Gizmos::DrawModel(glm::translate(iden, xAxis) * rightTransform, model, glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
-                    Gizmos::DrawModel(glm::translate(iden, yAxis) * forwardTransform, model, glm::vec4(0.0f, 1.0f, 0.0f, 1.0f));
-
-                    Gizmos::DrawLine(fPos, fPos.xyz() + xAxis, viewInv[2], 0.01f, glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
-                    Gizmos::DrawLine(fPos, fPos.xyz() + yAxis, viewInv[2], 0.01f, glm::vec4(0.0f, 1.0f, 0.0f, 1.0f));
-
-                    break;
-                }
-                default:
-                {
-                    Gizmos::DrawTranslation(fPos, viewInv[2], scale);
-
-                    break;
-                }
-                }
+                m_pathAction[toolMode]->Draw(a_camera);
             }
 
             break;
