@@ -1,5 +1,6 @@
 #include "EditorInputController.h"
 
+#include "EditorControls/Editor.h"
 #include "Object.h"
 #include "Workspace.h"
 

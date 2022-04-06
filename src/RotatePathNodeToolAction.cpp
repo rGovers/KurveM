@@ -5,6 +5,7 @@
 #include "Actions/RotatePathNodeAction.h"
 #include "Camera.h"
 #include "ColorTheme.h"
+#include "EditorControls/Editor.h"
 #include "Gizmos.h"
 #include "LocalModel.h"
 #include "PathModel.h"
@@ -82,14 +83,14 @@ bool RotatePathNodeToolAction::LeftClicked(Camera* a_camera, const glm::vec2& a_
         PathModel* model = object->GetPathModel();
         if (model != nullptr)
         {
-            const PathNode* nodes = model->GetNodes();
+            const PathNodeCluster* nodes = model->GetPathNodes();
 
             glm::vec3 pos = glm::vec3(0);
 
             const std::list<unsigned int> selectedNodes = m_editor->GetSelectedNodes();
             for (auto iter = selectedNodes.begin(); iter != selectedNodes.end(); ++iter)
             {
-                pos += nodes[*iter].Node.GetPosition();
+                pos += nodes[*iter].Nodes[0].Node.GetPosition();
             }
 
             pos /= selectedNodes.size();
@@ -153,14 +154,14 @@ void RotatePathNodeToolAction::Draw(Camera* a_camera)
             const Transform* camTransform = a_camera->GetTransform();
             const glm::mat4 viewInv = camTransform->ToMatrix();
 
-            const PathNode* nodes = model->GetNodes();
+            const PathNodeCluster* nodes = model->GetPathNodes();
 
             glm::vec3 pos = glm::vec3(0.0f);
 
             const std::list<unsigned int> selectedNodes = m_editor->GetSelectedNodes();
             for (auto iter = selectedNodes.begin(); iter != selectedNodes.end(); ++iter)
             {
-                pos += nodes[*iter].Node.GetPosition();
+                pos += nodes[*iter].Nodes[0].Node.GetPosition();
             }
 
             pos /= selectedNodes.size();

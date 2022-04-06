@@ -4,13 +4,14 @@
 #include "PathModel.h"
 #include "Workspace.h"
 
-MovePathNodeHandleAction::MovePathNodeHandleAction(Workspace* a_workspace, unsigned int a_nodeIndex, PathModel* a_pathModel, const glm::vec2& a_startCursorPos, const glm::vec3& a_xAxis, const glm::vec3& a_yAxis)
+MovePathNodeHandleAction::MovePathNodeHandleAction(Workspace* a_workspace, unsigned int a_nodeIndex, unsigned char a_clusterIndex, PathModel* a_pathModel, const glm::vec2& a_startCursorPos, const glm::vec3& a_xAxis, const glm::vec3& a_yAxis)
 {   
     m_workspace = a_workspace;
 
     m_pathModel = a_pathModel;
 
     m_nodeIndex = a_nodeIndex;
+    m_clusterIndex = a_clusterIndex;
 
     m_startCursorPos = a_startCursorPos;
     m_endCursorPos = a_startCursorPos;
@@ -18,9 +19,9 @@ MovePathNodeHandleAction::MovePathNodeHandleAction(Workspace* a_workspace, unsig
     m_xAxis = a_xAxis;
     m_yAxis = a_yAxis;
 
-    const PathNode node = m_pathModel->GetNode(m_nodeIndex);
+    const PathNodeCluster node = m_pathModel->GetPathNode(m_nodeIndex);
 
-    m_startPos = node.Node.GetHandlePosition();
+    m_startPos = node.Nodes[m_clusterIndex].Node.GetHandlePosition();
 }
 MovePathNodeHandleAction::~MovePathNodeHandleAction()
 {
@@ -40,9 +41,9 @@ bool MovePathNodeHandleAction::Execute()
 {
     const glm::vec2 cursorDiff = m_endCursorPos - m_startCursorPos;
 
-    PathNode* nodes = m_pathModel->GetNodes();
+    PathNodeCluster* nodes = m_pathModel->GetPathNodes();
 
-    nodes[m_nodeIndex].Node.SetHandlePosition(m_startPos + (m_yAxis * cursorDiff.y) + (m_xAxis * cursorDiff.x));
+    nodes[m_nodeIndex].Nodes[m_clusterIndex].Node.SetHandlePosition(m_startPos + (m_yAxis * cursorDiff.y) + (m_xAxis * cursorDiff.x));
 
     m_workspace->PushLongTask(new TriangulatePathLongTask(m_pathModel));
 
@@ -50,9 +51,9 @@ bool MovePathNodeHandleAction::Execute()
 }
 bool MovePathNodeHandleAction::Revert()
 {
-    PathNode* nodes = m_pathModel->GetNodes();
+    PathNodeCluster* nodes = m_pathModel->GetPathNodes();
 
-    nodes[m_nodeIndex].Node.SetHandlePosition(m_startPos);
+    nodes[m_nodeIndex].Nodes[m_clusterIndex].Node.SetHandlePosition(m_startPos);
 
     m_workspace->PushLongTask(new TriangulatePathLongTask(m_pathModel));
 

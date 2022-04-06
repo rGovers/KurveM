@@ -15,7 +15,7 @@ MoveShapeNodeAction::MoveShapeNodeAction(Workspace* a_workspace, const unsigned 
 
     m_axis = a_axis;
 
-    const BezierCurveNode2* nodes = m_model->GetShapeNodes();
+    const ShapeNodeCluster* nodes = m_model->GetShapeNodes();
 
     m_indexCount = a_indexCount;
     m_indices = new unsigned int[m_indexCount];
@@ -24,7 +24,7 @@ MoveShapeNodeAction::MoveShapeNodeAction(Workspace* a_workspace, const unsigned 
     {
         const unsigned int index = a_indices[i];
         m_indices[i] = index;
-        m_oldPos[i] = nodes[index].GetPosition();
+        m_oldPos[i] = nodes[index].Nodes[0].GetPosition();
     }
 }
 MoveShapeNodeAction::~MoveShapeNodeAction()
@@ -44,13 +44,20 @@ bool MoveShapeNodeAction::Redo()
 }
 bool MoveShapeNodeAction::Execute()
 {
-    BezierCurveNode2* nodes = m_model->GetShapeNodes();
+    ShapeNodeCluster* nodes = m_model->GetShapeNodes();
 
     const glm::vec2 delta = (m_endPos - m_startPos) * m_axis;
 
     for (unsigned int i = 0; i < m_indexCount; ++i)
     {
-        nodes[m_indices[i]].SetPosition(m_oldPos[i] + delta);
+        std::vector<BezierCurveNode2>& cNodes = nodes[m_indices[i]].Nodes;
+
+        const glm::vec2 pos = m_oldPos[i] + delta;
+
+        for (auto iter = cNodes.begin(); iter != cNodes.end(); ++iter)
+        {
+            iter->SetPosition(pos);
+        }
     }
 
     m_workspace->PushLongTask(new TriangulatePathLongTask(m_model));
@@ -59,11 +66,16 @@ bool MoveShapeNodeAction::Execute()
 }
 bool MoveShapeNodeAction::Revert()
 {
-    BezierCurveNode2* nodes = m_model->GetShapeNodes();
+    ShapeNodeCluster* nodes = m_model->GetShapeNodes();
 
     for (unsigned int i = 0; i < m_indexCount; ++i)
     {
-        nodes[m_indices[i]].SetPosition(m_oldPos[i]);
+        std::vector<BezierCurveNode2>& cNodes = nodes[m_indices[i]].Nodes;
+
+        for (auto iter = cNodes.begin(); iter != cNodes.end(); ++iter)
+        {
+            iter->SetPosition(m_oldPos[i]);
+        }
     }
 
     m_workspace->PushLongTask(new TriangulatePathLongTask(m_model));

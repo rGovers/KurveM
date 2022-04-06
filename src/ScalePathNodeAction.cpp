@@ -17,7 +17,7 @@ ScalePathNodeAction::ScalePathNodeAction(Workspace* a_workspace, const unsigned 
 
     m_axis = a_axis;
 
-    const PathNode* nodes = m_model->GetNodes();
+    const PathNodeCluster* nodes = m_model->GetPathNodes();
 
     m_indices = new unsigned int[m_indexCount];
     m_startScale = new glm::vec2[m_indexCount];
@@ -27,7 +27,7 @@ ScalePathNodeAction::ScalePathNodeAction(Workspace* a_workspace, const unsigned 
         const unsigned int index = a_indices[i];
 
         m_indices[i] = index;  
-        m_startScale[i] = nodes[index].Scale;
+        m_startScale[i] = nodes[index].Nodes[0].Scale;
     }
 }
 ScalePathNodeAction::~ScalePathNodeAction()
@@ -57,11 +57,17 @@ bool ScalePathNodeAction::Execute()
 
         const glm::vec2 scaleAxis = m_axis.xz() * scale;
 
-        PathNode* nodes = m_model->GetNodes();
+        PathNodeCluster* nodes = m_model->GetPathNodes();
 
         for (unsigned int i = 0; i < m_indexCount; ++i)
         {
-            nodes[m_indices[i]].Scale = m_startScale[i] + scaleAxis;
+            const glm::vec2 scale = m_startScale[i] + scaleAxis;
+
+            std::vector<PathNode>& cNodes = nodes[m_indices[i]].Nodes;
+            for (auto iter = cNodes.begin(); iter != cNodes.end(); ++iter)
+            {
+                iter->Scale = scale;
+            }
         }
 
         m_workspace->PushLongTask(new TriangulatePathLongTask(m_model));
@@ -71,11 +77,15 @@ bool ScalePathNodeAction::Execute()
 }
 bool ScalePathNodeAction::Revert()
 {
-    PathNode* nodes = m_model->GetNodes();
+    PathNodeCluster* nodes = m_model->GetPathNodes();
 
     for (unsigned int i = 0; i < m_indexCount; ++i)
     {
-        nodes[m_indices[i]].Scale = m_startScale[i];
+        std::vector<PathNode>& cNodes = nodes[m_indices[i]].Nodes;
+        for (auto iter = cNodes.begin(); iter != cNodes.end(); ++iter)
+        {
+            iter->Scale = m_startScale[i];
+        }
     }
 
     m_workspace->PushLongTask(new TriangulatePathLongTask(m_model));

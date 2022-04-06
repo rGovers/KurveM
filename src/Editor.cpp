@@ -385,6 +385,8 @@ void Editor::DrawObject(Object* a_object, const glm::vec2& a_winSize)
         if (editor->GetEditorMode() == m_editorMode)
         {
             editor->DrawObject(m_camera, a_object, a_winSize);
+
+            break;
         }
     }
 

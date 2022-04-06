@@ -3,12 +3,13 @@
 #include <list>
 #include <thread>
 
-#include "EditorControls/Editor.h"
+#include "Actions/Action.h"
 #include "imgui.h"
 #include "Object.h"
 
 class Action;
 class Animation;
+class Editor;
 class LongTask;
 class Modal;
 class ShapeEditor;

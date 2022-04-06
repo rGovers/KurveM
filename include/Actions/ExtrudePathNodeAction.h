@@ -5,34 +5,33 @@
 
 #include "Actions/Action.h"
 
-class CurveModel;
 class Editor;
+class PathModel;
 class Workspace;
 
-class ExtrudeCurveNodeAction : public Action
+class ExtrudePathNodeAction : public Action
 {
 private:
     Workspace*    m_workspace;
     Editor*       m_editor;
 
-    CurveModel*   m_curveModel;
+    PathModel*    m_model;
 
     unsigned int  m_nodeCount;
     unsigned int* m_nodeIndices;
 
     unsigned int  m_startNodeIndex;
-    unsigned int  m_startFaceIndex;
+    unsigned int  m_startLineIndex;
 
     glm::vec3     m_startPos;
     glm::vec3     m_endPos;
 
     glm::vec3     m_axis;
-    
 protected:
 
 public:
-    ExtrudeCurveNodeAction(Workspace* a_workspace, Editor* a_editor, const unsigned int* a_nodeIndices, unsigned int a_nodeCount, CurveModel* a_curveModel, const glm::vec3& a_startPos, const glm::vec3& a_axis);
-    virtual ~ExtrudeCurveNodeAction();
+    ExtrudePathNodeAction(Workspace* a_workspace, Editor* a_editor, const unsigned int* a_nodeIndices, unsigned int a_nodeCount, PathModel* a_pathModel, const glm::vec3& a_startPos, const glm::vec3& a_axis);
+    virtual ~ExtrudePathNodeAction();
 
     inline void SetPosition(const glm::vec3& a_position)
     {

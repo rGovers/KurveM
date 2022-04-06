@@ -15,10 +15,10 @@ PathModel::PathModel(Workspace* a_workspace)
     m_model = nullptr;
 
     m_pathNodes = nullptr;
-    m_pathIndices = nullptr;
+    m_pathLines = nullptr;
 
     m_shapeNodes = nullptr;
-    m_shapeIndices = nullptr;
+    m_shapeLines = nullptr;
 
     m_pathNodeCount = 0;
     m_shapeNodes = 0;
@@ -33,10 +33,10 @@ PathModel::~PathModel()
         delete[] m_pathNodes;
         m_pathNodes = nullptr;
     }
-    if (m_pathIndices != nullptr)
+    if (m_pathLines != nullptr)
     {
-        delete[] m_pathIndices;
-        m_pathIndices = nullptr;
+        delete[] m_pathLines;
+        m_pathLines = nullptr;
     }
 
     if (m_shapeNodes != nullptr)
@@ -44,10 +44,10 @@ PathModel::~PathModel()
         delete[] m_shapeNodes;
         m_shapeNodes = nullptr;
     }
-    if (m_shapeIndices != nullptr)
+    if (m_shapeLines != nullptr)
     {
-        delete[] m_shapeIndices;
-        m_shapeIndices = nullptr;
+        delete[] m_shapeLines;
+        m_shapeLines = nullptr;
     }
 
     if (m_model != nullptr)
@@ -57,33 +57,119 @@ PathModel::~PathModel()
     }
 }
 
-void PathModel::SetModelData(const PathNode* a_nodes, unsigned int a_nodeCount, const unsigned int* a_nodeIndices, unsigned int a_nodeIndexCount, 
-    const BezierCurveNode2* a_shapeNodes, unsigned int a_shapeNodeCount, const unsigned int* a_shapeIndices, unsigned int a_shapeIndexCount)
+void PathModel::EmplacePathNodes(const PathNodeCluster* a_nodes, unsigned int a_nodeCount)
+{
+    const unsigned int size = m_pathNodeCount + a_nodeCount;
+
+    PathNodeCluster* newNodes = new PathNodeCluster[size];
+
+    if (m_pathNodes != nullptr)
+    {
+        for (unsigned int i = 0; i < m_pathNodeCount; ++i)
+        {
+            newNodes[i] = m_pathNodes[i];
+        }
+
+        delete[] m_pathNodes;
+        m_pathNodes = nullptr;
+    }
+
+    for (unsigned int i = 0; i < a_nodeCount; ++i)
+    {
+        newNodes[i + m_pathNodeCount] = a_nodes[i];
+    }
+
+    m_pathNodes = newNodes;
+    m_pathNodeCount = size;
+}
+void PathModel::DestroyPathNodes(unsigned int a_startIndex, unsigned int a_endIndex)
+{
+    const unsigned int count = a_endIndex - a_startIndex;
+    const unsigned int size = m_pathNodeCount - count;
+    const unsigned int endCount = m_pathNodeCount - a_endIndex;
+
+    if (m_pathNodes != nullptr)
+    {
+        // Just doing inplace cause it is a shrink operation
+        // There is potential that I made need to delete and recreate if memory becomes an issue for some reason but that is easily addressable if needed
+        for (unsigned int i = 0; i < endCount; ++i)
+        {
+            m_pathNodes[i + a_startIndex] = m_pathNodes[i + a_endIndex];
+        }
+    }
+
+    m_pathNodeCount = size;
+}
+
+void PathModel::EmplacePathLines(const PathLine* a_lines, unsigned int a_lineCount)
+{
+    const unsigned int size = m_pathLineCount + a_lineCount;
+
+    PathLine* newLines = new PathLine[size];
+
+    if (m_pathLines != nullptr)
+    {
+        for (unsigned int i = 0; i < m_pathLineCount; ++i)
+        {
+            newLines[i] = m_pathLines[i];
+        }
+
+        delete[] m_pathLines;
+        m_pathLines = nullptr;
+    }
+
+    for (unsigned int i = 0; i < a_lineCount; ++i)
+    {
+        newLines[i + m_pathLineCount] = a_lines[i];
+    }
+
+    m_pathLines = newLines;
+    m_pathLineCount = size;
+}
+void PathModel::DestroyPathLines(unsigned int a_startIndex, unsigned int a_endIndex)
+{
+    const unsigned int count  = a_endIndex - a_startIndex;
+    const unsigned int size = m_pathLineCount - count;
+    const unsigned int endCount = m_pathLineCount - a_endIndex;
+
+    if (m_pathLines != nullptr)
+    {
+        for (unsigned int i = 0; i < endCount; ++i)
+        {
+            m_pathNodes[i + a_startIndex] = m_pathNodes[i + a_endIndex];
+        }
+    }
+
+    m_pathLineCount = size;
+}
+
+void PathModel::SetModelData(const PathNodeCluster* a_pathNodes, unsigned int a_pathNodeCount, const PathLine* a_pathLines, unsigned int a_pathLineCount, 
+    const ShapeNodeCluster* a_shapeNodes, unsigned int a_shapeNodeCount, const ShapeLine* a_shapeLines, unsigned int a_shapeLineCount)
 {
     if (m_pathNodes != nullptr)
     {
         delete[] m_pathNodes;
         m_pathNodes = nullptr;
     }
-    if (m_pathIndices != nullptr)
+    if (m_pathLines != nullptr)
     {
-        delete[] m_pathIndices;
-        m_pathIndices = nullptr;
+        delete[] m_pathLines;
+        m_pathLines = nullptr;
     }
 
-    m_pathNodeCount = a_nodeCount;
-    m_pathIndexCount = a_nodeIndexCount;
+    m_pathNodeCount = a_pathNodeCount;
+    m_pathLineCount = a_pathLineCount;
 
-    m_pathNodes = new PathNode[m_pathNodeCount];
+    m_pathNodes = new PathNodeCluster[m_pathNodeCount];
     for (unsigned int i = 0; i < m_pathNodeCount; ++i)
     {
-        m_pathNodes[i] = a_nodes[i];
+        m_pathNodes[i] = a_pathNodes[i];
     }
 
-    m_pathIndices = new unsigned int[m_pathIndexCount];
-    for (unsigned int i = 0; i < m_pathIndexCount; ++i)
+    m_pathLines = new PathLine[m_pathLineCount];
+    for (unsigned int i = 0; i < m_pathLineCount; ++i)
     {
-        m_pathIndices[i] = a_nodeIndices[i];
+        m_pathLines[i] = a_pathLines[i];
     }
 
     if (m_shapeNodes != nullptr)
@@ -91,75 +177,79 @@ void PathModel::SetModelData(const PathNode* a_nodes, unsigned int a_nodeCount, 
         delete[] m_shapeNodes;
         m_shapeNodes = nullptr;
     }
-    if (m_shapeIndices != nullptr)
+    if (m_shapeLines != nullptr)
     {
-        delete[] m_shapeIndices;
-        m_shapeIndices = nullptr;
+        delete[] m_shapeLines;
+        m_shapeLines = nullptr;
     }
 
     m_shapeNodeCount = a_shapeNodeCount;
-    m_shapeIndexCount = a_shapeIndexCount;
+    m_shapeLineCount = a_shapeLineCount;
 
-    m_shapeNodes = new BezierCurveNode2[m_shapeNodeCount];
+    m_shapeNodes = new ShapeNodeCluster[m_shapeNodeCount];
     for (unsigned int i = 0; i < m_shapeNodeCount; ++i)
     {
         m_shapeNodes[i] = a_shapeNodes[i];
     }
 
-    m_shapeIndices = new unsigned int[m_shapeIndexCount];
-    for (unsigned int i = 0; i < m_shapeIndexCount; ++i)
+    m_shapeLines = new ShapeLine[m_shapeLineCount];
+    for (unsigned int i = 0; i < m_shapeLineCount; ++i)
     {
-        m_shapeIndices[i] = a_shapeIndices[i];
+        m_shapeLines[i] = a_shapeLines[i];
     }
 }
-void PathModel::PassModelData(PathNode* a_nodes, unsigned int a_nodeCount, unsigned int* a_nodeIndices, unsigned int a_nodeIndexCount, 
-    BezierCurveNode2* a_shapeNodes, unsigned int a_shapeNodeCount, unsigned int* a_shapeIndices, unsigned int a_shapeIndexCount)
+void PathModel::PassModelData(PathNodeCluster* a_pathNodes, unsigned int a_pathNodeCount, PathLine* a_pathLines, unsigned int a_pathLineCount,
+    ShapeNodeCluster* a_shapeNodes, unsigned int a_shapeNodeCount, ShapeLine* a_shapeLines, unsigned int a_shapeLineCount)
 {
     if (m_pathNodes != nullptr)
     {
         delete[] m_pathNodes;
         m_pathNodes = nullptr;
     }
-    if (m_pathIndices != nullptr)
+    if (m_pathLines != nullptr)
     {
-        delete[] m_pathIndices;
-        m_pathIndices = nullptr;
+        delete[] m_pathLines;
+        m_pathLines = nullptr;
     }
 
-    m_pathNodeCount = a_nodeCount;
-    m_pathIndexCount = a_nodeIndexCount;
+    m_pathNodeCount = a_pathNodeCount;
+    m_pathLineCount = a_pathLineCount;
 
-    m_pathNodes = a_nodes;
-    m_pathIndices = a_nodeIndices;
+    m_pathNodes = a_pathNodes;
+    m_pathLines = a_pathLines;
 
     if (m_shapeNodes != nullptr)
     {
         delete[] m_shapeNodes;
         m_shapeNodes = nullptr;
     }
-    if (m_shapeIndices != nullptr)
+    if (m_shapeLines != nullptr)
     {
-        delete[] m_shapeIndices;
-        m_shapeIndices = nullptr;
+        delete[] m_shapeLines;
+        m_shapeLines = nullptr;
     }
 
     m_shapeNodeCount = a_shapeNodeCount;
-    m_shapeIndexCount = a_shapeIndexCount;
+    m_shapeLineCount = a_shapeLineCount;
 
     m_shapeNodes = a_shapeNodes;
-    m_shapeIndices = a_shapeIndices;
+    m_shapeLines = a_shapeLines;
 }
 
 void PathModel::GetModelData(int a_shapeSteps, int a_pathSteps, unsigned int** a_indices, unsigned int* a_indexCount, Vertex** a_vertices, unsigned int* a_vertexCount) const
 {
-    const unsigned int shapeLines = m_shapeIndexCount / 2;
-
     std::vector<Vertex> shapeVertices;
 
-    for (unsigned int i = 0; i < shapeLines; ++i)
+    for (unsigned int i = 0; i < m_shapeLineCount; ++i)
     {
-        const BezierCurveNode2 nodeA = m_shapeNodes[m_shapeIndices[i * 2 + 0U]];
-        const BezierCurveNode2 nodeB = m_shapeNodes[m_shapeIndices[i * 2 + 1U]];
+        const unsigned int indexA = m_shapeLines[i].Index[0];
+        const unsigned int indexB = m_shapeLines[i].Index[1];
+
+        const unsigned char clusterIndexA = m_shapeLines[i].ClusterIndex[0];
+        const unsigned char clusterIndexB = m_shapeLines[i].ClusterIndex[1];
+
+        const BezierCurveNode2& nodeA = m_shapeNodes[indexA].Nodes[clusterIndexA];
+        const BezierCurveNode2& nodeB = m_shapeNodes[indexB].Nodes[clusterIndexB];
 
         for (unsigned int j = 0; j <= a_shapeSteps; ++j)
         {
@@ -177,15 +267,19 @@ void PathModel::GetModelData(int a_shapeSteps, int a_pathSteps, unsigned int** a
 
     const unsigned int shapeVertexCount = shapeVertices.size();
 
-    const unsigned int pathLines = m_pathIndexCount / 2;
-
     const glm::mat4 iden = glm::identity<glm::mat4>();
 
     std::vector<Vertex> dirtyVertices;
-    for (unsigned int i = 0; i < pathLines; ++i)
+    for (unsigned int i = 0; i < m_pathLineCount; ++i)
     {
-        const PathNode nodeA = m_pathNodes[m_pathIndices[i * 2 + 0U]];
-        const PathNode nodeB = m_pathNodes[m_pathIndices[i * 2 + 1U]];
+        const unsigned int indexA = m_pathLines[i].Index[0];
+        const unsigned int indexB = m_pathLines[i].Index[1];
+
+        const unsigned char clusterIndexA = m_pathLines[i].ClusterIndex[0];
+        const unsigned char clusterIndexB = m_pathLines[i].ClusterIndex[1];
+
+        const PathNode& nodeA = m_pathNodes[indexA].Nodes[clusterIndexA];
+        const PathNode& nodeB = m_pathNodes[indexB].Nodes[clusterIndexB];
 
         glm::vec3 forward = glm::vec3(0, 0, 1);
 
@@ -390,15 +484,26 @@ void PathModel::Serialize(tinyxml2::XMLDocument* a_doc, tinyxml2::XMLElement* a_
     rootElement->InsertEndChild(shapeElement);
     shapeElement->SetAttribute("Steps", m_shapeSteps);
 
-    tinyxml2::XMLElement* shapeIndicesElement = a_doc->NewElement("Indices");
-    shapeElement->InsertEndChild(shapeIndicesElement);
+    tinyxml2::XMLElement* shapeLinesElement = a_doc->NewElement("Lines");
+    shapeElement->InsertEndChild(shapeLinesElement);
 
-    for (unsigned int i = 0; i < m_shapeIndexCount; ++i)
+    for (unsigned int i = 0; i < m_shapeLineCount; ++i)
     {
-        tinyxml2::XMLElement* indexElement = a_doc->NewElement("Index");
-        shapeIndicesElement->InsertEndChild(indexElement);
+        const ShapeLine& line = m_shapeLines[i];
 
-        indexElement->SetText(m_shapeIndices[i]);
+        tinyxml2::XMLElement* lineElement = a_doc->NewElement("Line");
+        shapeLinesElement->InsertEndChild(lineElement);
+
+        for (int j = 0; j < 2; ++j)
+        {
+            tinyxml2::XMLElement* indexElement = a_doc->NewElement("Index");
+            lineElement->InsertEndChild(indexElement);
+            indexElement->SetText(line.Index[j]);
+
+            tinyxml2::XMLElement* clusterIndexElement = a_doc->NewElement("ClusterIndex");
+            lineElement->InsertEndChild(clusterIndexElement);
+            clusterIndexElement->SetText((unsigned int)line.ClusterIndex[j]);
+        }
     }
 
     tinyxml2::XMLElement* shapeNodesElement = a_doc->NewElement("Nodes");
@@ -406,28 +511,52 @@ void PathModel::Serialize(tinyxml2::XMLDocument* a_doc, tinyxml2::XMLElement* a_
 
     for (unsigned int i = 0; i < m_shapeNodeCount; ++i)
     {
-        const BezierCurveNode2 node = m_shapeNodes[i];
+        const ShapeNodeCluster& node = m_shapeNodes[i];
 
-        tinyxml2::XMLElement* shapeNodeElement = a_doc->NewElement("Node");
-        shapeNodesElement->InsertEndChild(shapeNodeElement);
+        const int size = node.Nodes.size();
+        if (size > 0)
+        {
+            tinyxml2::XMLElement* shapeNodeElement = a_doc->NewElement("Node");
+            XMLIO::WriteVec2(a_doc, shapeNodeElement, "Position", node.Nodes[0].GetPosition());
+            shapeNodesElement->InsertEndChild(shapeNodeElement);
 
-        XMLIO::WriteVec2(a_doc, shapeNodeElement, "Position", node.GetPosition());
-        XMLIO::WriteVec2(a_doc, shapeNodeElement, "HandlePosition", node.GetHandlePosition());
+            for (int j = 0; j < size; ++j)
+            {
+                const BezierCurveNode2& sNode = node.Nodes[j];
+
+                tinyxml2::XMLElement* clusterNodeElement = a_doc->NewElement("ClusterNode");
+                shapeNodeElement->InsertEndChild(clusterNodeElement);
+
+                XMLIO::WriteVec2(a_doc, clusterNodeElement, "HandlePosition", sNode.GetHandlePosition());
+            }
+
+        }
     }
 
     tinyxml2::XMLElement* pathElement = a_doc->NewElement("Path");
     rootElement->InsertEndChild(pathElement);
     pathElement->SetAttribute("Steps", m_pathSteps);
 
-    tinyxml2::XMLElement* pathIndicesElement = a_doc->NewElement("Indices");
-    pathElement->InsertEndChild(pathIndicesElement);
+    tinyxml2::XMLElement* pathLinesElement = a_doc->NewElement("Lines");
+    pathElement->InsertEndChild(pathLinesElement);
 
-    for (unsigned int i = 0; i < m_pathIndexCount; ++i)
+    for (unsigned int i = 0; i < m_pathLineCount; ++i)
     {
-        tinyxml2::XMLElement* indexElement = a_doc->NewElement("Index");
-        pathIndicesElement->InsertEndChild(indexElement);
+        const PathLine& line = m_pathLines[i];
 
-        indexElement->SetText(m_pathIndices[i]);
+        tinyxml2::XMLElement* lineElement = a_doc->NewElement("Line");
+        pathLinesElement->InsertEndChild(lineElement);
+
+        for (int j = 0; j < 2; ++j)
+        {
+            tinyxml2::XMLElement* indexElement = a_doc->NewElement("Index");
+            lineElement->InsertEndChild(indexElement);
+            indexElement->SetText(line.Index[j]);
+
+            tinyxml2::XMLElement* clusterIndexElement = a_doc->NewElement("ClusterIndex");
+            lineElement->InsertEndChild(clusterIndexElement);
+            clusterIndexElement->SetText((unsigned int)line.ClusterIndex[j]);
+        }
     }
 
     tinyxml2::XMLElement* pathNodesElement = a_doc->NewElement("Nodes");
@@ -435,20 +564,31 @@ void PathModel::Serialize(tinyxml2::XMLDocument* a_doc, tinyxml2::XMLElement* a_
 
     for (unsigned int i = 0; i < m_pathNodeCount; ++i)
     {
-        const PathNode node = m_pathNodes[i];
-
-        tinyxml2::XMLElement* pathNodeElement = a_doc->NewElement("Node");
-        pathNodesElement->InsertEndChild(pathNodeElement);
-
-        XMLIO::WriteVec3(a_doc, pathNodeElement, "Position", node.Node.GetPosition());
-        XMLIO::WriteVec3(a_doc, pathNodeElement, "HandlePostion", node.Node.GetHandlePosition());
+        const PathNodeCluster& node = m_pathNodes[i];
         
-        tinyxml2::XMLElement* rotationElement = a_doc->NewElement("Rotation");
-        pathNodeElement->InsertEndChild(rotationElement);
+        const int size = node.Nodes.size();
+        if (size > 0)
+        {
+            tinyxml2::XMLElement* pathNodeElement = a_doc->NewElement("Node");
+            pathNodesElement->InsertEndChild(pathNodeElement);
 
-        rotationElement->SetText(node.Rotation);
+            XMLIO::WriteVec3(a_doc, pathNodeElement, "Position", node.Nodes[0].Node.GetPosition());
+            for (int j = 0; j < size; ++j)
+            {
+                const PathNode& pNode = node.Nodes[j];
 
-        XMLIO::WriteVec2(a_doc, pathNodeElement, "Scale", node.Scale, glm::vec2(1));
+                tinyxml2::XMLElement* clusterNodeElement = a_doc->NewElement("ClusterNode");
+                pathNodeElement->InsertEndChild(clusterNodeElement);
+
+                XMLIO::WriteVec3(a_doc, clusterNodeElement, "HandlePosition", pNode.Node.GetHandlePosition());
+
+                tinyxml2::XMLElement* rotationElement = a_doc->NewElement("Rotation");
+                clusterNodeElement->InsertEndChild(rotationElement);
+                rotationElement->SetText(pNode.Rotation);
+
+                XMLIO::WriteVec2(a_doc, clusterNodeElement, "Scale", pNode.Scale, glm::vec2(1.0f));
+            }
+        }   
     }
 }
 void PathModel::ParseData(const tinyxml2::XMLElement* a_element)
@@ -465,51 +605,79 @@ void PathModel::ParseData(const tinyxml2::XMLElement* a_element)
             {
                 const char* sStr = sIter->Value();
                 
-                if (strcmp(sStr, "Indices") == 0)
+                if (strcmp(sStr, "Lines") == 0)
                 {
-                    std::vector<unsigned int> indices;
+                    std::vector<ShapeLine> lines;
 
-                    for (const tinyxml2::XMLElement* iIter = sIter->FirstChildElement(); iIter != nullptr; iIter = iIter->NextSiblingElement())
+                    for (const tinyxml2::XMLElement* lIter = sIter->FirstChildElement(); lIter != nullptr; lIter = lIter->NextSiblingElement())
                     {
-                        const char* iStr = iIter->Value();
+                        const char* lStr = lIter->Value();
 
-                        if (strcmp(iStr, "Index") == 0)
+                        if (strcmp(lStr, "Line") == 0)
                         {
-                            indices.emplace_back(iIter->UnsignedText());
+                            ShapeLine line;
+
+                            int index = 0;
+                            int cIndex = 0;
+
+                            for (const tinyxml2::XMLElement* iIter = lIter->FirstChildElement(); iIter != nullptr; iIter = iIter->NextSiblingElement())
+                            {
+                                const char* iStr = iIter->Value();
+                                if (strcmp(iStr, "Index") == 0)
+                                {
+                                    line.Index[index++] = iIter->UnsignedText();
+                                }
+                                else if (strcmp(iStr, "ClusterIndex") == 0)
+                                {
+                                    line.ClusterIndex[cIndex++] = (unsigned char)iIter->UnsignedText();
+                                }
+                                else
+                                {
+                                    printf("PathModel::ParseData: Invalid Element: ");
+                                    printf(iStr);
+                                    printf("\n");
+                                }
+                            }
+
+                            lines.emplace_back(line);
                         }
                         else
                         {
                             printf("PathModel::ParseData: Invalid Element: ");
-                            printf(iStr);
+                            printf(lStr);
                             printf("\n");
                         }
                     }
 
-                    m_shapeIndexCount = indices.size();
+                    m_shapeLineCount = lines.size();
 
-                    if (m_shapeIndices != nullptr)
+                    if (m_shapeLines != nullptr)
                     {
-                        delete[] m_shapeIndices;
-                        m_shapeIndices = nullptr;
+                        delete[] m_shapeLines;
+                        m_shapeLines = nullptr;
                     }
 
-                    m_shapeIndices = new unsigned int[m_shapeIndexCount];
-
-                    for (unsigned int i = 0; i < m_shapeIndexCount; ++i)
+                    if (m_shapeLineCount > 0)
                     {
-                        m_shapeIndices[i] = indices[i];
+                        m_shapeLines = new ShapeLine[m_shapeLineCount];
+
+                        for (unsigned int i = 0; i < m_shapeLineCount; ++i)
+                        {
+                            m_shapeLines[i] = lines[i];
+                        }
                     }
                 }
                 else if (strcmp(sStr, "Nodes") == 0)
                 {
-                    std::vector<BezierCurveNode2> nodes;
+                    std::vector<ShapeNodeCluster> nodes;
 
                     for (const tinyxml2::XMLElement* nIter = sIter->FirstChildElement(); nIter != nullptr; nIter = nIter->NextSiblingElement())
                     {
                         const char* nStr = nIter->Value();
                         if (strcmp(nStr, "Node") == 0)
                         {
-                            BezierCurveNode2 node;
+                            glm::vec2 pos = glm::vec2(0.0f);
+                            ShapeNodeCluster c;
 
                             for (const tinyxml2::XMLElement* niIter = nIter->FirstChildElement(); niIter != nullptr; niIter = niIter->NextSiblingElement())
                             {
@@ -517,11 +685,31 @@ void PathModel::ParseData(const tinyxml2::XMLElement* a_element)
 
                                 if (strcmp(niStr, "Position") == 0)
                                 {
-                                    node.SetPosition(XMLIO::GetVec2(niIter));
+                                    XMLIO::ReadVec2(niIter, &pos);
                                 }
-                                else if (strcmp(niStr, "HandlePosition") == 0)
+                                else if (strcmp(niStr, "ClusterNode") == 0)
                                 {
-                                    node.SetHandlePosition(XMLIO::GetVec2(niIter));
+                                    BezierCurveNode2 n;
+
+                                    n.SetPosition(glm::vec2(std::numeric_limits<float>::infinity()));
+
+                                    for (const tinyxml2::XMLElement* cIter = niIter->FirstChildElement(); cIter != nullptr; cIter = cIter->NextSiblingElement())
+                                    {
+                                        const char* cStr = cIter->Value();
+
+                                        if (strcmp(cStr, "HandlePosition") == 0)
+                                        {
+                                            n.SetHandlePosition(XMLIO::GetVec2(cIter));
+                                        }
+                                        else
+                                        {
+                                            printf("PathModel::ParseData: Invalid Element: ");
+                                            printf(cStr);
+                                            printf("\n");
+                                        }
+                                    }
+
+                                    c.Nodes.emplace_back(n);
                                 }
                                 else
                                 {
@@ -531,7 +719,15 @@ void PathModel::ParseData(const tinyxml2::XMLElement* a_element)
                                 }
                             }
 
-                            nodes.emplace_back(node);
+                            for (auto iter = c.Nodes.begin(); iter != c.Nodes.end(); ++iter)
+                            {
+                                if (iter->GetPosition().x == std::numeric_limits<float>::infinity())
+                                {
+                                    iter->SetPosition(pos);
+                                }
+                            }
+
+                            nodes.emplace_back(c);
                         }
                         else
                         {
@@ -549,11 +745,14 @@ void PathModel::ParseData(const tinyxml2::XMLElement* a_element)
                         m_shapeNodes = nullptr;
                     }
 
-                    m_shapeNodes = new BezierCurveNode2[m_shapeNodeCount];
-
-                    for (unsigned int i = 0; i < m_shapeNodeCount; ++i)
+                    if (m_shapeLineCount > 0)
                     {
-                        m_shapeNodes[i] = nodes[i];
+                        m_shapeNodes = new ShapeNodeCluster[m_shapeNodeCount];
+
+                        for (unsigned int i = 0; i < m_shapeNodeCount; ++i)
+                        {
+                            m_shapeNodes[i] = nodes[i];
+                        }
                     }
                 }   
                 else
@@ -572,44 +771,72 @@ void PathModel::ParseData(const tinyxml2::XMLElement* a_element)
             {
                 const char* pStr = pIter->Value();
 
-                if (strcmp(pStr, "Indices") == 0)
+                if (strcmp(pStr, "Lines") == 0)
                 {
-                    std::vector<unsigned int> indices;
+                    std::vector<PathLine> lines;
 
-                    for (const tinyxml2::XMLElement* iIter = pIter->FirstChildElement(); iIter != nullptr; iIter = iIter->NextSiblingElement())
+                    for (const tinyxml2::XMLElement* lIter = pIter->FirstChildElement(); lIter != nullptr; lIter = lIter->NextSiblingElement())
                     {
-                        const char* iStr = iIter->Value();
+                        const char* lStr = lIter->Value();
 
-                        if (strcmp(iStr, "Index") == 0)
+                        if (strcmp(lStr, "Line") == 0)
                         {
-                            indices.emplace_back(iIter->UnsignedText());
+                            PathLine line;
+
+                            int index = 0;
+                            int cIndex = 0;
+
+                            for (const tinyxml2::XMLElement* iIter = lIter->FirstChildElement(); iIter != nullptr; iIter = iIter->NextSiblingElement())
+                            {
+                                const char* iStr = iIter->Value();
+
+                                if (strcmp(iStr, "Index") == 0)
+                                {
+                                    line.Index[index++] = iIter->UnsignedText();
+                                }
+                                else if (strcmp(iStr, "ClusterIndex") == 0)
+                                {
+                                    line.ClusterIndex[cIndex++] = (unsigned char)iIter->UnsignedText();
+                                }
+                                else
+                                {
+                                    printf("PathModel::ParseData: Invalid Element: ");
+                                    printf(iStr);
+                                    printf("\n");
+                                }
+                            }
+
+                            lines.emplace_back(line);
                         }
                         else
                         {
                             printf("PathModel::ParseData: Invalid Element: ");
-                            printf(iStr);
+                            printf(lStr);
                             printf("\n");
                         }
                     }
 
-                    m_pathIndexCount = indices.size();
+                    m_pathLineCount = lines.size();
 
-                    if (m_pathIndices != nullptr)
+                    if (m_pathLines != nullptr)
                     {
-                        delete[] m_pathIndices;
-                        m_pathIndices = nullptr;
+                        delete[] m_pathLines;
+                        m_pathLines = nullptr;
                     }
 
-                    m_pathIndices = new unsigned int[m_pathIndexCount];
-
-                    for (unsigned int i = 0; i < m_pathIndexCount; ++i)
+                    if (m_pathLineCount > 0)
                     {
-                        m_pathIndices[i] = indices[i];
+                        m_pathLines = new PathLine[m_pathLineCount];
+
+                        for (unsigned int i = 0; i < m_pathLineCount; ++i)
+                        {
+                            m_pathLines[i] = lines[i];
+                        }
                     }
                 }
                 else if (strcmp(pStr, "Nodes") == 0)
                 {
-                    std::vector<PathNode> nodes;
+                    std::vector<PathNodeCluster> nodes;
 
                     for (const tinyxml2::XMLElement* nIter = pIter->FirstChildElement(); nIter != nullptr; nIter = nIter->NextSiblingElement())
                     {
@@ -617,7 +844,8 @@ void PathModel::ParseData(const tinyxml2::XMLElement* a_element)
 
                         if (strcmp(nStr, "Node") == 0)
                         {
-                            PathNode node;
+                            PathNodeCluster c;
+                            glm::vec3 pos = glm::vec3(0.0f);
 
                             for (const tinyxml2::XMLElement* niIter = nIter->FirstChildElement(); niIter != nullptr; niIter = niIter->NextSiblingElement())
                             {
@@ -625,19 +853,39 @@ void PathModel::ParseData(const tinyxml2::XMLElement* a_element)
 
                                 if (strcmp(niStr, "Position") == 0)
                                 {
-                                    node.Node.SetPosition(XMLIO::GetVec3(niIter));
+                                    XMLIO::ReadVec3(niIter, &pos);
                                 }
-                                else if (strcmp(niStr, "HandlePostion") == 0)
+                                else if (strcmp(niStr, "ClusterNode") == 0)
                                 {
-                                    node.Node.SetHandlePosition(XMLIO::GetVec3(niIter));
-                                }
-                                else if (strcmp(niStr, "Rotation") == 0)
-                                {
-                                    node.Rotation = niIter->FloatText();
-                                }
-                                else if (strcmp(niStr, "Scale") == 0)
-                                {
-                                    node.Scale = XMLIO::GetVec2(niIter, glm::vec2(1));
+                                    PathNode node;
+
+                                    node.Node.SetPosition(glm::vec3(std::numeric_limits<float>::infinity()));
+
+                                    for (const tinyxml2::XMLElement* cIter = niIter->FirstChildElement(); cIter != nullptr; cIter = cIter->NextSiblingElement())
+                                    {
+                                        const char* cStr = cIter->Value();
+
+                                        if (strcmp(cStr, "HandlePosition") == 0)
+                                        {
+                                            node.Node.SetHandlePosition(XMLIO::GetVec3(cIter));
+                                        }
+                                        else if (strcmp(cStr, "Rotation") == 0)
+                                        {
+                                            node.Rotation = cIter->FloatText();   
+                                        }
+                                        else if (strcmp(cStr, "Scale") == 0)
+                                        {
+                                            node.Scale = XMLIO::GetVec2(cIter, glm::vec2(1.0f));
+                                        }
+                                        else
+                                        {
+                                            printf("PathModel::ParseData: Invalid Element: ");
+                                            printf(cStr);
+                                            printf("\n");
+                                        }
+                                    }
+
+                                    c.Nodes.emplace_back(node);
                                 }
                                 else
                                 {
@@ -647,7 +895,15 @@ void PathModel::ParseData(const tinyxml2::XMLElement* a_element)
                                 }
                             }
 
-                            nodes.emplace_back(node);
+                            for (auto iter = c.Nodes.begin(); iter != c.Nodes.end(); ++iter)
+                            {
+                                if (iter->Node.GetPosition().x == std::numeric_limits<float>::infinity())
+                                {
+                                    iter->Node.SetPosition(pos);
+                                }
+                            }
+
+                            nodes.emplace_back(c);
                         }
                         else
                         {
@@ -665,11 +921,14 @@ void PathModel::ParseData(const tinyxml2::XMLElement* a_element)
                         m_pathNodes = nullptr;
                     }
 
-                    m_pathNodes = new PathNode[m_pathNodeCount];
-
-                    for (unsigned int i = 0; i < m_pathNodeCount; ++i)
+                    if (m_pathNodeCount > 0)
                     {
-                        m_pathNodes[i] = nodes[i];
+                        m_pathNodes = new PathNodeCluster[m_pathNodeCount];
+
+                        for (unsigned int i = 0; i < m_pathNodeCount; ++i)
+                        {
+                            m_pathNodes[i] = nodes[i];
+                        }
                     }
                 }
                 else

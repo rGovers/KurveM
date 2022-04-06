@@ -16,7 +16,7 @@ RotatePathNodeAction::RotatePathNodeAction(Workspace* a_workspace, const unsigne
     m_startPos = a_startPos;
     m_endPos = m_startPos;
 
-    const PathNode* nodes = m_pathModel->GetNodes();
+    const PathNodeCluster* nodes = m_pathModel->GetPathNodes();
 
     m_nodeIndices = new unsigned int[m_nodeCount];
     m_startRotation = new float[m_nodeCount];
@@ -25,7 +25,7 @@ RotatePathNodeAction::RotatePathNodeAction(Workspace* a_workspace, const unsigne
     {
         const unsigned int index = a_indices[i];
         m_nodeIndices[i] = index;
-        m_startRotation[i] = nodes[index].Rotation;
+        m_startRotation[i] = nodes[index].Nodes[0].Rotation;
     }
 }
 RotatePathNodeAction::~RotatePathNodeAction()
@@ -57,11 +57,16 @@ bool RotatePathNodeAction::Execute()
         const glm::vec3 scaledAxis = inv * len;
         const float scale = glm::dot(scaledAxis, endAxis) * 10;
 
-        PathNode* nodes = m_pathModel->GetNodes();
+        PathNodeCluster* nodes = m_pathModel->GetPathNodes();
 
         for (unsigned int i = 0; i < m_nodeCount; ++i)
         {
-            nodes[m_nodeIndices[i]].Rotation = m_startRotation[i] + scale;
+            std::vector<PathNode>& cNodes = nodes[m_nodeIndices[i]].Nodes;
+
+            for (auto iter = cNodes.begin(); iter != cNodes.end(); ++iter)
+            {
+                iter->Rotation = m_startRotation[i] + scale;
+            }
         }
     }
 
@@ -71,11 +76,16 @@ bool RotatePathNodeAction::Execute()
 }
 bool RotatePathNodeAction::Revert()
 {
-    PathNode* nodes = m_pathModel->GetNodes();
+    PathNodeCluster* nodes = m_pathModel->GetPathNodes();
 
     for (unsigned int i = 0; i < m_nodeCount; ++i)
     {
-        nodes[m_nodeIndices[i]].Rotation = m_startRotation[i];
+        std::vector<PathNode>& cNodes = nodes[m_nodeIndices[i]].Nodes;
+
+        for (auto iter = cNodes.begin(); iter != cNodes.end(); ++iter)
+        {
+            iter->Rotation = m_startRotation[i];
+        }
     }
 
     m_workspace->PushLongTask(new TriangulatePathLongTask(m_pathModel));

@@ -48,8 +48,8 @@ struct NodeGroup
     NodeGroup() {}
     NodeGroup(const NodeGroup& a_other)
     {
-        FaceCount = a_other.FaceCount;
         Node = a_other.Node;
+        FaceCount = 0;
     }
     NodeGroup(const BezierCurveNode3& a_node)
     {

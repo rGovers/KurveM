@@ -4,7 +4,7 @@
 #include <glm/gtx/quaternion.hpp>
 
 #include "Actions/MoveShapeNodeAction.h"
-#include "Actions/MoveShapeHandleAction.h"
+#include "Actions/MoveShapeNodeHandleAction.h"
 #include "Camera.h"
 #include "ColorTheme.h"
 #include "Datastore.h"
@@ -80,20 +80,24 @@ e_ActionType ShapeEditor::GetCurrentAction() const
 
     return ActionType_Null;
 }
-void ShapeEditor::DrawSelection(const BezierCurveNode2& a_node, unsigned int a_index) const
+void ShapeEditor::DrawSelection(const ShapeNodeCluster& a_node, unsigned int a_index) const
 {
     constexpr glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
 
-    const glm::vec2 pos = a_node.GetPosition();
+    const glm::vec2 pos = a_node.Nodes[0].GetPosition();
     for (auto iter = m_selectedIndices.begin(); iter != m_selectedIndices.end(); ++iter)
     {
         if (*iter == a_index)
-        {
-            const glm::vec2 handle = a_node.GetHandlePosition();
+        {   
+            const std::vector<BezierCurveNode2>& cNodes = a_node.Nodes;
+            for (auto cIter = cNodes.begin(); cIter != cNodes.end(); ++cIter)
+            {
+                const glm::vec2 handle = cIter->GetHandlePosition();
 
-            Gizmos::DrawLine(glm::vec3(pos.x, 0.0f, pos.y), glm::vec3(handle.x, 0.0f, handle.y), 0.01f, ColorTheme::Active);
-            Gizmos::DrawCircleFilled(glm::vec3(handle.x, 0.0f, handle.y), up, 0.05f, 10, ColorTheme::Active);
-
+                Gizmos::DrawLine(glm::vec3(pos.x, 0.0f, pos.y), glm::vec3(handle.x, 0.0f, handle.y), 0.01f, ColorTheme::Active);
+                Gizmos::DrawCircleFilled(glm::vec3(handle.x, 0.0f, handle.y), up, 0.05f, 10, ColorTheme::Active);
+            }
+            
             return;
         }
     }
@@ -133,21 +137,27 @@ bool ShapeEditor::MoveNode(const glm::mat4& a_viewProj, const glm::vec2& a_pos, 
 
     return false;
 }
-bool ShapeEditor::MoveNodeHandle(const glm::mat4& a_viewProj, const BezierCurveNode2& a_node, unsigned int a_index, const glm::vec2& a_cursorPos, PathModel* a_pathModel)
+bool ShapeEditor::MoveNodeHandle(const glm::mat4& a_viewProj, const ShapeNodeCluster& a_node, unsigned int a_index, const glm::vec2& a_cursorPos, PathModel* a_pathModel)
 {
-    if (SelectionControl::NodeHandleInPoint(a_viewProj, a_cursorPos, 0.05f, a_node))
+    const std::vector<BezierCurveNode2>& nodes = a_node.Nodes;
+    for (auto iter = nodes.begin(); iter != nodes.end(); ++iter)
     {
-        m_currentAction = new MoveShapeNodeHandleAction(m_workspace, a_index, a_pathModel, a_cursorPos);
-        if (!m_workspace->PushAction(m_currentAction))
+        if (SelectionControl::NodeHandleInPoint(a_viewProj, a_cursorPos, 0.05f, *iter))
         {
-            printf("Error moving shape handle node \n");
+            m_currentAction = new MoveShapeNodeHandleAction(m_workspace, a_index, iter - nodes.begin(), a_pathModel, a_cursorPos);
+            if (!m_workspace->PushAction(m_currentAction))
+            {
+                printf("Error moving shape handle node \n");
 
-            delete m_currentAction;
-            m_currentAction = nullptr;
+                delete m_currentAction;
+                m_currentAction = nullptr;
+            }
+
+            return true;
         }
-
-        return true;
     }
+
+    
 
     return false;
 }
@@ -265,16 +275,16 @@ void ShapeEditor::Update(double a_delta, const glm::vec2& a_winPos, const glm::v
                 PathModel* model = object->GetPathModel();
                 if (model != nullptr)
                 {
-                    const BezierCurveNode2* nodes = model->GetShapeNodes();
+                    const ShapeNodeCluster* nodes = model->GetShapeNodes();
                     const unsigned int indexCount = (unsigned int)m_selectedIndices.size();
 
                     if (indexCount > 0)
                     {
-                        glm::vec2 pos = glm::vec2(0);
+                        glm::vec2 pos = glm::vec2(0.0f);
 
                         for (auto iter = m_selectedIndices.begin(); iter != m_selectedIndices.end(); ++iter)
                         {
-                            pos += nodes[*iter].GetPosition();
+                            pos += nodes[*iter].Nodes[0].GetPosition();
                         }
 
                         pos /= indexCount;
@@ -331,7 +341,7 @@ void ShapeEditor::Update(double a_delta, const glm::vec2& a_winPos, const glm::v
         PathModel* model = object->GetPathModel();
         if (model != nullptr)
         {
-            const BezierCurveNode2* nodes = model->GetShapeNodes();
+            const ShapeNodeCluster* nodes = model->GetShapeNodes();
             const unsigned int nodeCount = model->GetShapeNodeCount();
 
             if (ImGui::IsMouseReleased(ImGuiMouseButton_Left) && m_mouseState & 0b1 << 0)
@@ -355,7 +365,7 @@ void ShapeEditor::Update(double a_delta, const glm::vec2& a_winPos, const glm::v
 
                     for (unsigned int i = 0; i < nodeCount; ++i)
                     {
-                        if (SelectionControl::NodeInSelection(viewProj, min, max, glm::identity<glm::mat4>(), nodes[i]))
+                        if (SelectionControl::NodeInSelection(viewProj, min, max, glm::identity<glm::mat4>(), nodes[i].Nodes[0]))
                         {
                             m_selectedIndices.emplace_back(i);
                         }
@@ -370,20 +380,13 @@ void ShapeEditor::Update(double a_delta, const glm::vec2& a_winPos, const glm::v
 
             const int shapeSteps = model->GetShapeSteps();
 
-            const unsigned int* indices = model->GetShapeIndices();
-            const unsigned int indexCount = model->GetShapeIndexCount();
-            const unsigned int lineCount = indexCount / 2;
+            const ShapeLine* lines = model->GetShapeLines();
+            const unsigned int lineCount = model->GetShapeLineCount();
 
             for (unsigned int i = 0; i < lineCount; ++i)
             {
-                const unsigned int indexA = indices[i * 2 + 0U];
-                const unsigned int indexB = indices[i * 2 + 1U];
-
-                const BezierCurveNode2 nodeA = nodes[indexA];
-                const BezierCurveNode2 nodeB = nodes[indexB];
-
-                DrawSelection(nodeA, indexA);
-                DrawSelection(nodeB, indexB);
+                const BezierCurveNode2& nodeA = nodes[lines[i].Index[0]].Nodes[lines[i].ClusterIndex[0]];
+                const BezierCurveNode2& nodeB = nodes[lines[i].Index[1]].Nodes[lines[i].ClusterIndex[1]];
 
                 for (int j = 0; j < shapeSteps; ++j)
                 {
@@ -394,6 +397,11 @@ void ShapeEditor::Update(double a_delta, const glm::vec2& a_winPos, const glm::v
                 }
             }
 
+            for (unsigned int i = 0; i < nodeCount; ++i)
+            {
+                DrawSelection(nodes[i], i);
+            }
+
             const unsigned int selectedCount = (unsigned int)m_selectedIndices.size();
 
             if (selectedCount > 0)
@@ -402,7 +410,7 @@ void ShapeEditor::Update(double a_delta, const glm::vec2& a_winPos, const glm::v
 
                 for (auto iter = m_selectedIndices.begin(); iter != m_selectedIndices.end(); ++iter)
                 {
-                    pos += nodes[*iter].GetPosition();
+                    pos += nodes[*iter].Nodes[0].GetPosition();
                 }
 
                 pos /= selectedCount;

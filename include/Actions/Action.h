@@ -12,6 +12,7 @@ enum e_ActionType
     ActionType_DeleteObject,
     ActionType_ExtrudeArmatureNode,
     ActionType_ExtrudeCurveNode,
+    ActionType_ExtrudePathNode,
     ActionType_FlipFace,
     ActionType_InsertFace,
     ActionType_MoveCurveNode,

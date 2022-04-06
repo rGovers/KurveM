@@ -138,6 +138,7 @@ Workspace::Workspace()
     m_taskThread = std::thread(RunTasks, this);
 
     m_editor = nullptr;
+    m_shapeEditor = nullptr;
 
     TransformVisualizer::Init();
 
@@ -258,6 +259,10 @@ void Workspace::New()
     if (m_editor != nullptr)
     {
         m_editor->Init();
+    }
+    if (m_shapeEditor != nullptr)
+    {
+        m_shapeEditor->Init();
     }
 
     m_block = false;

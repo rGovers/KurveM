@@ -1,5 +1,6 @@
 #include "Windows/ToolbarWindow.h"
 
+#include "EditorControls/Editor.h"
 #include "imgui.h"
 #include "ImGuiExt.h"
 

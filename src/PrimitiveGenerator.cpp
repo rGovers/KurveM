@@ -47,41 +47,41 @@ void GetData(const std::vector<Node3Cluster>& a_nodes, const std::vector<CurveFa
         } 
     }
 }
-void GetData(const std::vector<PathNode>& a_pathNodes, const std::vector<unsigned int>& a_pathIndices, 
-    const std::vector<BezierCurveNode2>& a_shapeNodes, const std::vector<unsigned int>& a_shapeIndices,
-    PathNode** a_nodePtr, unsigned int* a_nodeCount, unsigned int** a_nodeIndicesPtr, unsigned int* a_nodeIndexCount, 
-    BezierCurveNode2** a_shapeNodePtr, unsigned int* a_shapeNodeCount, unsigned int** a_shapeIndicesPtr, unsigned int* a_shapeIndexCount)
+void GetData(const std::vector<PathNodeCluster>& a_pathNodes, const std::vector<PathLine>& a_pathLines, 
+    const std::vector<ShapeNodeCluster>& a_shapeNodes, const std::vector<ShapeLine>& a_shapeLines,
+    PathNodeCluster** a_pathNodePtr, unsigned int* a_pathNodeCount, PathLine** a_pathLinesPtr, unsigned int* a_pathLineCount, 
+    ShapeNodeCluster** a_shapeNodePtr, unsigned int* a_shapeNodeCount, ShapeLine** a_shapeLinesPtr, unsigned int* a_shapeLineCount)
 {
-    *a_nodeCount = a_pathNodes.size();
-    *a_nodePtr = new PathNode[*a_nodeCount];
+    *a_pathNodeCount = a_pathNodes.size();
+    *a_pathNodePtr = new PathNodeCluster[*a_pathNodeCount];
 
-    for (unsigned int i = 0; i < *a_nodeCount; ++i)
+    for (unsigned int i = 0; i < *a_pathNodeCount; ++i)
     {
-        (*a_nodePtr)[i] = a_pathNodes[i];
+        (*a_pathNodePtr)[i] = a_pathNodes[i];
     }
 
-    *a_nodeIndexCount = a_pathIndices.size();
-    *a_nodeIndicesPtr = new unsigned int[*a_nodeIndexCount];
+    *a_pathLineCount = a_pathLines.size();
+    *a_pathLinesPtr = new PathLine[*a_pathLineCount];
 
-    for (unsigned int i = 0; i < *a_nodeIndexCount; ++i)
+    for (unsigned int i = 0; i < *a_pathLineCount; ++i)
     {
-        (*a_nodeIndicesPtr)[i] = a_pathIndices[i];
+        (*a_pathLinesPtr)[i] = a_pathLines[i];
     }
 
     *a_shapeNodeCount = a_shapeNodes.size();
-    *a_shapeNodePtr = new BezierCurveNode2[*a_shapeNodeCount];
+    *a_shapeNodePtr = new ShapeNodeCluster[*a_shapeNodeCount];
 
     for (unsigned int i = 0; i < *a_shapeNodeCount; ++i)
     {
         (*a_shapeNodePtr)[i] = a_shapeNodes[i];
     }
 
-    *a_shapeIndexCount = a_shapeIndices.size();
-    *a_shapeIndicesPtr = new unsigned int[*a_shapeIndexCount];
+    *a_shapeLineCount = a_shapeLines.size();
+    *a_shapeLinesPtr = new ShapeLine[*a_shapeLineCount];
 
-    for (unsigned int i = 0; i < *a_shapeIndexCount; ++i)
+    for (unsigned int i = 0; i < *a_shapeLineCount; ++i)
     {
-        (*a_shapeIndicesPtr)[i] = a_shapeIndices[i];
+        (*a_shapeLinesPtr)[i] = a_shapeLines[i];
     }
 }
 void GetData(const std::vector<Vertex>& a_vertices, const std::vector<unsigned int> a_indices, Vertex** a_verticesPtr, unsigned int* a_vertexCount, unsigned int** a_indicesPtr, unsigned int* a_indexCount)
@@ -948,154 +948,215 @@ void PrimitiveGenerator::CreateCurveCube(Node3Cluster** a_nodePtr, unsigned int*
     GetData(nodes, faces, a_nodePtr, a_nodeCount, a_facePtr, a_faceCount);
 }
 
-void PrimitiveGenerator::CreatePathCylinder(PathNode** a_nodePtr, unsigned int* a_nodeCount, unsigned int** a_nodeIndicesPtr, unsigned int* a_nodeIndexCount, 
-    BezierCurveNode2** a_shapeNodePtr, unsigned int* a_shapeNodeCount, unsigned int** a_shapeIndicesPtr, unsigned int* a_shapeIndexCount)
+void PrimitiveGenerator::CreatePathCylinder(PathNodeCluster** a_pathNodesPtr, unsigned int* a_pathNodeCount, PathLine** a_pathLinesPtr, unsigned int* a_pathLineCount, 
+    ShapeNodeCluster** a_shapeNodePtr, unsigned int* a_shapeNodeCount, ShapeLine** a_shapeLinesPtr, unsigned int* a_shapeLineCount)
 {
-    std::vector<BezierCurveNode2> shapeNodes;
-    std::vector<unsigned int> shapeIndices;
+    constexpr glm::vec2 vec2one = glm::vec2(1.0f);
 
-    std::vector<PathNode> pathNodes;
-    std::vector<unsigned int> pathIndices;
+    *a_pathNodesPtr = new PathNodeCluster[2];
+    (*a_pathNodesPtr)[0] = PathNode(vec2one, 0.0f, BezierCurveNode3(glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)));
+    (*a_pathNodesPtr)[1] = PathNode(vec2one, 0.0f, BezierCurveNode3(glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f)));
 
-    shapeNodes.emplace_back(BezierCurveNode2(glm::vec2(1.0f, 0.0f), glm::vec2(1.0f, 0.5f)));
-    shapeNodes.emplace_back(BezierCurveNode2(glm::vec2(1.0f, 0.0f), glm::vec2(1.0f, -0.5f)));
+    *a_pathNodeCount = 2;
+
+    *a_pathLinesPtr = new PathLine[1];
+    (*a_pathLinesPtr)[0] = PathLine(0, 1, 0, 0);
+
+    *a_pathLineCount = 1;
+
+    *a_shapeNodePtr = new ShapeNodeCluster[4];
+
+    ShapeNodeCluster rNC;
+    rNC.Nodes.emplace_back(BezierCurveNode2(glm::vec2(1.0f, 0.0f), glm::vec2(1.0f, 0.5f)));
+    rNC.Nodes.emplace_back(BezierCurveNode2(glm::vec2(1.0f, 0.0f), glm::vec2(1.0f, -0.5f)));
+
+    ShapeNodeCluster tNC;
+    tNC.Nodes.emplace_back(BezierCurveNode2(glm::vec2(0.0f, 1.0f), glm::vec2(0.5f, 1.0f)));
+    tNC.Nodes.emplace_back(BezierCurveNode2(glm::vec2(0.0f, 1.0f), glm::vec2(-0.5f, 1.0f)));
+
+    ShapeNodeCluster lNC;
+    lNC.Nodes.emplace_back(BezierCurveNode2(glm::vec2(-1.0f, 0.0f), glm::vec2(-1.0f, 0.5f)));
+    lNC.Nodes.emplace_back(BezierCurveNode2(glm::vec2(-1.0f, 0.0f), glm::vec2(-1.0f, -0.5f)));
+
+    ShapeNodeCluster bNC;
+    bNC.Nodes.emplace_back(BezierCurveNode2(glm::vec2(0.0f, -1.0f), glm::vec2(0.5f, -1.0f)));
+    bNC.Nodes.emplace_back(BezierCurveNode2(glm::vec2(0.0f, -1.0f), glm::vec2(-0.5f, -1.0f)));
+
+    (*a_shapeNodePtr)[0] = rNC;
+    (*a_shapeNodePtr)[1] = tNC;
+    (*a_shapeNodePtr)[2] = lNC;
+    (*a_shapeNodePtr)[3] = bNC;
+
+    *a_shapeNodeCount = 4;
+
+    *a_shapeLinesPtr = new ShapeLine[4];
+    (*a_shapeLinesPtr)[0] = ShapeLine(0, 1, 0, 0);
+    (*a_shapeLinesPtr)[1] = ShapeLine(1, 2, 1, 0);
+    (*a_shapeLinesPtr)[2] = ShapeLine(2, 3, 1, 1);
+    (*a_shapeLinesPtr)[3] = ShapeLine(3, 0, 0, 1);
+
+    *a_shapeLineCount = 4;
+}
+void PrimitiveGenerator::CreatePathCone(PathNodeCluster** a_pathNodesPtr, unsigned int* a_pathNodeCount, PathLine** a_pathLinesPtr, unsigned int* a_pathLineCount, 
+    ShapeNodeCluster** a_shapeNodePtr, unsigned int* a_shapeNodeCount, ShapeLine** a_shapeLinesPtr, unsigned int* a_shapeLineCount)
+{
+    constexpr glm::vec2 vec2zero = glm::vec2(0.0f);
+    constexpr glm::vec2 vec2one = glm::vec2(1.0f);
+
+    *a_pathNodesPtr = new PathNodeCluster[2];
+    (*a_pathNodesPtr)[0] = PathNode(vec2one, 0.0f, BezierCurveNode3(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f)));
+    (*a_pathNodesPtr)[1] = PathNode(vec2zero, 0.0f, BezierCurveNode3(glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)));
+
+    *a_pathNodeCount = 2;
+
+    *a_pathLinesPtr = new PathLine[1];
+    (*a_pathLinesPtr)[0] = PathLine(0, 1, 0, 0);
+
+    *a_pathLineCount = 1;
+
+    *a_shapeNodePtr = new ShapeNodeCluster[4];
+
+    ShapeNodeCluster rNC;
+    rNC.Nodes.emplace_back(BezierCurveNode2(glm::vec2(1.0f, 0.0f), glm::vec2(1.0f, 0.5f)));
+    rNC.Nodes.emplace_back(BezierCurveNode2(glm::vec2(1.0f, 0.0f), glm::vec2(1.0f, -0.5f)));
+
+    ShapeNodeCluster tNC;
+    tNC.Nodes.emplace_back(BezierCurveNode2(glm::vec2(0.0f, 1.0f), glm::vec2(0.5f, 1.0f)));
+    tNC.Nodes.emplace_back(BezierCurveNode2(glm::vec2(0.0f, 1.0f), glm::vec2(-0.5f, 1.0f)));
+
+    ShapeNodeCluster lNC;
+    lNC.Nodes.emplace_back(BezierCurveNode2(glm::vec2(-1.0f, 0.0f), glm::vec2(-1.0f, 0.5f)));
+    lNC.Nodes.emplace_back(BezierCurveNode2(glm::vec2(-1.0f, 0.0f), glm::vec2(-1.0f, -0.5f)));
+
+    ShapeNodeCluster bNC;
+    bNC.Nodes.emplace_back(BezierCurveNode2(glm::vec2(0.0f, -1.0f), glm::vec2(0.5f, -1.0f)));
+    bNC.Nodes.emplace_back(BezierCurveNode2(glm::vec2(0.0f, -1.0f), glm::vec2(-0.5f, -1.0f)));
+
+    (*a_shapeNodePtr)[0] = rNC;
+    (*a_shapeNodePtr)[1] = tNC;
+    (*a_shapeNodePtr)[2] = lNC;
+    (*a_shapeNodePtr)[3] = bNC;
+
+    *a_shapeNodeCount = 4;
+
+    *a_shapeLinesPtr = new ShapeLine[4];
+    (*a_shapeLinesPtr)[0] = ShapeLine(0, 1, 0, 0);
+    (*a_shapeLinesPtr)[1] = ShapeLine(1, 2, 1, 0);
+    (*a_shapeLinesPtr)[2] = ShapeLine(2, 3, 1, 1);
+    (*a_shapeLinesPtr)[3] = ShapeLine(3, 0, 0, 1);
+
+    *a_shapeLineCount = 4;
+}
+void PrimitiveGenerator::CreatePathTorus(PathNodeCluster** a_pathNodesPtr, unsigned int* a_pathNodeCount, PathLine** a_pathLinesPtr, unsigned int* a_pathLineCount, 
+    ShapeNodeCluster** a_shapeNodePtr, unsigned int* a_shapeNodeCount, ShapeLine** a_shapeLinesPtr, unsigned int* a_shapeLineCount)
+{
+    constexpr glm::vec2 vec2one = glm::vec2(1.0f);
+
+    *a_pathNodesPtr = new PathNodeCluster[4];
     
-    shapeNodes.emplace_back(BezierCurveNode2(glm::vec2(0.0f, 1.0f), glm::vec2(0.5f, 1.0f)));
-    shapeNodes.emplace_back(BezierCurveNode2(glm::vec2(0.0f, 1.0f), glm::vec2(-0.5f, 1.0f)));
+    PathNodeCluster rPNC;
+    rPNC.Nodes.emplace_back(PathNode(vec2one, 0.0f, BezierCurveNode3(glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.5f))));
+    rPNC.Nodes.emplace_back(PathNode(vec2one, 0.0f, BezierCurveNode3(glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.0f, -0.5f))));
 
-    shapeNodes.emplace_back(BezierCurveNode2(glm::vec2(-1.0f, 0.0f), glm::vec2(-1.0f, 0.5f)));
-    shapeNodes.emplace_back(BezierCurveNode2(glm::vec2(-1.0f, 0.0f), glm::vec2(-1.0f, -0.5f)));
+    PathNodeCluster tPNC;
+    tPNC.Nodes.emplace_back(PathNode(vec2one, 0.0f, BezierCurveNode3(glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.5f, 0.0f, 1.0f))));
+    tPNC.Nodes.emplace_back(PathNode(vec2one, 0.0f, BezierCurveNode3(glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(-0.5f, 0.0f, 1.0f))));
 
-    shapeNodes.emplace_back(BezierCurveNode2(glm::vec2(0.0f, -1.0f), glm::vec2(0.5f, -1.0f)));
-    shapeNodes.emplace_back(BezierCurveNode2(glm::vec2(0.0f, -1.0f), glm::vec2(-0.5f, -1.0f)));
+    PathNodeCluster lPNC;
+    lPNC.Nodes.emplace_back(PathNode(vec2one, 0.0f, BezierCurveNode3(glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec3(-1.0f, 0.0f, 0.5f))));
+    lPNC.Nodes.emplace_back(PathNode(vec2one, 0.0f, BezierCurveNode3(glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec3(-1.0f, 0.0f, -0.5f))));
 
-    shapeIndices.emplace_back(0); shapeIndices.emplace_back(2);
-    shapeIndices.emplace_back(3); shapeIndices.emplace_back(4);
-    shapeIndices.emplace_back(5); shapeIndices.emplace_back(7);
-    shapeIndices.emplace_back(6); shapeIndices.emplace_back(1);
+    PathNodeCluster bPNC;
+    bPNC.Nodes.emplace_back(PathNode(vec2one, 0.0f, BezierCurveNode3(glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.5f, 0.0f, -1.0f))));
+    bPNC.Nodes.emplace_back(PathNode(vec2one, 0.0f, BezierCurveNode3(glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(-0.5f, 0.0f, -1.0f))));
 
-    pathNodes.emplace_back(PathNode(glm::vec2(1.0f, 1.0f), 0.0f, BezierCurveNode3(glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f))));
-    pathNodes.emplace_back(PathNode(glm::vec2(1.0f, 1.0f), 0.0f, BezierCurveNode3(glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f))));
+    (*a_pathNodesPtr)[0] = rPNC;
+    (*a_pathNodesPtr)[1] = tPNC;
+    (*a_pathNodesPtr)[2] = lPNC;
+    (*a_pathNodesPtr)[3] = bPNC;
 
-    pathIndices.emplace_back(0);
-    pathIndices.emplace_back(1);
+    *a_pathNodeCount = 4;
 
-    GetData(pathNodes, pathIndices, shapeNodes, shapeIndices, a_nodePtr, a_nodeCount, a_nodeIndicesPtr, a_nodeIndexCount, a_shapeNodePtr, a_shapeNodeCount, a_shapeIndicesPtr, a_shapeIndexCount);
+    *a_pathLinesPtr = new PathLine[4];
+    (*a_pathLinesPtr)[0] = PathLine(0, 1, 0, 0);
+    (*a_pathLinesPtr)[1] = PathLine(1, 2, 1, 0);
+    (*a_pathLinesPtr)[2] = PathLine(2, 3, 1, 1);
+    (*a_pathLinesPtr)[3] = PathLine(3, 0, 0, 1);
+
+    *a_pathLineCount = 4;
+
+    *a_shapeNodePtr = new ShapeNodeCluster[4];
+
+    ShapeNodeCluster rSNC;
+    rSNC.Nodes.emplace_back(BezierCurveNode2(glm::vec2(0.5f, 0.0f), glm::vec2(0.5f, 0.25f)));
+    rSNC.Nodes.emplace_back(BezierCurveNode2(glm::vec2(0.5f, 0.0f), glm::vec2(0.5f, -0.25f)));
+
+    ShapeNodeCluster tSNC;
+    tSNC.Nodes.emplace_back(BezierCurveNode2(glm::vec2(0.0f, 0.5f), glm::vec2(0.25f, 0.5f)));
+    tSNC.Nodes.emplace_back(BezierCurveNode2(glm::vec2(0.0f, 0.5f), glm::vec2(-0.25f, 0.5f)));
+
+    ShapeNodeCluster lSNC;
+    lSNC.Nodes.emplace_back(BezierCurveNode2(glm::vec2(-0.5f, 0.0f), glm::vec2(-0.5f, 0.25f)));
+    lSNC.Nodes.emplace_back(BezierCurveNode2(glm::vec2(-0.5f, 0.0f), glm::vec2(-0.5f, -0.25f)));
+
+    ShapeNodeCluster bSNC;
+    bSNC.Nodes.emplace_back(BezierCurveNode2(glm::vec2(0.0f, -0.5f), glm::vec2(0.25f, -0.5f)));
+    bSNC.Nodes.emplace_back(BezierCurveNode2(glm::vec2(0.0f, -0.5f), glm::vec2(-0.25f, -0.5f)));
+
+    (*a_shapeNodePtr)[0] = rSNC;
+    (*a_shapeNodePtr)[1] = tSNC;
+    (*a_shapeNodePtr)[2] = lSNC;
+    (*a_shapeNodePtr)[3] = bSNC;
+
+    *a_shapeNodeCount = 4;
+
+    *a_shapeLinesPtr = new ShapeLine[4];
+    (*a_shapeLinesPtr)[0] = ShapeLine(0, 1, 0, 0);
+    (*a_shapeLinesPtr)[1] = ShapeLine(1, 2, 1, 0);
+    (*a_shapeLinesPtr)[2] = ShapeLine(2, 3, 1, 1);
+    (*a_shapeLinesPtr)[3] = ShapeLine(3, 0, 0, 1);
+
+    *a_shapeLineCount = 4;
 }
-void PrimitiveGenerator::CreatePathCone(PathNode** a_nodePtr, unsigned int* a_nodeCount, unsigned int** a_nodeIndicesPtr, unsigned int* a_nodeIndexCount, 
-    BezierCurveNode2** a_shapeNodePtr, unsigned int* a_shapeNodeCount, unsigned int** a_shapeIndicesPtr, unsigned int* a_shapeIndexCount)
+void PrimitiveGenerator::CreatePathSpiral(PathNodeCluster** a_pathNodesPtr, unsigned int* a_pathNodeCount, PathLine** a_pathLinesPtr, unsigned int* a_pathLineCount, 
+    ShapeNodeCluster** a_shapeNodePtr, unsigned int* a_shapeNodeCount, ShapeLine** a_shapeLinesPtr, unsigned int* a_shapeLineCount)
 {
-    std::vector<BezierCurveNode2> shapeNodes;
-    std::vector<unsigned int> shapeIndices;
-
-    std::vector<PathNode> pathNodes;
-    std::vector<unsigned int> pathIndices;
-
-    shapeNodes.emplace_back(BezierCurveNode2(glm::vec2(1.0f, 0.0f), glm::vec2(1.0f, 0.5f)));
-    shapeNodes.emplace_back(BezierCurveNode2(glm::vec2(1.0f, 0.0f), glm::vec2(1.0f, -0.5f)));
-    
-    shapeNodes.emplace_back(BezierCurveNode2(glm::vec2(0.0f, 1.0f), glm::vec2(0.5f, 1.0f)));
-    shapeNodes.emplace_back(BezierCurveNode2(glm::vec2(0.0f, 1.0f), glm::vec2(-0.5f, 1.0f)));
-
-    shapeNodes.emplace_back(BezierCurveNode2(glm::vec2(-1.0f, 0.0f), glm::vec2(-1.0f, 0.5f)));
-    shapeNodes.emplace_back(BezierCurveNode2(glm::vec2(-1.0f, 0.0f), glm::vec2(-1.0f, -0.5f)));
-
-    shapeNodes.emplace_back(BezierCurveNode2(glm::vec2(0.0f, -1.0f), glm::vec2(0.5f, -1.0f)));
-    shapeNodes.emplace_back(BezierCurveNode2(glm::vec2(0.0f, -1.0f), glm::vec2(-0.5f, -1.0f)));
-
-    shapeIndices.emplace_back(0); shapeIndices.emplace_back(2);
-    shapeIndices.emplace_back(3); shapeIndices.emplace_back(4);
-    shapeIndices.emplace_back(5); shapeIndices.emplace_back(7);
-    shapeIndices.emplace_back(6); shapeIndices.emplace_back(1);
-
-    pathNodes.emplace_back(PathNode(glm::vec2(0.0f, 0.0f), 0.0f, BezierCurveNode3(glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f))));
-    pathNodes.emplace_back(PathNode(glm::vec2(1.0f, 1.0f), 0.0f, BezierCurveNode3(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f))));
-
-    pathIndices.emplace_back(0);
-    pathIndices.emplace_back(1);
-
-    GetData(pathNodes, pathIndices, shapeNodes, shapeIndices, a_nodePtr, a_nodeCount, a_nodeIndicesPtr, a_nodeIndexCount, a_shapeNodePtr, a_shapeNodeCount, a_shapeIndicesPtr, a_shapeIndexCount);
-}
-void PrimitiveGenerator::CreatePathTorus(PathNode** a_nodePtr, unsigned int* a_nodeCount, unsigned int** a_nodeIndicesPtr, unsigned int* a_nodeIndexCount, 
-    BezierCurveNode2** a_shapeNodePtr, unsigned int* a_shapeNodeCount, unsigned int** a_shapeIndicesPtr, unsigned int* a_shapeIndexCount)
-{
-    std::vector<BezierCurveNode2> shapeNodes;
-    std::vector<unsigned int> shapeIndices;
-
-    std::vector<PathNode> pathNodes;
-    std::vector<unsigned int> pathIndices;
-
-    shapeNodes.emplace_back(BezierCurveNode2(glm::vec2(0.5f, 0.0f), glm::vec2(0.5f, 0.25f)));
-    shapeNodes.emplace_back(BezierCurveNode2(glm::vec2(0.5f, 0.0f), glm::vec2(0.5f, -0.25f)));
-
-    shapeNodes.emplace_back(BezierCurveNode2(glm::vec2(0.0f, 0.5f), glm::vec2(0.25f, 0.5f)));
-    shapeNodes.emplace_back(BezierCurveNode2(glm::vec2(0.0f, 0.5f), glm::vec2(-0.25f, 0.5f)));   
-
-    shapeNodes.emplace_back(BezierCurveNode2(glm::vec2(-0.5f, 0.0f), glm::vec2(-0.5f, 0.25f)));
-    shapeNodes.emplace_back(BezierCurveNode2(glm::vec2(-0.5f, 0.0f), glm::vec2(-0.5f, -0.25f)));
-
-    shapeNodes.emplace_back(BezierCurveNode2(glm::vec2(0.0f, -0.5f), glm::vec2(0.25f, -0.5f)));
-    shapeNodes.emplace_back(BezierCurveNode2(glm::vec2(0.0f, -0.5f), glm::vec2(-0.25f, -0.5f)));   
-
-    shapeIndices.emplace_back(0); shapeIndices.emplace_back(2);
-    shapeIndices.emplace_back(3); shapeIndices.emplace_back(4);
-    shapeIndices.emplace_back(5); shapeIndices.emplace_back(7);
-    shapeIndices.emplace_back(6); shapeIndices.emplace_back(1);
-
-    pathNodes.emplace_back(PathNode(glm::vec2(1.0f, 1.0f), 0.0f, BezierCurveNode3(glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.5f))));
-    pathNodes.emplace_back(PathNode(glm::vec2(1.0f, 1.0f), 0.0f, BezierCurveNode3(glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.0f, -0.5f))));
-
-    pathNodes.emplace_back(PathNode(glm::vec2(1.0f, 1.0f), 0.0f, BezierCurveNode3(glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.5f, 0.0f, 1.0f))));
-    pathNodes.emplace_back(PathNode(glm::vec2(1.0f, 1.0f), 0.0f, BezierCurveNode3(glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(-0.5f, 0.0f, 1.0f))));
-
-    pathNodes.emplace_back(PathNode(glm::vec2(1.0f, 1.0f), 0.0f, BezierCurveNode3(glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec3(-1.0f, 0.0f, 0.5f))));
-    pathNodes.emplace_back(PathNode(glm::vec2(1.0f, 1.0f), 0.0f, BezierCurveNode3(glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec3(-1.0f, 0.0f, -0.5f))));
-
-    pathNodes.emplace_back(PathNode(glm::vec2(1.0f, 1.0f), 0.0f, BezierCurveNode3(glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.5f, 0.0f, -1.0f))));
-    pathNodes.emplace_back(PathNode(glm::vec2(1.0f, 1.0f), 0.0f, BezierCurveNode3(glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(-0.5f, 0.0f, -1.0f))));
-
-    pathIndices.emplace_back(0); pathIndices.emplace_back(2);
-    pathIndices.emplace_back(3); pathIndices.emplace_back(4);
-    pathIndices.emplace_back(5); pathIndices.emplace_back(7);
-    pathIndices.emplace_back(6); pathIndices.emplace_back(1);
-
-    GetData(pathNodes, pathIndices, shapeNodes, shapeIndices, a_nodePtr, a_nodeCount, a_nodeIndicesPtr, a_nodeIndexCount, a_shapeNodePtr, a_shapeNodeCount, a_shapeIndicesPtr, a_shapeIndexCount);
-}
-void PrimitiveGenerator::CreatePathSpiral(PathNode** a_nodePtr, unsigned int* a_nodeCount, unsigned int** a_nodeIndicesPtr, unsigned int* a_nodeIndexCount, 
-    BezierCurveNode2** a_shapeNodePtr, unsigned int* a_shapeNodeCount, unsigned int** a_shapeIndicesPtr, unsigned int* a_shapeIndexCount)
-{
-    std::vector<BezierCurveNode2> shapeNodes;
-    std::vector<unsigned int> shapeIndices;
-
-    std::vector<PathNode> pathNodes;
-    std::vector<unsigned int> pathIndices;
-
-    shapeNodes.emplace_back(BezierCurveNode2(glm::vec2(0.0f, 0.0f), glm::vec2(0.05f, 0.25f)));
-    shapeNodes.emplace_back(BezierCurveNode2(glm::vec2(0.0f, 0.0f), glm::vec2(-0.05f, 0.25f)));
-    shapeNodes.emplace_back(BezierCurveNode2(glm::vec2(0.0f, 0.0f), glm::vec2(0.05f, -0.25f)));
-    shapeNodes.emplace_back(BezierCurveNode2(glm::vec2(0.0f, 0.0f), glm::vec2(-0.05f, -0.25f)));
-
-    shapeNodes.emplace_back(BezierCurveNode2(glm::vec2(0.0f, 0.5f), glm::vec2(1.0f, 1.0f)));
-    shapeNodes.emplace_back(BezierCurveNode2(glm::vec2(0.0f, 0.5f), glm::vec2(-1.0f, 1.0f)));
-
-    shapeNodes.emplace_back(BezierCurveNode2(glm::vec2(0.0f, -0.5f), glm::vec2(1.0f, -1.0f)));
-    shapeNodes.emplace_back(BezierCurveNode2(glm::vec2(0.0f, -0.5f), glm::vec2(-1.0f, -1.0f)));
-
-    shapeIndices.emplace_back(0); shapeIndices.emplace_back(4);
-    shapeIndices.emplace_back(5); shapeIndices.emplace_back(1);
-
-    shapeIndices.emplace_back(2); shapeIndices.emplace_back(6);
-    shapeIndices.emplace_back(7); shapeIndices.emplace_back(3);
-
+    constexpr glm::vec2 vec2zero = glm::vec2(0.0f);
+    constexpr glm::vec2 vec2one = glm::vec2(1.0f);
     constexpr float pi = glm::pi<float>();
-    constexpr float halfPi = pi * 0.5f;
+    constexpr float twoPi = pi * 2.0f;
 
-    pathNodes.emplace_back(PathNode(glm::vec2(0.0f), 0.0f, BezierCurveNode3(glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f))));
-    pathNodes.emplace_back(PathNode(glm::vec2(1.0f), halfPi, BezierCurveNode3(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f))));
-    pathNodes.emplace_back(PathNode(glm::vec2(0.0f), pi, BezierCurveNode3(glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f))));
+    *a_pathNodesPtr = new PathNodeCluster[3];
+    (*a_pathNodesPtr)[0] = PathNode(vec2zero, 0.0f, BezierCurveNode3(glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f)));
+    (*a_pathNodesPtr)[1] = PathNode(vec2one, pi, BezierCurveNode3(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f)));
+    (*a_pathNodesPtr)[2] = PathNode(vec2zero, twoPi, BezierCurveNode3(glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)));
 
-    pathIndices.emplace_back(0); pathIndices.emplace_back(1);
-    pathIndices.emplace_back(1); pathIndices.emplace_back(2);
+    *a_pathNodeCount = 3;
 
-    GetData(pathNodes, pathIndices, shapeNodes, shapeIndices, a_nodePtr, a_nodeCount, a_nodeIndicesPtr, a_nodeIndexCount, a_shapeNodePtr, a_shapeNodeCount, a_shapeIndicesPtr, a_shapeIndexCount);
+    *a_pathLinesPtr = new PathLine[2];
+    (*a_pathLinesPtr)[0] = PathLine(0, 1, 0, 0);
+    (*a_pathLinesPtr)[1] = PathLine(1, 2, 0, 0);
+
+    *a_pathLineCount = 2;
+
+    *a_shapeNodePtr = new ShapeNodeCluster[2];
+
+    ShapeNodeCluster rNC;
+    rNC.Nodes.emplace_back(BezierCurveNode2(glm::vec2(0.1f, 0.0f), glm::vec2(0.1f, 0.5f)));
+    rNC.Nodes.emplace_back(BezierCurveNode2(glm::vec2(0.1f, 0.0f), glm::vec2(0.1f, -0.5f)));
+
+    ShapeNodeCluster lNC;
+    lNC.Nodes.emplace_back(BezierCurveNode2(glm::vec2(-0.1f, 0.0f), glm::vec2(-0.1f, 0.5f)));
+    lNC.Nodes.emplace_back(BezierCurveNode2(glm::vec2(-0.1f, 0.0f), glm::vec2(-0.1f, -0.5f)));
+
+    (*a_shapeNodePtr)[0] = rNC;
+    (*a_shapeNodePtr)[1] = lNC;
+
+    *a_shapeNodeCount = 2;
+
+    *a_shapeLinesPtr = new ShapeLine[2];
+    (*a_shapeLinesPtr)[0] = ShapeLine(0, 1, 0, 0);
+    (*a_shapeLinesPtr)[1] = ShapeLine(1, 0, 1, 1);
+
+    *a_shapeLineCount = 2;
 }

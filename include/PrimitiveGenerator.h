@@ -22,8 +22,8 @@ public:
     static void CreateCurveSphere(Node3Cluster** a_nodePtr, unsigned int* a_nodeCount, CurveFace** a_facePtr, unsigned int* a_faceCount);
     static void CreateCurveCube(Node3Cluster** a_nodePtr, unsigned int* a_nodeCount, CurveFace** a_facePtr, unsigned int* a_faceCount);
 
-    static void CreatePathCylinder(PathNode** a_nodePtr, unsigned int* a_nodeCount, unsigned int** a_nodeIndicesPtr, unsigned int* a_nodeIndexCount, BezierCurveNode2** a_shapeNodePtr, unsigned int* a_shapeNodeCount, unsigned int** a_shapeIndicesPtr, unsigned int* a_shapeIndexCount);
-    static void CreatePathCone(PathNode** a_nodePtr, unsigned int* a_nodeCount, unsigned int** a_nodeIndicesPtr, unsigned int* a_nodeIndexCount, BezierCurveNode2** a_shapeNodePtr, unsigned int* a_shapeNodeCount, unsigned int** a_shapeIndicesPtr, unsigned int* a_shapeIndexCount);
-    static void CreatePathTorus(PathNode** a_nodePtr, unsigned int* a_nodeCount, unsigned int** a_nodeIndicesPtr, unsigned int* a_nodeIndexCount, BezierCurveNode2** a_shapeNodePtr, unsigned int* a_shapeNodeCount, unsigned int** a_shapeIndicesPtr, unsigned int* a_shapeIndexCount);
-    static void CreatePathSpiral(PathNode** a_nodePtr, unsigned int* a_nodeCount, unsigned int** a_nodeIndicesPtr, unsigned int* a_nodeIndexCount, BezierCurveNode2** a_shapeNodePtr, unsigned int* a_shapeNodeCount, unsigned int ** a_shapeIndicesPtr, unsigned int* a_shapeIndexCount);
+    static void CreatePathCylinder(PathNodeCluster** a_pathNodesPtr, unsigned int* a_pathNodeCount, PathLine** a_pathLinesPtr, unsigned int* a_pathLineCount, ShapeNodeCluster** a_shapeNodePtr, unsigned int* a_shapeNodeCount, ShapeLine** a_shapeLinesPtr, unsigned int* a_shapeLineCount);
+    static void CreatePathCone(PathNodeCluster** a_pathNodesPtr, unsigned int* a_pathNodeCount, PathLine** a_pathLinesPtr, unsigned int* a_pathLineCount, ShapeNodeCluster** a_shapeNodePtr, unsigned int* a_shapeNodeCount, ShapeLine** a_shapeLinesPtr, unsigned int* a_shapeLineCount);
+    static void CreatePathTorus(PathNodeCluster** a_pathNodesPtr, unsigned int* a_pathNodeCount, PathLine** a_pathLinesPtr, unsigned int* a_pathLineCount, ShapeNodeCluster** a_shapeNodePtr, unsigned int* a_shapeNodeCount, ShapeLine** a_shapeLinesPtr, unsigned int* a_shapeLineCount);
+    static void CreatePathSpiral(PathNodeCluster** a_pathNodesPtr, unsigned int* a_pathNodeCount, PathLine** a_pathLinesPtr, unsigned int* a_pathLineCount, ShapeNodeCluster** a_shapeNodePtr, unsigned int* a_shapeNodeCount, ShapeLine** a_shapeLinesPtr, unsigned int* a_shapeLineCount);
 };

@@ -15,6 +15,7 @@
 #include "ToolActions/ToolAction.h"
 #include "ToolActions/ExtrudeArmatureNodeToolAction.h"
 #include "ToolActions/ExtrudeCurveNodeToolAction.h"
+#include "ToolActions/ExtrudePathNodeToolAction.h"
 #include "ToolActions/MoveArmatureNodeToolAction.h"
 #include "ToolActions/MoveCurveNodeToolAction.h"
 #include "ToolActions/MovePathNodeToolAction.h"
@@ -55,6 +56,7 @@ EditEditor::EditEditor(Editor* a_editor, Workspace* a_workspace)
     m_pathAction[ToolMode_Translate] = new MovePathNodeToolAction(m_workspace, m_editor);
     m_pathAction[ToolMode_Rotate] = new RotatePathNodeToolAction(m_workspace, m_editor);
     m_pathAction[ToolMode_Scale] = new ScalePathNodeToolAction(m_workspace, m_editor);
+    m_pathAction[ToolMode_Extrude] = new ExtrudePathNodeToolAction(m_workspace, m_editor);
 }
 EditEditor::~EditEditor()
 {
@@ -108,23 +110,26 @@ bool EditEditor::IsInteractingCurveNodeHandle(const Node3Cluster& a_node, unsign
 
     return false;
 }
-bool EditEditor::IsInteractingPathNodeHandle(const PathNode& a_node, unsigned int a_nodeIndex, PathModel* a_model, const glm::mat4& a_viewProj, const glm::vec2& a_cursorPos, const glm::mat4& a_transform, const glm::vec3& a_up, const glm::vec3& a_right)
+bool EditEditor::IsInteractingPathNodeHandle(const PathNodeCluster& a_node, unsigned int a_nodeIndex, PathModel* a_model, const glm::mat4& a_viewProj, const glm::vec2& a_cursorPos, const glm::mat4& a_transform, const glm::vec3& a_up, const glm::vec3& a_right)
 {
-    if (SelectionControl::NodeHandleInPoint(a_viewProj, a_cursorPos, 0.025f, a_transform, a_node.Node))
+    for (auto iter = a_node.Nodes.begin(); iter != a_node.Nodes.end(); ++iter)
     {
-        Action* action = new MovePathNodeHandleAction(m_workspace, a_nodeIndex, a_model, a_cursorPos, a_right, a_up);
-        if (!m_workspace->PushAction(action))
+        if (SelectionControl::NodeHandleInPoint(a_viewProj, a_cursorPos, 0.025f, a_transform, iter->Node))
         {
-            printf("Error moving node handle \n");
+            Action* action = new MovePathNodeHandleAction(m_workspace, a_nodeIndex, iter - a_node.Nodes.begin(), a_model, a_cursorPos, a_right, a_up);
+            if (!m_workspace->PushAction(action))
+            {
+                printf("Error moving node handle \n");
 
-            delete action;
-        }
-        else
-        {
-            m_editor->SetCurrentAction(action);
-        }
+                delete action;
+            }
+            else
+            {
+                m_editor->SetCurrentAction(action);
+            }
 
-        return true;
+            return true;
+        }
     }
 
     return false;
@@ -310,12 +315,12 @@ NextArmatureDrawNodeLoop:;
                 {
                     if (*iter == i)
                     {
-                        const std::vector<NodeGroup> nodeCluster = nodes[i].Nodes;
+                        const std::vector<NodeGroup>& nodeCluster = nodes[i].Nodes;
                         for (auto iter = nodeCluster.begin(); iter != nodeCluster.end(); ++iter)
                         {
                             const glm::vec4 pos = modelMatrix * glm::vec4(iter->Node.GetPosition(), 1);
 
-                            if (iter->Node.GetHandlePosition().x != std::numeric_limits<float>().infinity())
+                            if (iter->Node.GetHandlePosition().x != std::numeric_limits<float>::infinity())
                             {
                                 const glm::vec4 handlePos = modelMatrix * glm::vec4(iter->Node.GetHandlePosition(), 1);
 
@@ -347,18 +352,16 @@ NextCurveDrawNodeLoop:;
             const PathModel* pathModel = a_object->GetPathModel();
             const int steps = pathModel->GetPathSteps();
 
-            const unsigned int indexCount = pathModel->GetPathIndexCount();
-            const unsigned int* indices = pathModel->GetPathIndices();
+            const unsigned int lineCount = pathModel->GetPathLineCount();
+            const PathLine* lines = pathModel->GetPathLines();
 
             const unsigned int nodeCount = pathModel->GetPathNodeCount();
-            const PathNode* pathNodes = pathModel->GetNodes();
+            const PathNodeCluster* pathNodes = pathModel->GetPathNodes();
 
-            const unsigned int pathCount = indexCount / 2;
-
-            for (unsigned int i = 0; i < pathCount; ++i)
+            for (unsigned int i = 0; i < lineCount; ++i)
             {
-                const PathNode nodeA = pathNodes[indices[i * 2U + 0U]];
-                const PathNode nodeB = pathNodes[indices[i * 2U + 1U]];
+                const PathNode& nodeA = pathNodes[lines[i].Index[0]].Nodes[lines[i].ClusterIndex[0]];
+                const PathNode& nodeB = pathNodes[lines[i].Index[1]].Nodes[lines[i].ClusterIndex[1]];
 
                 Gizmos::DrawCurve(steps, modelMatrix, nodeA.Node, nodeB.Node, ColorTheme::Active);
             }
@@ -366,17 +369,26 @@ NextCurveDrawNodeLoop:;
             const std::list<unsigned int> selectedNodes = m_editor->GetSelectedNodes();
             for (unsigned int i = 0; i < nodeCount; ++i)
             {
-                const BezierCurveNode3 curve = pathNodes[i].Node;
-                const glm::vec4 pos = modelMatrix * glm::vec4(curve.GetPosition(), 1);
+                const BezierCurveNode3& curve = pathNodes[i].Nodes[0].Node;
+                const glm::vec4 pos = modelMatrix * glm::vec4(curve.GetPosition(), 1.0f);
 
                 for (auto iter = selectedNodes.begin(); iter != selectedNodes.end(); ++iter)
                 {
                     if (*iter == i)
                     {
-                        const glm::vec4 handlePos = modelMatrix * glm::vec4(curve.GetHandlePosition(), 1);
+                        const std::vector<PathNode>& nodeCluster = pathNodes[i].Nodes;
+                        for (auto nIter = nodeCluster.begin(); nIter != nodeCluster.end(); ++nIter)
+                        {
+                            const glm::vec3 handlePos = nIter->Node.GetHandlePosition();
 
-                        Gizmos::DrawLine(pos, handlePos, camFor, 0.005f, ColorTheme::Active);
-                        Gizmos::DrawCircleFilled(handlePos, camFor, 0.05f, 15, ColorTheme::Active);
+                            if (handlePos.x != std::numeric_limits<float>::infinity())
+                            {
+                                const glm::vec4 hPos = modelMatrix * glm::vec4(handlePos, 1.0f);
+
+                                Gizmos::DrawLine(pos, hPos, camFor, 0.005f, ColorTheme::Active);
+                                Gizmos::DrawCircleFilled(hPos, camFor, 0.05f, 15, ColorTheme::Active);
+                            }
+                        }
 
                         goto NextPathDrawNodeLoop;
                     }
@@ -489,14 +501,14 @@ void EditEditor::LeftClicked(Camera* a_camera, const glm::vec2& a_cursorPos, con
                 if (m_pathAction[toolMode] == nullptr || !m_pathAction[toolMode]->LeftClicked(a_camera, a_cursorPos, a_winSize))
                 {
                     const glm::mat4 transformMat = obj->GetGlobalMatrix();
-                    const PathNode* nodes = model->GetNodes();
+                    const PathNodeCluster* nodes = model->GetPathNodes();
 
                     glm::vec3 pos = glm::vec3(0);
 
                     const std::list<unsigned int> selectedNodes = m_editor->GetSelectedNodes();
                     for (auto iter = selectedNodes.begin(); iter != selectedNodes.end(); ++iter)
                     {
-                        pos += nodes[*iter].Node.GetPosition();
+                        pos += nodes[*iter].Nodes[0].Node.GetPosition();
                     }
 
                     pos /= selectedNodes.size();
@@ -704,7 +716,7 @@ NextCurveNode:;
             {
                 const PathModel* model = obj->GetPathModel();
                 const unsigned int nodeCount = model->GetPathNodeCount();
-                const PathNode* nodes = model->GetNodes();
+                const PathNodeCluster* nodes = model->GetPathNodes();
 
                 switch (m_editor->GetCurrentActionType())
                 {
@@ -722,8 +734,8 @@ NextCurveNode:;
                         {
                             for (unsigned int i = 0; i < nodeCount; ++i)
                             {
-                                const PathNode node = nodes[i];
-                                if (SelectionControl::NodeInSelection(viewProj, min, max, transformMat, node.Node))
+                                const PathNodeCluster& node = nodes[i];
+                                if (SelectionControl::NodeInSelection(viewProj, min, max, transformMat, node.Nodes[0].Node))
                                 {
                                     m_editor->AddNodeToSelection(i);
                                 }
@@ -733,8 +745,8 @@ NextCurveNode:;
                         {
                             for (unsigned int i = 0; i < nodeCount; ++i)
                             {
-                                const PathNode node = nodes[i];
-                                if (SelectionControl::NodeInSelection(viewProj, min, max, transformMat, node.Node))
+                                const PathNodeCluster& node = nodes[i];
+                                if (SelectionControl::NodeInSelection(viewProj, min, max, transformMat, node.Nodes[0].Node))
                                 {
                                     const std::list<unsigned int> selectedNodes = m_editor->GetSelectedNodes();
                                     for (auto iter = selectedNodes.begin(); iter != selectedNodes.end(); ++iter)
@@ -759,8 +771,8 @@ NextPathNode:;
 
                             for (unsigned int i = 0; i < nodeCount; ++i)
                             {
-                                const PathNode node = nodes[i];
-                                if (SelectionControl::NodeInSelection(viewProj, min, max, transformMat, node.Node))
+                                const PathNodeCluster& node = nodes[i];
+                                if (SelectionControl::NodeInSelection(viewProj, min, max, transformMat, node.Nodes[0].Node))
                                 {
                                     m_editor->AddNodeToSelection(i);
                                 }

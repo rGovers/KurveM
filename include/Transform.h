@@ -4,6 +4,7 @@
 #include <glm/glm.hpp>
 
 #include <glm/gtc/quaternion.hpp>
+#include <glm/gtx/quaternion.hpp>
 
 #include "tinyxml2.h"
 
@@ -43,6 +44,24 @@ public:
     inline const glm::vec3& Scale() const
     {
         return m_scale;
+    }
+
+    inline glm::mat3 RotationMatrix() const
+    {
+        return glm::toMat3(m_rotation);
+    }
+
+    inline glm::vec3 Forward() const
+    {
+        return RotationMatrix()[2];
+    }
+    inline glm::vec3 Up() const
+    {
+        return RotationMatrix()[1];
+    }
+    inline glm::vec3 Right() const
+    {
+        return RotationMatrix()[0];
     }
 
     glm::mat4 ToMatrix() const;

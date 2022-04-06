@@ -20,7 +20,7 @@ MovePathNodeAction::MovePathNodeAction(Workspace* a_workspace, const unsigned in
     m_oldPos = new glm::vec3[m_nodeCount];
     m_nodeIndices = new unsigned int[m_nodeCount];
 
-    const PathNode* nodes = m_pathModel->GetNodes();
+    const PathNodeCluster* nodes = m_pathModel->GetPathNodes();
 
     for (unsigned int i = 0; i < m_nodeCount; ++i)
     {
@@ -28,7 +28,7 @@ MovePathNodeAction::MovePathNodeAction(Workspace* a_workspace, const unsigned in
 
         m_nodeIndices[i] = index;
 
-        const PathNode node = nodes[index];
+        const PathNode& node = nodes[index].Nodes[0];
 
         m_oldPos[i] = node.Node.GetPosition();
     }
@@ -60,12 +60,16 @@ bool MovePathNodeAction::Execute()
 
         const float scale = glm::dot(scaledAxis, endAxis);
 
-        PathNode* nodes = m_pathModel->GetNodes();
+        PathNodeCluster* nodes = m_pathModel->GetPathNodes();
         for (unsigned int i = 0; i < m_nodeCount; ++i)
         {
             const glm::vec3 diff = m_oldPos[i] - m_startPos;
 
-            nodes[m_nodeIndices[i]].Node.SetPosition((m_startPos + (m_axis * scale)) + diff);   
+            std::vector<PathNode>& cNodes = nodes[m_nodeIndices[i]].Nodes;
+            for (auto iter = cNodes.begin(); iter != cNodes.end(); ++iter)
+            {
+                iter->Node.SetPosition((m_startPos + (m_axis * scale)) + diff);   
+            }
         }
     }
 
@@ -75,11 +79,15 @@ bool MovePathNodeAction::Execute()
 }
 bool MovePathNodeAction::Revert()
 {
-    PathNode* nodes = m_pathModel->GetNodes();
+    PathNodeCluster* nodes = m_pathModel->GetPathNodes();
 
     for (unsigned int i = 0; i < m_nodeCount; ++i)
     {
-        nodes[m_nodeIndices[i]].Node.SetPosition(m_oldPos[i]);
+        std::vector<PathNode>& cNodes = nodes[m_nodeIndices[i]].Nodes;
+        for (auto iter = cNodes.begin(); iter != cNodes.end(); ++iter)
+        {
+            iter->Node.SetPosition(m_oldPos[i]);
+        }
     }
 
     m_workspace->PushLongTask(new TriangulatePathLongTask(m_pathModel));

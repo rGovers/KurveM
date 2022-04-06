@@ -11,6 +11,7 @@
 #include "Actions/SetPathShapeStepsAction.h"
 #include "Actions/TranslateObjectAction.h"
 #include "CurveModel.h"
+#include "EditorControls/Editor.h"
 #include "imgui.h"
 #include "ImGuiExt.h"
 #include "LongTasks/TriangulateCurveLongTask.h"

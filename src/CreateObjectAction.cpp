@@ -127,14 +127,14 @@ bool CreateObjectAction::Execute()
     unsigned int faceCount = 0;
     CurveFace* facePtr;
 
-    PathNode* pathNodePtr;
-    unsigned int pathIndexCount = 0;
-    unsigned int* pathIndicesPtr;
+    PathNodeCluster* pathNodePtr;
+    unsigned int pathLineCount = 0;
+    PathLine* pathLinesPtr;
     
     unsigned int shapeNodeCount = 0;
-    BezierCurveNode2* shapeNodePtr;
-    unsigned int shapeIndexCount = 0;
-    unsigned int* shapeIndicesPtr;
+    ShapeNodeCluster* shapeNodePtr;
+    unsigned int shapeLineCount = 0;
+    ShapeLine* shapeLinesPtr;
 
     e_ObjectType objectType = ObjectType_Empty;
 
@@ -174,7 +174,7 @@ bool CreateObjectAction::Execute()
         }
         case CreateObjectType_CylinderPath:
         {
-            PrimitiveGenerator::CreatePathCylinder(&pathNodePtr, &nodeCount, &pathIndicesPtr, &pathIndexCount, &shapeNodePtr, &shapeNodeCount, &shapeIndicesPtr, &shapeIndexCount);
+            PrimitiveGenerator::CreatePathCylinder(&pathNodePtr, &nodeCount, &pathLinesPtr, &pathLineCount, &shapeNodePtr, &shapeNodeCount, &shapeLinesPtr, &shapeLineCount);
 
             objectType = ObjectType_PathModel;
 
@@ -182,7 +182,7 @@ bool CreateObjectAction::Execute()
         }
         case CreateObjectType_ConePath:
         {
-            PrimitiveGenerator::CreatePathCone(&pathNodePtr, &nodeCount, &pathIndicesPtr, &pathIndexCount, &shapeNodePtr, &shapeNodeCount, &shapeIndicesPtr, &shapeIndexCount);
+            PrimitiveGenerator::CreatePathCone(&pathNodePtr, &nodeCount, &pathLinesPtr, &pathLineCount, &shapeNodePtr, &shapeNodeCount, &shapeLinesPtr, &shapeLineCount);
 
             objectType = ObjectType_PathModel;
 
@@ -190,7 +190,7 @@ bool CreateObjectAction::Execute()
         }
         case CreateObjectType_SpiralPath:
         {
-            PrimitiveGenerator::CreatePathSpiral(&pathNodePtr, &nodeCount, &pathIndicesPtr, &pathIndexCount, &shapeNodePtr, &shapeNodeCount, &shapeIndicesPtr, &shapeIndexCount);
+            PrimitiveGenerator::CreatePathSpiral(&pathNodePtr, &nodeCount, &pathLinesPtr, &pathLineCount, &shapeNodePtr, &shapeNodeCount, &shapeLinesPtr, &shapeLineCount);
 
             objectType = ObjectType_PathModel;
 
@@ -198,7 +198,7 @@ bool CreateObjectAction::Execute()
         }
         case CreateObjectType_TorusPath:
         {
-            PrimitiveGenerator::CreatePathTorus(&pathNodePtr, &nodeCount, &pathIndicesPtr, &pathIndexCount, &shapeNodePtr, &shapeNodeCount, &shapeIndicesPtr, &shapeIndexCount);
+            PrimitiveGenerator::CreatePathTorus(&pathNodePtr, &nodeCount, &pathLinesPtr, &pathLineCount, &shapeNodePtr, &shapeNodeCount, &shapeLinesPtr, &shapeLineCount);
 
             objectType = ObjectType_PathModel;
 
@@ -254,11 +254,11 @@ bool CreateObjectAction::Execute()
     }
     case ObjectType_PathModel:
     {
-        if (nodeCount != 0 && pathIndexCount != 0 && shapeNodeCount != 0 && shapeIndexCount != 0)
+        if (nodeCount != 0 && pathLineCount != 0 && shapeNodeCount != 0 && shapeLineCount != 0)
         {
             PathModel* model = new PathModel(m_workspace);
 
-            model->PassModelData(pathNodePtr, nodeCount, pathIndicesPtr, pathIndexCount, shapeNodePtr, shapeNodeCount, shapeIndicesPtr, shapeIndexCount);
+            model->PassModelData(pathNodePtr, nodeCount, pathLinesPtr, pathLineCount, shapeNodePtr, shapeNodeCount, shapeLinesPtr, shapeLineCount);
 
             m_workspace->PushLongTask(new TriangulatePathLongTask(model));
 

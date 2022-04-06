@@ -31,7 +31,7 @@ ExtrudeCurveNodeAction::ExtrudeCurveNodeAction(Workspace* a_workspace, Editor* a
 }
 ExtrudeCurveNodeAction::~ExtrudeCurveNodeAction()
 {
-
+    delete[] m_nodeIndices;
 }
 
 e_ActionType ExtrudeCurveNodeAction::GetActionType()
@@ -73,6 +73,8 @@ bool ExtrudeCurveNodeAction::Execute()
         }
 
         m_curveModel->EmplaceNodes(nodes, m_nodeCount);
+
+        delete[] nodes;
     }
 
     Node3Cluster* nodes = m_curveModel->GetNodes();

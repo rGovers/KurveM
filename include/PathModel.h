@@ -5,6 +5,7 @@
 #include "tinyxml2.h"
 
 #include <fstream>
+#include <vector>
 
 struct Vertex;
 
@@ -37,6 +38,61 @@ struct PathNode
     }
 };
 
+struct ShapeNodeCluster
+{
+    std::vector<BezierCurveNode2> Nodes;
+};
+
+struct PathNodeCluster
+{
+    std::vector<PathNode> Nodes;
+
+    PathNodeCluster() { }
+    PathNodeCluster(const BezierCurveNode3& a_node)
+    {
+        Nodes.emplace_back(PathNode(glm::vec2(1.0f), 0.0f, a_node));
+    }
+    PathNodeCluster(const PathNode& a_node)
+    {
+        Nodes.emplace_back(a_node);
+    }
+    PathNodeCluster(const PathNodeCluster& a_other)
+    {
+        Nodes = a_other.Nodes;
+    }
+};
+
+struct PathLine
+{
+    unsigned int Index[2];
+    unsigned char ClusterIndex[2];
+
+    PathLine() {}
+    PathLine(unsigned int a_indexA, unsigned int a_indexB, unsigned char a_clusterIndexA, unsigned char a_clusterIndexB)
+    {
+        Index[0] = a_indexA;
+        Index[1] = a_indexB;
+
+        ClusterIndex[0] = a_clusterIndexA;
+        ClusterIndex[1] = a_clusterIndexB;
+    }
+};
+struct ShapeLine
+{
+    unsigned int Index[2];
+    unsigned char ClusterIndex[2];
+
+    ShapeLine() {}
+    ShapeLine(unsigned int a_indexA, unsigned int a_indexB, unsigned char a_clusterIndexA, unsigned char a_clusterIndexB)
+    {
+        Index[0] = a_indexA;
+        Index[1] = a_indexB;
+
+        ClusterIndex[0] = a_clusterIndexA;
+        ClusterIndex[1] = a_clusterIndexB;
+    }
+};
+
 class PathModel
 {
 private:
@@ -46,14 +102,14 @@ private:
     int               m_pathSteps;
 
     unsigned int      m_shapeNodeCount;
-    BezierCurveNode2* m_shapeNodes;
-    unsigned int      m_shapeIndexCount;
-    unsigned int*     m_shapeIndices;
+    ShapeNodeCluster* m_shapeNodes;
+    unsigned int      m_shapeLineCount;
+    ShapeLine*        m_shapeLines;
 
     unsigned int      m_pathNodeCount;
-    PathNode*         m_pathNodes;
-    unsigned int      m_pathIndexCount;
-    unsigned int*     m_pathIndices;
+    PathNodeCluster*  m_pathNodes;
+    unsigned int      m_pathLineCount;
+    PathLine*         m_pathLines;
 
     Model*            m_model;
 protected:
@@ -80,37 +136,37 @@ public:
         m_pathSteps = a_value;
     }
 
-    inline unsigned int GetPathIndexCount() const
+    inline unsigned int GetPathLineCount() const
     {
-        return m_pathIndexCount;
+        return m_pathLineCount;
     }
-    inline unsigned int GetPathIndex(unsigned int a_index) const
+    inline PathLine GetPathLineCount(unsigned int a_index) const
     {
-        return m_pathIndices[a_index];
+        return m_pathLines[a_index];
     }
-    inline unsigned int* GetPathIndices() const
+    inline PathLine* GetPathLines() const
     {
-        return m_pathIndices;
+        return m_pathLines;
     }
 
     inline unsigned int GetPathNodeCount() const
     {
         return m_pathNodeCount;
     }
-    inline PathNode GetNode(unsigned int a_index) const
+    inline PathNodeCluster GetPathNode(unsigned int a_index) const
     {
         return m_pathNodes[a_index];
     }
-    inline PathNode* GetNodes() const
+    inline PathNodeCluster* GetPathNodes() const
     {
         return m_pathNodes;
     }
 
-    inline BezierCurveNode2* GetShapeNodes() const
+    inline ShapeNodeCluster* GetShapeNodes() const
     {
         return m_shapeNodes;
     }
-    inline BezierCurveNode2 GetShapeNode(unsigned int a_index) const
+    inline ShapeNodeCluster GetShapeNode(unsigned int a_index) const
     {
         return m_shapeNodes[a_index];
     }
@@ -118,17 +174,18 @@ public:
     {
         return m_shapeNodeCount;
     }
-    inline unsigned int GetShapeIndexCount() const
+
+    inline unsigned int GetShapeLineCount() const
     {
-        return m_shapeIndexCount;
+        return m_shapeLineCount;
     }
-    inline unsigned int GetShapeIndex(unsigned int a_index) const
+    inline ShapeLine GetShapeLine(unsigned int a_index) const
     {
-        return m_shapeIndices[a_index];
+        return m_shapeLines[a_index];
     }
-    inline unsigned int* GetShapeIndices() const
+    inline ShapeLine* GetShapeLines() const
     {
-        return m_shapeIndices;
+        return m_shapeLines;
     }
 
     inline Model* GetDisplayModel() const
@@ -136,10 +193,16 @@ public:
         return m_model;
     }
 
+    void EmplacePathNodes(const PathNodeCluster* a_nodes, unsigned int a_nodeCount);
+    void DestroyPathNodes(unsigned int a_startIndex, unsigned int a_endIndex);
+
+    void EmplacePathLines(const PathLine* a_lines, unsigned int a_lineCount);
+    void DestroyPathLines(unsigned int a_startIndex, unsigned int a_endIndex);
+
     void GetModelData(int a_shapeSteps, int a_pathSteps, unsigned int** a_indices, unsigned int* a_indexCount, Vertex** a_vertices, unsigned int* a_vertexCount) const;
 
-    void SetModelData(const PathNode* a_nodes, unsigned int a_nodeCount, const unsigned int* a_nodeIndices, unsigned int a_nodeIndexCount, const BezierCurveNode2* a_shapeNodes, unsigned int a_shapeNodeCount, const unsigned int* a_shapeIndices, unsigned int a_shapeIndexCount);
-    void PassModelData(PathNode* a_nodes, unsigned int a_nodeCount, unsigned int* a_nodeIndices, unsigned int a_nodeIndexCount, BezierCurveNode2* a_shapeNodes, unsigned int a_shapeNodeCount, unsigned int* a_shapeIndices, unsigned int a_shapeIndexCount);
+    void SetModelData(const PathNodeCluster* a_pathNodes, unsigned int a_pathNodeCount, const PathLine* a_pathLines, unsigned int a_pathLineCount, const ShapeNodeCluster* a_shapeNodes, unsigned int a_shapeNodeCount, const ShapeLine* a_shapeLines, unsigned int a_shapeLineCount);
+    void PassModelData(PathNodeCluster* a_pathNodes, unsigned int a_pathNodeCount, PathLine* a_pathLines, unsigned int a_pathLineCount, ShapeNodeCluster* a_shapeNodes, unsigned int a_shapeNodeCount, ShapeLine* a_shapeLines, unsigned int a_shapeLineCount);
     void Triangulate();
 
     void PreTriangulate(unsigned int** a_indices, unsigned int* a_indexCount, Vertex** a_vertices, unsigned int* a_vertexCount) const;
