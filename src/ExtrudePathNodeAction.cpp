@@ -69,9 +69,9 @@ bool ExtrudePathNodeAction::Execute()
             for (unsigned int i = 0; i < m_nodeCount; ++i)
             {
                 const unsigned int nodeIndex = m_nodeIndices[i];
-                const BezierCurveNode3 node = mNodes[nodeIndex].Nodes[0].Node;
+                const PathNode node = mNodes[nodeIndex].Nodes[0];
                 nodes[i] = PathNodeCluster(node);
-                mNodes[nodeIndex].Nodes.emplace_back(PathNode(glm::vec2(1.0f), 0.0f, node));
+                mNodes[nodeIndex].Nodes.emplace_back(node);
 
                 m_editor->AddNodeToSelection(i + m_startNodeIndex);
             }

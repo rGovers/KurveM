@@ -238,8 +238,12 @@ void PathModel::PassModelData(PathNodeCluster* a_pathNodes, unsigned int a_pathN
 
 void PathModel::GetModelData(int a_shapeSteps, int a_pathSteps, unsigned int** a_indices, unsigned int* a_indexCount, Vertex** a_vertices, unsigned int* a_vertexCount) const
 {
-    std::vector<Vertex> shapeVertices;
+    constexpr glm::mat4 iden = glm::identity<glm::mat4>();
 
+    const unsigned int shapeVertexCount = m_shapeLineCount * (a_shapeSteps + 1);
+
+    Vertex* shapeVertices = new Vertex[shapeVertexCount];
+    unsigned int index = 0;
     for (unsigned int i = 0; i < m_shapeLineCount; ++i)
     {
         const unsigned int indexA = m_shapeLines[i].Index[0];
@@ -261,15 +265,14 @@ void PathModel::GetModelData(int a_shapeSteps, int a_pathSteps, unsigned int** a
 
             const glm::vec2 forward = glm::normalize(nextPos - pos);
 
-            shapeVertices.emplace_back(Vertex{ glm::vec4(pos.x, 0.0f, pos.y, 1.0f), glm::vec3(-forward.y, 0, forward.x) });
+            shapeVertices[index++] = Vertex{ glm::vec4(pos.x, 0.0f, pos.y, 1.0f), glm::vec3(-forward.y, 0.0f, forward.x) };
         }
     }
 
-    const unsigned int shapeVertexCount = shapeVertices.size();
+    const unsigned int dirtyVertexCount = m_pathLineCount * (a_pathSteps + 1) * shapeVertexCount; 
 
-    const glm::mat4 iden = glm::identity<glm::mat4>();
-
-    std::vector<Vertex> dirtyVertices;
+    Vertex* dirtyVertices = new Vertex[dirtyVertexCount];
+    index = 0;
     for (unsigned int i = 0; i < m_pathLineCount; ++i)
     {
         const unsigned int indexA = m_pathLines[i].Index[0];
@@ -281,9 +284,9 @@ void PathModel::GetModelData(int a_shapeSteps, int a_pathSteps, unsigned int** a
         const PathNode& nodeA = m_pathNodes[indexA].Nodes[clusterIndexA];
         const PathNode& nodeB = m_pathNodes[indexB].Nodes[clusterIndexB];
 
-        glm::vec3 forward = glm::vec3(0, 0, 1);
+        glm::vec3 forward = glm::vec3(0.0f, 0.0f, 1.0f);
 
-        for (unsigned int j = 0; j < a_pathSteps; ++j)
+        for (unsigned int j = 0; j <= a_pathSteps; ++j)
         {
             const float lerp = (j + 0U) / (float)a_pathSteps;
             const float nextLerp = (j + 1U) / (float)a_pathSteps;
@@ -295,10 +298,10 @@ void PathModel::GetModelData(int a_shapeSteps, int a_pathSteps, unsigned int** a
             
             const float rot = glm::mix(nodeA.Rotation, nodeB.Rotation, lerp);
 
-            glm::vec3 up = glm::vec3(0, 1, 0);
+            glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
             if (glm::abs(glm::dot(up, forward)) >= 0.95f)
             {
-                up = glm::vec3(0, 0, 1);
+                up = glm::vec3(0.0f, 0.0f, 1.0f);
             }
             // Need to apply rotation around the axis to allow the rotation property to work this should theoretically allow it
             const glm::vec3 right = glm::normalize(glm::angleAxis(rot, forward) * glm::cross(up, forward));
@@ -311,57 +314,28 @@ void PathModel::GetModelData(int a_shapeSteps, int a_pathSteps, unsigned int** a
 
             const glm::vec2 scale = glm::mix(nodeA.Scale, nodeB.Scale, lerp);
 
-            const glm::mat4 mat = glm::scale(iden, glm::vec3(scale.x, 1.0f, scale.y)) * glm::translate(iden, pos) * glm::mat4(rotMat);
+            const glm::mat4 mat = glm::translate(iden, pos) * glm::mat4(rotMat) * glm::scale(iden, glm::vec3(scale.x, 1.0f, scale.y));
 
             for (unsigned int k = 0; k < shapeVertexCount; ++k)
             {
-                const glm::vec3 pos = mat * shapeVertices[k].Position; 
+                const glm::vec4 pos = mat * shapeVertices[k].Position; 
                 const glm::vec3 norm = rotMat * shapeVertices[k].Normal;
 
-                dirtyVertices.emplace_back(Vertex{ glm::vec4(pos, 1.0f), norm });
+                dirtyVertices[index++] = Vertex{ pos, norm };
             }
-        }
-
-        const glm::vec3 pos = nodeB.Node.GetPosition();
-        const float rot = nodeB.Rotation;
-
-        glm::vec3 up = glm::vec3(0, 1, 0);
-        if (glm::abs(glm::dot(up, forward)) >= 0.95f)
-        {
-            up = glm::vec3(0, 0, 1);
-        }
- 
-        const glm::vec3 right = glm::normalize(glm::angleAxis(rot, forward) * glm::cross(up, forward));
-        up = glm::cross(forward, right);
-
-        const glm::mat3 rotMat = glm::mat3(right, forward, up);
-
-        const glm::vec2 scale = nodeB.Scale;
-
-        const glm::mat4 mat = glm::scale(iden, glm::vec3(scale.x, 1.0f, scale.y)) * glm::translate(iden, pos) * glm::mat4(rotMat);
-
-        for (unsigned int k = 0; k < shapeVertexCount; ++k)
-        {
-            const glm::vec3 pos = mat * shapeVertices[k].Position; 
-            const glm::vec3 norm = rotMat * shapeVertices[k].Normal;
-
-            dirtyVertices.emplace_back(Vertex{ glm::vec4(pos, 1.0f), norm });
         }
     }
 
     std::unordered_map<unsigned int, unsigned int> indexMap;
-
-    const unsigned int dirtyVertexCount = dirtyVertices.size(); 
-
+    
     *a_vertices = new Vertex[dirtyVertexCount];
 
-    unsigned int vertexIndex = 0;
-
+    index = 0;
     for (unsigned int i = 0; i < dirtyVertexCount; ++i)
     {
         const Vertex vert = dirtyVertices[i];
 
-        for (unsigned int j = 0; j < vertexIndex; ++j)
+        for (unsigned int j = 0; j < index; ++j)
         {
             const Vertex cVert = (*a_vertices)[j];
 
@@ -376,12 +350,12 @@ void PathModel::GetModelData(int a_shapeSteps, int a_pathSteps, unsigned int** a
             }
         }
 
-        (*a_vertices)[vertexIndex] = vert;
-        indexMap.emplace(i, vertexIndex++);
+        (*a_vertices)[index] = vert;
+        indexMap.emplace(i, index++);
 Next:;
     }
 
-    *a_vertexCount = vertexIndex;
+    *a_vertexCount = index;
 
     for (unsigned int i = 0; i < *a_vertexCount; ++i)
     {
@@ -390,47 +364,55 @@ Next:;
 
     std::vector<unsigned int> indices;
 
-    const unsigned int loops = dirtyVertexCount / shapeVertexCount;
-
-    for (unsigned int i = 0; i < loops - 1; ++i)
+    const unsigned int pathSize = shapeVertexCount * (m_pathSteps + 1);
+    for (unsigned int i = 0; i < m_pathLineCount; ++i)
     {
+        const unsigned int pathIndex = i * pathSize;
         for (unsigned int j = 0; j < shapeVertexCount; ++j)
         {
-            const unsigned int indexA = indexMap[(i + 0U) * shapeVertexCount + (j + 0U)];
-            const unsigned int indexB = indexMap[(i + 0U) * shapeVertexCount + (j + 1U)];
-            const unsigned int indexC = indexMap[(i + 1U) * shapeVertexCount + (j + 0U)];
-            const unsigned int indexD = indexMap[(i + 1U) * shapeVertexCount + (j + 1U)];
+            const unsigned int nJ = j + 1;
 
-            if (indexA == indexD)
+            for (unsigned int k = 0; k < a_pathSteps; ++k)
             {
-                continue;
-            }
+                const unsigned int lA = (k + 0) * shapeVertexCount;
+                const unsigned int lB = (k + 1) * shapeVertexCount;
 
-            // Points merged makes a Tri
-            if (indexA == indexB || indexA == indexC)
-            {
-                indices.emplace_back(indexB);
-                indices.emplace_back(indexD);
-                indices.emplace_back(indexC);
-            }  
-            // Points merged makes a Tri
-            else if (indexD == indexC || indexD == indexB)
-            {
-                indices.emplace_back(indexA);
-                indices.emplace_back(indexB);
-                indices.emplace_back(indexC);
-            }
-            // Makes a Quad
-            else
-            {
-                indices.emplace_back(indexA);
-                indices.emplace_back(indexB);
-                indices.emplace_back(indexC);
+                const unsigned int indexA = indexMap[pathIndex + lA + j];
+                const unsigned int indexB = indexMap[pathIndex + lA + nJ];
+                const unsigned int indexC = indexMap[pathIndex + lB + j];
+                const unsigned int indexD = indexMap[pathIndex + lB + nJ];
 
-                indices.emplace_back(indexB);
-                indices.emplace_back(indexD);
-                indices.emplace_back(indexC);
-            }
+                if (indexA == indexD || indexB == indexC || (indexA == indexC && indexB == indexD))
+                {
+                    continue;
+                }
+
+                // Points merged makes a Tri
+                if (indexA == indexB || indexA == indexC)
+                {
+                    indices.emplace_back(indexB);
+                    indices.emplace_back(indexD);
+                    indices.emplace_back(indexC);
+                }
+                // Points merged makes a Tri
+                else if (indexD == indexC || indexD == indexB)
+                {
+                    indices.emplace_back(indexA);
+                    indices.emplace_back(indexB);
+                    indices.emplace_back(indexC);
+                }
+                // Makes a Quad
+                else
+                {
+                    indices.emplace_back(indexA);
+                    indices.emplace_back(indexB);
+                    indices.emplace_back(indexC);
+
+                    indices.emplace_back(indexB);
+                    indices.emplace_back(indexD);
+                    indices.emplace_back(indexC);
+                }
+            }       
         }
     }
 
