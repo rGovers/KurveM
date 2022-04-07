@@ -13,6 +13,7 @@ enum e_ActionType
     ActionType_ExtrudeArmatureNode,
     ActionType_ExtrudeCurveNode,
     ActionType_ExtrudePathNode,
+    ActionType_ExtrudeShapeNode,
     ActionType_FlipFace,
     ActionType_InsertFace,
     ActionType_MoveCurveNode,

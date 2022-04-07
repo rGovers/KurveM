@@ -260,7 +260,7 @@ void Gizmos::DrawCircleFilled(const glm::vec3& a_position, const glm::vec3& a_di
     constexpr float pi2 = glm::pi<float>() * 2;
 
     glm::vec4 vec = glm::vec4(0.0f, a_radius, 0.0f, 1.0f);
-    if (glm::dot(a_dir, glm::vec3(0.0f, 1.0f, 0.0f)) >= 0.95f)
+    if (glm::abs(glm::dot(a_dir, glm::vec3(0.0f, 1.0f, 0.0f))) >= 0.95f)
     {
         vec = glm::vec4(0.0f, 0.0f, a_radius, 1.0f);
     }

@@ -143,6 +143,90 @@ void PathModel::DestroyPathLines(unsigned int a_startIndex, unsigned int a_endIn
     m_pathLineCount = size;
 }
 
+void PathModel::EmplaceShapeNodes(const ShapeNodeCluster* a_nodes, unsigned int a_nodeCount)
+{
+    const unsigned int size = m_shapeNodeCount + a_nodeCount;
+
+    ShapeNodeCluster* newNodes = new ShapeNodeCluster[size];
+
+    if (m_shapeNodes != nullptr)
+    {
+        for (unsigned int i = 0; i < m_shapeNodeCount; ++i)
+        {
+            newNodes[i] = m_shapeNodes[i];
+        }
+
+        delete[] m_shapeNodes;
+        m_shapeNodes = nullptr;
+    }
+
+    for (unsigned int i = 0; i < a_nodeCount; ++i)
+    {
+        newNodes[i + m_shapeNodeCount] = a_nodes[i];
+    }
+
+    m_shapeNodes = newNodes;
+    m_shapeNodeCount = size;
+}
+void PathModel::DestroyShapeNodes(unsigned int a_startIndex, unsigned int a_endIndex)
+{
+    const unsigned int count = a_endIndex - a_startIndex;
+    const unsigned int size = m_shapeNodeCount - count;
+    const unsigned int endCount = m_shapeNodeCount - a_endIndex;
+
+    if (m_shapeNodes != nullptr)
+    {
+        for (unsigned int i = 0; i < endCount; ++i)
+        {
+            m_shapeNodes[i + a_startIndex] = m_shapeNodes[i + a_endIndex];
+        }
+    }
+
+    m_shapeNodeCount = size;
+}
+
+void PathModel::EmplaceShapeLines(const ShapeLine* a_lines, unsigned int a_lineCount)
+{
+    const unsigned int size = m_shapeLineCount + a_lineCount;
+
+    ShapeLine* newLines = new ShapeLine[size];
+
+    if (m_shapeLines != nullptr)
+    {
+        for (unsigned int i = 0; i < m_shapeLineCount; ++i)
+        {
+            newLines[i] = m_shapeLines[i];
+        }
+
+        delete[] m_shapeLines;
+        m_shapeLines = nullptr;
+    }
+
+    for (unsigned int i = 0; i < a_lineCount; ++i)
+    {
+        newLines[i + m_shapeLineCount] = a_lines[i];
+    }
+
+    m_shapeLines = newLines;
+    m_shapeLineCount = size;
+}
+void PathModel::DestroyShapeLines(unsigned int a_startIndex, unsigned int a_endIndex)
+{
+    const unsigned int count = a_endIndex - a_startIndex;
+    const unsigned int size = m_shapeLineCount - count;
+    const unsigned int endCount = m_shapeLineCount - a_endIndex;
+
+    if (m_shapeLines != nullptr)
+    {
+        for (unsigned int i = 0; i < endCount; ++i)
+        {
+            m_shapeLines[i + a_startIndex] = m_shapeLines[i + a_endIndex];
+        }
+    }
+
+    m_shapeLineCount = size;
+}
+
 void PathModel::SetModelData(const PathNodeCluster* a_pathNodes, unsigned int a_pathNodeCount, const PathLine* a_pathLines, unsigned int a_pathLineCount, 
     const ShapeNodeCluster* a_shapeNodes, unsigned int a_shapeNodeCount, const ShapeLine* a_shapeLines, unsigned int a_shapeLineCount)
 {

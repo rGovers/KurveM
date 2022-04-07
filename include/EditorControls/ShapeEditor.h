@@ -15,6 +15,7 @@ class Editor;
 class PathModel;
 class RenderTexture;
 class ShaderProgram;
+class ToolAction;
 class Workspace;
 
 class ShapeEditor
@@ -31,6 +32,8 @@ private:
 
     ShaderProgram*          m_gridShader;
 
+    ToolAction**            m_shapeActions;
+
     glm::vec2               m_prevCursorPos;
 
     std::list<unsigned int> m_selectedIndices;
@@ -41,11 +44,8 @@ private:
 
     float                   m_cameraZoom;
 
-    e_ActionType GetCurrentAction() const;
-
     void DrawSelection(const ShapeNodeCluster& a_node, unsigned int a_index) const;
 
-    bool MoveNode(const glm::mat4& a_viewProj, const glm::vec2& a_pos, const glm::vec2& a_cursorPos, e_Axis a_axis, PathModel* a_pathModel);
     bool MoveNodeHandle(const glm::mat4& a_viewProj, const ShapeNodeCluster& a_node, unsigned int a_index, const glm::vec2& a_cursorPos, PathModel* a_pathModel);
 
 protected:
@@ -55,6 +55,33 @@ public:
     ~ShapeEditor();
 
     void Init();
+
+    e_ActionType GetCurrentActionType() const;
+    inline Action* GetCurrentAction() const
+    {
+        return m_currentAction;
+    }
+    inline void SetCurrentAction(Action* a_action)
+    {
+        m_currentAction = a_action;
+    }
+
+    inline std::list<unsigned int> GetSelectedIndices() const
+    {
+        return m_selectedIndices;
+    }
+    unsigned int* GetSelectedIndicesArray() const;
+    inline unsigned int GetSelectedIndicesCount() const
+    {
+        return m_selectedIndices.size();
+    }
+
+    inline float GetCameraZoom() const
+    {
+        return m_cameraZoom;
+    }
+
+    void AddNodeToSelection(unsigned int a_index);
 
     void ClearSelectedNodes();
 

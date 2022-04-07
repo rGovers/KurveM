@@ -19,6 +19,8 @@
 #include "Shaders/GridPixel.h"
 #include "Shaders/GridVertex.h"
 #include "ShaderVertex.h"
+#include "ToolActions/ExtrudeShapeNodeToolAction.h"
+#include "ToolActions/MoveShapeNodeToolAction.h"
 #include "Transform.h"
 #include "Workspace.h"
 
@@ -34,10 +36,29 @@ ShapeEditor::ShapeEditor(Workspace* a_workspace, Editor* a_editor)
     m_camera = new Camera();
     m_camera->SetOrthographic(true);
 
+    m_shapeActions = new ToolAction*[ToolMode_End];
+
+    for (int i = 0; i < ToolMode_End; ++i)
+    {
+        m_shapeActions[i] = nullptr;
+    }
+
+    m_shapeActions[ToolMode_Translate] = new MoveShapeNodeToolAction(m_workspace, this);
+    m_shapeActions[ToolMode_Extrude] = new ExtrudeShapeNodeToolAction(m_workspace, this);
+
     Init();
 }
 ShapeEditor::~ShapeEditor()
 {
+    for (int i = 0; i < ToolMode_End; ++i)
+    {
+        if (m_shapeActions[i] != nullptr)
+        {
+            delete m_shapeActions[i];
+        }
+    }
+    delete[] m_shapeActions;
+
     delete m_camera;
     
     delete m_renderTexture;
@@ -71,7 +92,7 @@ void ShapeEditor::Init()
     m_cameraZoom = 1.0f;
 }
 
-e_ActionType ShapeEditor::GetCurrentAction() const
+e_ActionType ShapeEditor::GetCurrentActionType() const
 {
     if (m_currentAction != nullptr)
     {
@@ -105,38 +126,6 @@ void ShapeEditor::DrawSelection(const ShapeNodeCluster& a_node, unsigned int a_i
     Gizmos::DrawCircleFilled(glm::vec3(pos.x, 0.0f, pos.y), up, 0.05f, 10, ColorTheme::InActive);
 }
 
-bool ShapeEditor::MoveNode(const glm::mat4& a_viewProj, const glm::vec2& a_pos, const glm::vec2& a_cursorPos, e_Axis a_axis, PathModel* a_pathModel)
-{
-    const glm::vec3 axis = AxisControl::GetAxis(a_axis) * 0.5f;
-  
-    glm::vec4 fPos = a_viewProj * glm::vec4(glm::vec3(a_pos.x, 0.0f, a_pos.y) + glm::vec3(axis.x, 0.0f, axis.y), 1.0f);
-    fPos /= fPos.w;
-
-    if (SelectionControl::PointInPoint(fPos.xy(), a_cursorPos, 0.01f))
-    {
-        const unsigned int nodeCount = (unsigned int)m_selectedIndices.size();
-
-        unsigned int* indices = new unsigned int[nodeCount];
-        unsigned int index = 0;
-        for (auto iter = m_selectedIndices.begin(); iter != m_selectedIndices.end(); ++iter)
-        {
-            indices[index++] = *iter;
-        }
-
-        m_currentAction = new MoveShapeNodeAction(m_workspace, indices, nodeCount, a_pathModel, a_cursorPos, axis);
-        if (!m_workspace->PushAction(m_currentAction))
-        {
-            printf("Error moving shape node \n");
-
-            delete m_currentAction;
-            m_currentAction = nullptr;
-        }
-
-        return true;
-    }
-
-    return false;
-}
 bool ShapeEditor::MoveNodeHandle(const glm::mat4& a_viewProj, const ShapeNodeCluster& a_node, unsigned int a_index, const glm::vec2& a_cursorPos, PathModel* a_pathModel)
 {
     const std::vector<BezierCurveNode2>& nodes = a_node.Nodes;
@@ -160,6 +149,26 @@ bool ShapeEditor::MoveNodeHandle(const glm::mat4& a_viewProj, const ShapeNodeClu
     
 
     return false;
+}
+
+unsigned int* ShapeEditor::GetSelectedIndicesArray() const
+{
+    const unsigned int size = m_selectedIndices.size();
+
+    unsigned int* indices = new unsigned int[size];
+    
+    unsigned int index = 0;
+    for (auto iter = m_selectedIndices.begin(); iter != m_selectedIndices.end(); ++iter)
+    {
+        indices[index++] = *iter;
+    }
+
+    return indices;
+}
+
+void ShapeEditor::AddNodeToSelection(unsigned int a_index)
+{
+    m_selectedIndices.emplace_back(a_index);
 }
 
 void ShapeEditor::ClearSelectedNodes()
@@ -216,48 +225,44 @@ void ShapeEditor::Update(double a_delta, const glm::vec2& a_winPos, const glm::v
     const glm::mat4 proj = m_camera->GetProjection(a_winSize * m_cameraZoom);
     const glm::mat4 viewProj = proj * view;
 
+    const e_ToolMode toolMode = m_workspace->GetToolMode();
+
     if (m_mouseState & 0b1 << 0)
     {
-        switch (GetCurrentAction())
+        if (m_shapeActions[toolMode] == nullptr || !m_shapeActions[toolMode]->LeftDown(m_camera, curCursorPos, a_winSize))
         {
-        case ActionType_MoveShapeNode:
-        {
-            MoveShapeNodeAction* action = (MoveShapeNodeAction*)m_currentAction;
-            action->SetPosition(curCursorPos);
+            switch (GetCurrentActionType())
+            {
+            case ActionType_MoveShapeNodeHandle:
+            {
+                MoveShapeNodeHandleAction *action = (MoveShapeNodeHandleAction *)m_currentAction;
+                action->SetCursorPos(curCursorPos);
 
-            action->Execute();
+                action->Execute();
 
-            break;
-        }
-        case ActionType_MoveShapeNodeHandle:
-        {
-            MoveShapeNodeHandleAction* action = (MoveShapeNodeHandleAction*)m_currentAction;
-            action->SetCursorPos(curCursorPos);
+                break;
+            }
+            default:
+            {
+                const glm::vec2 min = glm::min(m_startCursorPos, curCursorPos);
+                const glm::vec2 max = glm::max(m_startCursorPos, curCursorPos);
 
-            action->Execute();
+                const glm::vec3 tlWP = m_camera->GetScreenToWorld(glm::vec3(min.x, min.y, 0.0f), a_winSize * m_cameraZoom);
+                const glm::vec3 trWP = m_camera->GetScreenToWorld(glm::vec3(max.x, min.y, 0.0f), a_winSize * m_cameraZoom);
+                const glm::vec3 blWP = m_camera->GetScreenToWorld(glm::vec3(min.x, max.y, 0.0f), a_winSize * m_cameraZoom);
+                const glm::vec3 brWP = m_camera->GetScreenToWorld(glm::vec3(max.x, max.y, 0.0f), a_winSize * m_cameraZoom);
 
-            break;
-        }
-        default:
-        {   
-            const glm::vec2 min = glm::min(m_startCursorPos, curCursorPos);
-            const glm::vec2 max = glm::max(m_startCursorPos, curCursorPos);
+                const glm::vec3 f = viewInv[2].xyz();
 
-            const glm::vec3 tlWP = m_camera->GetScreenToWorld(glm::vec3(min.x, min.y, 0.0f), a_winSize * m_cameraZoom);
-            const glm::vec3 trWP = m_camera->GetScreenToWorld(glm::vec3(max.x, min.y, 0.0f), a_winSize * m_cameraZoom);
-            const glm::vec3 blWP = m_camera->GetScreenToWorld(glm::vec3(min.x, max.y, 0.0f), a_winSize * m_cameraZoom);
-            const glm::vec3 brWP = m_camera->GetScreenToWorld(glm::vec3(max.x, max.y, 0.0f), a_winSize * m_cameraZoom);
+                Gizmos::DrawLine(tlWP, trWP, f, 0.005f, ColorTheme::Active);
+                Gizmos::DrawLine(trWP, brWP, f, 0.005f, ColorTheme::Active);
+                Gizmos::DrawLine(brWP, blWP, f, 0.005f, ColorTheme::Active);
+                Gizmos::DrawLine(blWP, tlWP, f, 0.005f, ColorTheme::Active);
 
-            const glm::vec3 f = viewInv[2].xyz();
-
-            Gizmos::DrawLine(tlWP, trWP, f, 0.005f, ColorTheme::Active);
-            Gizmos::DrawLine(trWP, brWP, f, 0.005f, ColorTheme::Active);
-            Gizmos::DrawLine(brWP, blWP, f, 0.005f, ColorTheme::Active);
-            Gizmos::DrawLine(blWP, tlWP, f, 0.005f, ColorTheme::Active);
-
-            break;
-        }
-        }   
+                break;
+            }
+            }
+        }         
     }
 
     if (ImGui::IsWindowFocused())
@@ -275,42 +280,20 @@ void ShapeEditor::Update(double a_delta, const glm::vec2& a_winPos, const glm::v
                 PathModel* model = object->GetPathModel();
                 if (model != nullptr)
                 {
-                    const ShapeNodeCluster* nodes = model->GetShapeNodes();
-                    const unsigned int indexCount = (unsigned int)m_selectedIndices.size();
-
-                    if (indexCount > 0)
+                    if (m_shapeActions[toolMode] == nullptr || !m_shapeActions[toolMode]->LeftClicked(m_camera, curCursorPos, a_winSize))
                     {
-                        glm::vec2 pos = glm::vec2(0.0f);
+                        const ShapeNodeCluster* nodes = model->GetShapeNodes();
 
                         for (auto iter = m_selectedIndices.begin(); iter != m_selectedIndices.end(); ++iter)
                         {
-                            pos += nodes[*iter].Nodes[0].GetPosition();
-                        }
+                            const unsigned int index = *iter;
 
-                        pos /= indexCount;
-
-                        switch (m_workspace->GetToolMode())
-                        {
-                        case ToolMode_Translate:
-                        {
-                            if (!MoveNode(viewProj, pos, curCursorPos, Axis_X, model) &&
-                                !MoveNode(viewProj, pos, curCursorPos, Axis_Y, model))
+                            if (MoveNodeHandle(viewProj, nodes[index], index, curCursorPos, model))
                             {
-                                for (auto iter = m_selectedIndices.begin(); iter != m_selectedIndices.end(); ++iter)
-                                {
-                                    const unsigned int index = *iter;
-
-                                    if (MoveNodeHandle(viewProj, nodes[index], index, curCursorPos, model))
-                                    {
-                                        break;
-                                    }
-                                }
+                                break;
                             }
-
-                            break;
                         }
-                        }
-                    }      
+                    }
                 }
             }
 
@@ -346,34 +329,35 @@ void ShapeEditor::Update(double a_delta, const glm::vec2& a_winPos, const glm::v
 
             if (ImGui::IsMouseReleased(ImGuiMouseButton_Left) && m_mouseState & 0b1 << 0)
             {
-                const e_ActionType actionType = GetCurrentAction();
-                switch (actionType)
+                if (m_shapeActions[toolMode] == nullptr || !m_shapeActions[toolMode]->LeftReleased(m_camera, curCursorPos, a_winSize))
                 {
-                case ActionType_MoveShapeNode:
-                case ActionType_MoveShapeNodeHandle:
-                {
-                    m_currentAction = nullptr;
-
-                    break;
-                }
-                default:
-                {
-                    const glm::vec2 min = glm::min(m_startCursorPos, curCursorPos);
-                    const glm::vec2 max = glm::max(m_startCursorPos, curCursorPos);
-
-                    m_selectedIndices.clear();
-
-                    for (unsigned int i = 0; i < nodeCount; ++i)
+                    switch (GetCurrentActionType())
                     {
-                        if (SelectionControl::NodeInSelection(viewProj, min, max, glm::identity<glm::mat4>(), nodes[i].Nodes[0]))
-                        {
-                            m_selectedIndices.emplace_back(i);
-                        }
-                    }
+                    case ActionType_MoveShapeNodeHandle:
+                    {
+                        m_currentAction = nullptr;
 
-                    break;
+                        break;
+                    }
+                    default:
+                    {
+                        const glm::vec2 min = glm::min(m_startCursorPos, curCursorPos);
+                        const glm::vec2 max = glm::max(m_startCursorPos, curCursorPos);
+
+                        m_selectedIndices.clear();
+
+                        for (unsigned int i = 0; i < nodeCount; ++i)
+                        {
+                            if (SelectionControl::NodeInSelection(viewProj, min, max, glm::identity<glm::mat4>(), nodes[i].Nodes[0]))
+                            {
+                                m_selectedIndices.emplace_back(i);
+                            }
+                        }
+
+                        break;
+                    }
+                    }
                 }
-                }    
             
                 m_mouseState &= ~(0b1 << 0);
             }
@@ -401,31 +385,12 @@ void ShapeEditor::Update(double a_delta, const glm::vec2& a_winPos, const glm::v
             {
                 DrawSelection(nodes[i], i);
             }
-
-            const unsigned int selectedCount = (unsigned int)m_selectedIndices.size();
-
-            if (selectedCount > 0)
-            {
-                glm::vec2 pos = glm::vec2(0);
-
-                for (auto iter = m_selectedIndices.begin(); iter != m_selectedIndices.end(); ++iter)
-                {
-                    pos += nodes[*iter].Nodes[0].GetPosition();
-                }
-
-                pos /= selectedCount;
-
-                const glm::vec3 pos3 = glm::vec3(pos.x, 0.0f, pos.y);
-                const glm::vec3 up = pos3 + glm::vec3(0.0f, 0.0f, 0.5f);
-                const glm::vec3 right = pos3 + glm::vec3(0.5f, 0.0f, 0.0f);
-
-                Gizmos::DrawLine(pos3, up, 0.01f, glm::vec4(0.0f, 1.0f, 0.0f, 1.0f));
-                Gizmos::DrawLine(pos3, right, 0.01f, glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
-
-                Gizmos::DrawTriangle(up, glm::vec3(0.0f, 0.0f, 1.0f), 0.05f, glm::vec4(0.0f, 1.0f, 0.0f, 1.0f));
-                Gizmos::DrawTriangle(right, glm::vec3(1.0f, 0.0f, 0.0f), 0.05f, glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
-            }
         }
+    }
+
+    if (m_shapeActions[toolMode] != nullptr)
+    {
+        m_shapeActions[toolMode]->Draw(m_camera);
     }
 
     glEnable(GL_BLEND);

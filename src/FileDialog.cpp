@@ -130,6 +130,8 @@ bool FileDialog::DirectoryExplorer(const std::list<char*>& a_dirs, char* a_path)
 
         ImGui::NextColumn();
     }
+
+    return true;
 }
 void FileDialog::FileExplorer(const std::list<char*>& a_files, char* a_name)
 {

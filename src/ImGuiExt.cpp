@@ -6,7 +6,7 @@
 
 bool ImGuiExt::Spinner(const char* a_label, float a_radius, int a_thickness, const glm::vec4& a_color)
 {
-    Spinner(a_label, a_radius, a_thickness, ImGui::ColorConvertFloat4ToU32(ImVec4(a_color.x, a_color.y, a_color.z, a_color.w)));
+    return Spinner(a_label, a_radius, a_thickness, ImGui::ColorConvertFloat4ToU32(ImVec4(a_color.x, a_color.y, a_color.z, a_color.w)));
 }
 // https://github.com/ocornut/imgui/issues/1901
 bool ImGuiExt::Spinner(const char* a_label, float a_radius, int a_thickness, const ImU32& a_color) 
@@ -50,11 +50,13 @@ bool ImGuiExt::Spinner(const char* a_label, float a_radius, int a_thickness, con
     }
 
     window->DrawList->PathStroke(a_color, false, a_thickness);
+
+    return true;
 }
 
 bool ImGuiExt::ColoredButton(const char* a_label, const glm::vec4& a_color, const glm::vec2& a_size)
 {
-    ColoredButton(a_label, ImVec4(a_color.x, a_color.y, a_color.z, a_color.w), ImVec2(a_size.x, a_size.y));
+    return ColoredButton(a_label, ImVec4(a_color.x, a_color.y, a_color.z, a_color.w), ImVec2(a_size.x, a_size.y));
 }
 bool ImGuiExt::ColoredButton(const char* a_label, const ImVec4& a_color, const ImVec2& a_size)
 {
@@ -73,7 +75,7 @@ bool ImGuiExt::ColoredButton(const char* a_label, const ImVec4& a_color, const I
 
 bool ImGuiExt::ToggleButton(const char* a_label, bool a_state, const glm::vec2& a_size)
 {
-    ToggleButton(a_label, a_state, ImVec2(a_size.x, a_size.y));
+    return ToggleButton(a_label, a_state, ImVec2(a_size.x, a_size.y));
 }
 bool ImGuiExt::ToggleButton(const char* a_label, bool a_state, const ImVec2& a_size)
 {
@@ -197,7 +199,7 @@ bool ImGuiExt::BeginImageCombo(const char* a_label, const char* a_previewPath, c
 
 bool ImGuiExt::Image(const char* a_path, const glm::vec2& a_size)
 {
-    Image(a_path, ImVec2(a_size.x, a_size.y));
+    return Image(a_path, ImVec2(a_size.x, a_size.y));
 }
 bool ImGuiExt::Image(const char* a_path, const ImVec2& a_size)
 {
@@ -214,7 +216,7 @@ bool ImGuiExt::Image(const char* a_path, const ImVec2& a_size)
 
 bool ImGuiExt::ImageButton(const char* a_label, const char* a_path, const glm::vec2& a_size)
 {
-    ImageButton(a_label, a_path, ImVec2(a_size.x, a_size.y));
+    return ImageButton(a_label, a_path, ImVec2(a_size.x, a_size.y));
 }
 bool ImGuiExt::ImageButton(const char* a_label, const char* a_path, const ImVec2& a_size)
 {
@@ -238,7 +240,7 @@ bool ImGuiExt::ImageButton(const char* a_label, const char* a_path, const ImVec2
 
 bool ImGuiExt::ImageSwitchButton(const char* a_label, const char* a_pathEnabled, const char* a_pathDisabled, bool* a_state, const glm::vec2& a_size, bool a_background)
 {
-    ImageSwitchButton(a_label, a_pathEnabled, a_pathDisabled, a_state, ImVec2(a_size.x, a_size.y), a_background);
+    return ImageSwitchButton(a_label, a_pathEnabled, a_pathDisabled, a_state, ImVec2(a_size.x, a_size.y), a_background);
 }
 bool ImGuiExt::ImageSwitchButton(const char* a_label, const char* a_pathEnabled, const char* a_pathDisabled, bool* a_state, const ImVec2& a_size, bool a_background)
 {
@@ -290,7 +292,7 @@ bool ImGuiExt::ImageSwitchButton(const char* a_label, const char* a_pathEnabled,
 
 bool ImGuiExt::ImageToggleButton(const char* a_label, const char* a_path, bool a_state, const glm::vec2& a_size)
 {
-    ImageToggleButton(a_label, a_path, a_state, ImVec2(a_size.x, a_size.y));
+    return ImageToggleButton(a_label, a_path, a_state, ImVec2(a_size.x, a_size.y));
 }
 bool ImGuiExt::ImageToggleButton(const char* a_label, const char* a_path, bool a_state, const ImVec2& a_size)
 {

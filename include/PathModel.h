@@ -41,6 +41,12 @@ struct PathNode
 struct ShapeNodeCluster
 {
     std::vector<BezierCurveNode2> Nodes;
+
+    ShapeNodeCluster() {}
+    ShapeNodeCluster(const BezierCurveNode2& a_node)
+    {
+        Nodes.emplace_back(a_node);
+    }
 };
 
 struct PathNodeCluster
@@ -198,6 +204,12 @@ public:
 
     void EmplacePathLines(const PathLine* a_lines, unsigned int a_lineCount);
     void DestroyPathLines(unsigned int a_startIndex, unsigned int a_endIndex);
+
+    void EmplaceShapeNodes(const ShapeNodeCluster* a_nodes, unsigned int a_nodeCount);
+    void DestroyShapeNodes(unsigned int a_startIndex, unsigned int a_endIndex);
+
+    void EmplaceShapeLines(const ShapeLine* a_lines, unsigned int a_lineCount);
+    void DestroyShapeLines(unsigned int a_startIndex, unsigned int a_endIndex);
 
     void GetModelData(int a_shapeSteps, int a_pathSteps, unsigned int** a_indices, unsigned int* a_indexCount, Vertex** a_vertices, unsigned int* a_vertexCount) const;
 
