@@ -7,6 +7,8 @@
 #include <list>
 #include <unordered_map>
 
+#include "Physics/CollisionObject.h"
+#include "Physics/CollisionShapes/CollisionShape.h"
 #include "tinyxml2.h"
 
 class Animation; 
@@ -74,6 +76,12 @@ private:
 
     CurveModel*          m_curveModel;
     PathModel*           m_pathModel;
+
+    CollisionShape*      m_collisionShape;
+    CollisionObject*     m_collisionObject;
+
+    void DrawModel(const Model* model, const glm::mat4& a_world, const glm::mat4& a_view, const glm::mat4& a_proj);
+    void DrawModelAnim(const Model* a_model, const Object* a_armature, const glm::mat4& a_world, const glm::mat4& a_view, const glm::mat4& a_proj);
 
 protected:
 
@@ -152,9 +160,30 @@ public:
         m_curveModel = a_curveModel;
     }
 
+    inline CollisionShape* GetCollisionShape() const
+    {
+        return m_collisionShape;
+    }
+    inline void SetCollisionShape(CollisionShape* a_value)
+    {
+        m_collisionShape = a_value;
+    }
+    e_CollisionShapeType GetCollisionShapeType() const;
+
+    inline CollisionObject* GetCollisionObject() const
+    {
+        return m_collisionObject;
+    }
+    inline void SetCollisionObject(CollisionObject* a_value)
+    {
+        m_collisionObject = a_value;
+    }
+    e_CollisionObjectType GetCollisionObjectType() const;
+
     bool SetReferenceImage(const char* a_path);
 
     glm::mat4 GetGlobalMatrix() const;
+    glm::mat4 GetGlobalAnimMatrix() const;
 
     glm::vec3 GetGlobalTranslation() const;
     void SetGlobalTranslation(const glm::vec3& a_pos);

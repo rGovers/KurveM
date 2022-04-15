@@ -77,6 +77,8 @@ public:
     AnimationNode GetNode(Object* a_object, float a_time) const;
     void SetNode(Object* a_object, const AnimationNode& a_node);
 
+    bool ContainsObject(const Object* a_object) const;
+
     glm::vec3 GetTranslation(Object* a_object, float a_time) const;
     glm::quat GetRotation(Object* a_object, float a_time) const;
     glm::vec3 GetScale(Object* a_object, float a_time) const;

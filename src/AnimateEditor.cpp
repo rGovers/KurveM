@@ -70,14 +70,17 @@ void AnimateEditor::UpdateObject(Object* a_object)
         const Animation* animation = m_workspace->GetCurrentAnimation();
         if (animation != nullptr)
         {
-            const float time = m_editor->GetAnimationTime();
+            if (animation->ContainsObject(a_object))
+            {
+                const float time = m_editor->GetAnimationTime();
 
-            Transform* animTransform = a_object->GetAnimationTransform();
+                Transform* animTransform = a_object->GetAnimationTransform();
 
-            animTransform->Translation() = animation->GetTranslation(a_object, time);
-            animTransform->Quaternion() = animation->GetRotation(a_object, time);
-            animTransform->Scale() = animation->GetScale(a_object, time);
-
+                animTransform->Translation() = animation->GetTranslation(a_object, time);
+                animTransform->Quaternion() = animation->GetRotation(a_object, time);
+                animTransform->Scale() = animation->GetScale(a_object, time);
+            }
+            
             const std::list<Object*> children = a_object->GetChildren();
 
             for (auto iter = children.begin(); iter != children.end(); ++iter)

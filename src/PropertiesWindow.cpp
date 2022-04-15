@@ -4,6 +4,8 @@
 #include "Actions/RotateObjectAction.h"
 #include "Actions/ScaleObjectAction.h"
 #include "Actions/SetAnimationNodeAction.h"
+#include "Actions/SetCollisionObjectTypeAction.h"
+#include "Actions/SetCollisionShapeTypeAction.h"
 #include "Actions/SetCurveArmatureAction.h"
 #include "Actions/SetCurveSmartStepAction.h"
 #include "Actions/SetCurveStepsAction.h"
@@ -21,11 +23,14 @@
 #include "Workspace.h"
 
 const char* RotationMode_String[] = { "Axis Angle", "Quaternion", "Euler Angle" };
+const char* CollisionObject_String[] = { "Null", "Collision Object", "Rigidbody" };
+const char* CollisionShape_String[] = { "Null", "Sphere" };
 
 #define ANIMATE_TOOLTIP "Contains object animation settings"
 #define OBJECT_TOOLTIP "Contains object settings"
 #define CURVE_TOOLTIP "Contains curve model settings"
 #define PATH_TOOLTIP "Contains path model settings"
+#define PHYSICS_TOOLTIP "Contains object physics settings"
 
 PropertiesWindow::PropertiesWindow(Workspace* a_workspace, Editor* a_editor)
 {
@@ -417,7 +422,7 @@ void PropertiesWindow::AnimateTab()
                     glm::vec3 axis = m_nodeAxisAngle.xyz() / len;
                     if (len <= 0)
                     {
-                        axis = glm::vec3(0, 1, 0);
+                        axis = glm::vec3(0.0f, 1.0f, 0.0f);
                     }
 
                     node.Rotation = glm::angleAxis(m_nodeAxisAngle.w, axis);
@@ -736,6 +741,89 @@ void PropertiesWindow::PathTab()
         }
     }
 }
+void PropertiesWindow::PhysicsTab()
+{
+    Object* obj = m_workspace->GetSelectedObject();
+    if (obj != nullptr)
+    {
+        const unsigned int objectCount = m_workspace->GetSelectedObjectCount();
+        Object* const* objs = m_workspace->GetSelectedObjectArray();
+
+        e_CollisionObjectType cOType = obj->GetCollisionObjectType();
+        if (ImGui::BeginCombo("Physics Object Type", CollisionObject_String[cOType]))
+        {
+            for (int i = 0; i < CollisionObjectType_End; ++i)
+            {
+                if (ImGui::Selectable(CollisionObject_String[i]))
+                {
+                    if (m_workspace->GetCurrentActionType() == ActionType_SetCollisionObjectType)
+                    {
+                        SetCollisionObjectTypeAction* action = (SetCollisionObjectTypeAction*)m_workspace->GetCurrentAction();
+                        action->SetType((e_CollisionObjectType)i);
+
+                        action->Execute();
+                    }
+                    else
+                    {   
+                        Action* action = new SetCollisionObjectTypeAction((e_CollisionObjectType)i, objs, objectCount, m_editor->GetPhysicsEngine());
+                        if (!m_workspace->PushAction(action))
+                        {
+                            printf("Error setting collsion object type \n");
+
+                            delete action;
+                        }
+                        else
+                        {
+                            m_workspace->SetCurrentAction(action);
+                        }
+                    }
+                }
+            }
+
+            ImGui::EndCombo();
+        }
+
+        cOType = obj->GetCollisionObjectType();
+        if (cOType != CollisionObjectType_Null)
+        {
+            const e_CollisionShapeType sType = obj->GetCollisionShapeType();
+            if (ImGui::BeginCombo("Collision Shape Type", CollisionShape_String[sType]))
+            {
+                for (int i = 0; i < CollisionShapeType_End; ++i)
+                {
+                    if (ImGui::Selectable(CollisionShape_String[i]))
+                    {
+                        if (m_workspace->GetCurrentActionType() == ActionType_SetCollisionShapeType)
+                        {
+                            SetCollisionShapeTypeAction* action = (SetCollisionShapeTypeAction*)m_workspace->GetCurrentAction();
+                            action->SetType((e_CollisionShapeType)i);
+
+                            action->Execute();
+                        }
+                        else
+                        {
+                            Action* action = new SetCollisionShapeTypeAction((e_CollisionShapeType)i, objs, objectCount);
+                            if (!m_workspace->PushAction(action))
+                            {
+                                printf("Error setting collision shape type \n");
+
+                                delete action;
+                            }
+                            else
+                            {
+                                m_workspace->SetCurrentAction(action);
+                            }
+                        }
+                    }
+                }
+
+                ImGui::EndCombo();
+            }
+        }
+
+        delete[] objs;
+    }
+}
 
 void PropertiesWindow::Update(double a_delta)
 {
@@ -779,6 +867,8 @@ void PropertiesWindow::Update(double a_delta)
             }
             }
 
+            PropertiesTabButton("Physics", "Textures/PROPERTIES_PHYICS.png", ObjectPropertiesTab_Physics, PHYSICS_TOOLTIP);
+
             ImGui::EndGroup();
 
             ImGui::SameLine();
@@ -808,6 +898,12 @@ void PropertiesWindow::Update(double a_delta)
             case ObjectPropertiesTab_Object:
             {
                 ObjectTab();
+
+                break;
+            }
+            case ObjectPropertiesTab_Physics:
+            {
+                PhysicsTab();
 
                 break;
             }

@@ -8,6 +8,7 @@
 #include "imgui.h"
 #include "ImGuiExt.h"
 #include "Object.h"
+#include "PhysicsEngine.h"
 #include "Workspace.h"
 
 AnimatorWindow::AnimatorWindow(Workspace* a_workspace, Editor* a_editor)
@@ -67,6 +68,7 @@ void AnimatorWindow::Update(double a_delta)
                     }
 
                     m_editor->SetAnimationTime((float)time);
+                    m_editor->GetPhysicsEngine()->Update(a_delta);
                 }
 
                 if (ImGui::BeginChild("Outter Frame", {0, 0}, false, ImGuiWindowFlags_AlwaysVerticalScrollbar))

@@ -1,6 +1,8 @@
 cmake_minimum_required (VERSION 2.9)
 project (KurveM)
 
+FILE (STRINGS "lib/bullet3/VERSION" BULLET_VERSION)
+
 set(CMAKE_CXX_STANDARD 17)
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug" AND NOT WIN32)
@@ -76,6 +78,7 @@ FileToHeader(
 
 include_directories("${PROJECT_SOURCE_DIR}")
 include_directories("${PROJECT_SOURCE_DIR}/include/")
+include_directories("${PROJECT_SOURCE_DIR}/lib/bullet3/src/")
 include_directories("${PROJECT_SOURCE_DIR}/lib/glad/include/")
 include_directories("${PROJECT_SOURCE_DIR}/lib/glfw/include/")
 include_directories("${PROJECT_SOURCE_DIR}/lib/glm/")
@@ -86,7 +89,36 @@ include_directories("${PROJECT_SOURCE_DIR}/lib/tinyxml2")
 
 file(GLOB SOURCES "src/*.cpp" "lib/glad/src/*.c" "lib/tinyxml2/tinyxml2.cpp" "lib/imgui/*.cpp" "lib/imgui/backends/imgui_impl_opengl3.cpp" "lib/imgui/backends/imgui_impl_glfw.cpp")
 
+# Bullet Options
+IF(NOT WIN32)
+	set(BUILD_SHARED_LIBS ON)
+	SET(DL ${CMAKE_DL_LIBS})
+	IF(CMAKE_SYSTEM_NAME MATCHES "Linux")
+		MESSAGE("Linux")
+		SET(OSDEF -D_LINUX)
+	ELSE(CMAKE_SYSTEM_NAME MATCHES "Linux")
+		IF(APPLE)
+			MESSAGE("Apple")
+			SET(OSDEF -D_DARWIN)
+		ELSE(APPLE)
+			MESSAGE("BSD?")
+			SET(OSDEF -D_BSD)
+		ENDIF(APPLE)
+	ENDIF(CMAKE_SYSTEM_NAME MATCHES "Linux")
+ELSE(NOT WIN32)
+	set(BUILD_SHARED_LIBS OFF)
+ENDIF(NOT WIN32)
+
+set(USE_DOUBLE_PRECISION OFF)
+set(USE_GRAPHICAL_BENCHMARK OFF)
+set(USE_SOFT_BODY_MULTI_BODY_DYNAMICS_WORLD ON)
+set(BULLET2_MULTITHREADING OFF)
+set(USE_MSVC_INCREMENTAL_LINKING OFF)
+set(USE_CUSTOM_VECTOR_MATH OFF)
+set(BUILD_BULLET3 ON)
+
 add_subdirectory("lib/glfw")
+add_subdirectory("lib/bullet3/src")
 
 add_executable(KurveM ${SOURCES})
-target_link_libraries(KurveM glfw ${GLFW_LIBRARIES})
+target_link_libraries(KurveM glfw ${GLFW_LIBRARIES} BulletInverseDynamics BulletSoftBody BulletCollision BulletDynamics LinearMath Bullet3Common Bullet3Dynamics Bullet3Collision Bullet3Geometry)

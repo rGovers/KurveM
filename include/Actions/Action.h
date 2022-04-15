@@ -36,6 +36,8 @@ enum e_ActionType
     ActionType_SetAnimationFramerate,
     ActionType_SetAnimationLength,
     ActionType_SetAnimationNode,
+    ActionType_SetCollisionObjectType,
+    ActionType_SetCollisionShapeType,
     ActionType_SetCurveArmature,
     ActionType_SetCurveSmartStep,
     ActionType_SetCurveSteps,

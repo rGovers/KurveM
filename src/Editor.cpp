@@ -29,6 +29,7 @@
 #include "Modals/DeleteNodesModal.h"
 #include "Model.h"
 #include "Object.h"
+#include "PhysicsEngine.h"
 #include "RenderTexture.h"
 #include "ShaderPixel.h"
 #include "ShaderProgram.h"
@@ -63,6 +64,8 @@ Editor::Editor(Workspace* a_workspace)
     m_editorControls.emplace_back(new EditEditor(this, m_workspace));
     m_editorControls.emplace_back(new ObjectEditor(this, m_workspace));
     m_editorControls.emplace_back(new WeightPaintingEditor(this, m_workspace));
+
+    m_engine = new PhysicsEngine();
 }
 Editor::~Editor()
 {
@@ -75,6 +78,8 @@ Editor::~Editor()
 
     delete m_cameraController;
     delete m_camera;
+
+    delete m_engine;
 }
 
 void Editor::Init()

@@ -5,6 +5,7 @@ class CameraController;
 class ControlEditor;
 class EditorInputController;
 class Object;
+class PhysicsEngine;
 class RenderTexture;
 class ShaderProgram;
 class Workspace;
@@ -49,6 +50,8 @@ private:
          
     Workspace*                m_workspace;
          
+    PhysicsEngine*            m_engine;
+
     RenderTexture*            m_renderTexture;
          
     unsigned char             m_mouseDown;
@@ -76,6 +79,11 @@ protected:
 public:
     Editor(Workspace* a_workspace);
     ~Editor();
+
+    inline PhysicsEngine* GetPhysicsEngine() const
+    {
+        return m_engine;
+    }
 
     e_ActionType GetCurrentActionType() const;
     inline Action* GetCurrentAction() const

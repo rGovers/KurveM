@@ -46,6 +46,9 @@ Object::Object(const char* a_name, e_ObjectType a_objectType)
     m_curveModel = nullptr;
     m_pathModel = nullptr;
 
+    m_collisionShape = nullptr;
+    m_collisionObject = nullptr;
+
     m_referencePath = nullptr;
     m_referenceImage = nullptr;
 
@@ -102,6 +105,17 @@ Object::~Object()
         m_pathModel = nullptr;
     }
 
+    if (m_collisionShape != nullptr)
+    {
+        delete m_collisionShape;
+        m_collisionShape = nullptr;
+    }
+    if (m_collisionObject != nullptr)
+    {
+        delete m_collisionObject;
+        m_collisionObject = nullptr;
+    }
+
     if (m_name != nullptr)
     {
         delete[] m_name;
@@ -127,7 +141,7 @@ bool Object::IsGlobalVisible() const
 {
     if (m_parent != nullptr)
     {
-        return m_parent->IsGlobalVisible() && m_visible;
+        return m_visible && m_parent->IsGlobalVisible();
     }
 
     return m_visible;
@@ -221,6 +235,26 @@ void Object::SetParent(Object* a_parent)
     }
 }
 
+e_CollisionShapeType Object::GetCollisionShapeType() const
+{
+    if (m_collisionShape != nullptr)
+    {
+        return m_collisionShape->GetShapeType();
+    }
+    
+    return CollisionShapeType_Null;
+}
+
+e_CollisionObjectType Object::GetCollisionObjectType() const
+{
+    if (m_collisionObject != nullptr)
+    {
+        return m_collisionObject->GetCollisionObjectType();
+    }
+
+    return CollisionObjectType_Null;
+}
+
 bool Object::SetReferenceImage(const char* a_path)
 {
     if (a_path != nullptr)
@@ -251,6 +285,15 @@ glm::mat4 Object::GetGlobalMatrix() const
 
     return m_transform->ToMatrix();
 }
+glm::mat4 Object::GetGlobalAnimMatrix() const
+{
+    if (m_parent != nullptr)
+    {
+        return m_parent->GetGlobalAnimMatrix() * m_animationTransform->ToMatrix();
+    }
+
+    return m_animationTransform->ToMatrix();
+}
 glm::vec3 Object::GetGlobalTranslation() const
 {
     return GetGlobalMatrix()[3].xyz();
@@ -265,6 +308,21 @@ void Object::SetGlobalTranslation(const glm::vec3& a_pos)
 
     const glm::vec4 pos = inv * glm::vec4(a_pos, 1);
     m_transform->Translation() = pos.xyz() / pos.w;
+}
+
+void Object::DrawModel(const Model* a_model, const glm::mat4& a_world, const glm::mat4& a_view, const glm::mat4& a_proj)
+{
+    const unsigned int programHandle = m_baseProgram->GetHandle();
+    glUseProgram(programHandle);
+
+    const unsigned int vao = a_model->GetVAO();
+    glBindVertexArray(vao);
+
+    glUniformMatrix4fv(0, 1, false, (float *)&a_view);
+    glUniformMatrix4fv(1, 1, false, (float *)&a_proj);
+    glUniformMatrix4fv(2, 1, false, (float *)&a_world);
+
+    glDrawElements(GL_TRIANGLES, a_model->GetIndexCount(), GL_UNSIGNED_INT, nullptr);
 }
 
 void Object::DrawBase(Camera* a_camera, const glm::vec2& a_winSize)
@@ -312,20 +370,9 @@ void Object::DrawBase(Camera* a_camera, const glm::vec2& a_winSize)
             if (m_curveModel != nullptr)
             {
                 const Model* model = m_curveModel->GetDisplayModel();
-
                 if (model != nullptr)
                 {   
-                    const unsigned int programHandle = m_baseProgram->GetHandle();
-                    glUseProgram(programHandle);
-
-                    const unsigned int vao = model->GetVAO();
-                    glBindVertexArray(vao);
-
-                    glUniformMatrix4fv(0, 1, false, (float*)&view);
-                    glUniformMatrix4fv(1, 1, false, (float*)&proj);
-                    glUniformMatrix4fv(2, 1, false, (float*)&world);
-
-                    glDrawElements(GL_TRIANGLES, model->GetIndexCount(), GL_UNSIGNED_INT, nullptr);
+                    DrawModel(model, world, view, proj);
                 }
             }
 
@@ -336,20 +383,9 @@ void Object::DrawBase(Camera* a_camera, const glm::vec2& a_winSize)
             if (m_pathModel != nullptr)
             {
                 const Model* model = m_pathModel->GetDisplayModel();
-
                 if (model != nullptr)
                 {
-                    const unsigned int programHandle = m_baseProgram->GetHandle();
-                    glUseProgram(programHandle);
-
-                    const unsigned int vao = model->GetVAO();
-                    glBindVertexArray(vao);
-
-                    glUniformMatrix4fv(0, 1, false, (float*)&view);
-                    glUniformMatrix4fv(1, 1, false, (float*)&proj);
-                    glUniformMatrix4fv(2, 1, false, (float*)&world);
-
-                    glDrawElements(GL_TRIANGLES, model->GetIndexCount(), GL_UNSIGNED_INT, nullptr);
+                    DrawModel(model, world, view, proj);
                 }
             }
 
@@ -386,6 +422,37 @@ void UpdateMatrices(const glm::mat4& a_parent, const glm::mat4& a_animParent, Ob
     }
 }
 
+void Object::DrawModelAnim(const Model* a_model, const Object* a_armature, const glm::mat4& a_world, const glm::mat4& a_view, const glm::mat4& a_proj)
+{
+    unsigned int programHandle = m_baseProgram->GetHandle();
+
+    if (a_armature != nullptr)
+    {
+        programHandle = m_animatorProgram->GetHandle();
+    }
+
+    glUseProgram(programHandle);
+
+    if (a_armature != nullptr)
+    {
+        const ShaderStorageBuffer* buffer = a_armature->m_armatureBuffer;
+        const unsigned int bufferHandle = buffer->GetHandle();
+
+        glUniform1ui(3, m_curveModel->GetArmatureNodeCount());
+
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, bufferHandle);
+    }
+
+    const unsigned int vao = a_model->GetVAO();
+    glBindVertexArray(vao);
+
+    glUniformMatrix4fv(0, 1, false, (float*)&a_view);
+    glUniformMatrix4fv(1, 1, false, (float*)&a_proj);
+    glUniformMatrix4fv(2, 1, false, (float*)&a_world);
+
+    glDrawElements(GL_TRIANGLES, a_model->GetIndexCount(), GL_UNSIGNED_INT, nullptr);
+}
+
 void Object::DrawAnimator(Camera* a_camera, const glm::vec2& a_winSize)
 {
     if (IsGlobalVisible())
@@ -394,6 +461,7 @@ void Object::DrawAnimator(Camera* a_camera, const glm::vec2& a_winSize)
         const glm::mat4 proj = a_camera->GetProjection(a_winSize);
 
         const glm::mat4 world = GetGlobalMatrix();
+        const glm::mat4 worldAnim = GetGlobalAnimMatrix();
 
         switch (m_objectType)
         {
@@ -453,35 +521,21 @@ void Object::DrawAnimator(Camera* a_camera, const glm::vec2& a_winSize)
                 const Model* model = m_curveModel->GetDisplayModel();
                 if (model != nullptr)
                 {
-                    unsigned int programHandle = m_baseProgram->GetHandle();
-
-                    const Object* arm = m_curveModel->GetArmature();
-                    if (arm != nullptr)
-                    {
-                        programHandle = m_animatorProgram->GetHandle();
-                    }
-
-                    glUseProgram(programHandle);
-                    
-                    if (arm != nullptr)
-                    {
-                        const ShaderStorageBuffer* buffer = arm->m_armatureBuffer;
-                        const unsigned int bufferHandle = buffer->GetHandle();
-
-                        glUniform1ui(3, m_curveModel->GetArmatureNodeCount());
-
-                        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, bufferHandle);
-                    }
-                    
-                    const unsigned int vao = model->GetVAO();
-                    glBindVertexArray(vao);
-
-                    glUniformMatrix4fv(0, 1, false, (float*)&view);
-                    glUniformMatrix4fv(1, 1, false, (float*)&proj);
-                    glUniformMatrix4fv(2, 1, false, (float*)&world);
-
-                    glDrawElements(GL_TRIANGLES, model->GetIndexCount(), GL_UNSIGNED_INT, nullptr);
+                    DrawModelAnim(model, m_curveModel->GetArmature(), worldAnim, view, proj);
                 }                
+            }
+
+            break;
+        }
+        case ObjectType_PathModel:
+        {
+            if (m_pathModel != nullptr)
+            {
+                const Model* model = m_pathModel->GetDisplayModel();
+                if (model != nullptr)
+                {
+                    DrawModelAnim(model, nullptr, worldAnim, view, proj);
+                }
             }
 
             break;

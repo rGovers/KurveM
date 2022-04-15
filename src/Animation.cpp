@@ -139,6 +139,19 @@ void Animation::SetNode(Object* a_object, const AnimationNode& a_node)
     }
 }
 
+bool Animation::ContainsObject(const Object* a_object) const
+{
+    for (auto iter = m_nodes.begin(); iter != m_nodes.end(); ++iter)
+    {
+        if (iter->SelectedObject == a_object)
+        {
+            return true;
+        }
+    }
+
+    return false;   
+}
+
 glm::vec3 Animation::GetTranslation(Object* a_object, float a_time) const
 {
     Transform* transform = a_object->GetTransform();
