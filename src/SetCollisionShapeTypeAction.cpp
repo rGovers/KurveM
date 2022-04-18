@@ -1,6 +1,9 @@
 #include "Actions/SetCollisionShapeTypeAction.h"
 
 #include "Object.h"
+#include "Physics/CollisionShapes/BoxCollisionShape.h"
+#include "Physics/CollisionShapes/CapsuleCollisionShape.h"
+#include "Physics/CollisionShapes/PlaneCollisionShape.h"
 #include "Physics/CollisionShapes/SphereCollisionShape.h"
 
 SetCollisionShapeTypeAction::SetCollisionShapeTypeAction(e_CollisionShapeType a_type, Object* const* a_objs, unsigned int a_objectCount)
@@ -61,6 +64,24 @@ bool SetCollisionShapeTypeAction::Execute()
         CollisionShape* shape = nullptr;
         switch (m_type)
         {
+        case CollisionShapeType_Box:
+        {
+            shape = new BoxCollisionShape(glm::vec3(1.0f));
+
+            break;
+        }
+        case CollisionShapeType_Capsule:
+        {
+            shape = new CapsuleCollisionShape(0.25f, 1.0f);
+
+            break;
+        }
+        case CollisionShapeType_Plane:
+        {
+            shape = new PlaneCollisionShape(glm::vec3(0.0f, -1.0f, 0.0f), 0.0f);
+
+            break;
+        }
         case CollisionShapeType_Sphere:
         {
             shape = new SphereCollisionShape(1.0f);

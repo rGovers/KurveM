@@ -4,6 +4,9 @@
 #include "Actions/RotateObjectAction.h"
 #include "Actions/ScaleObjectAction.h"
 #include "Actions/SetAnimationNodeAction.h"
+#include "Actions/SetBoxCollisionShapeHalfExtentsAction.h"
+#include "Actions/SetCapsuleCollisionShapeHeightAction.h"
+#include "Actions/SetCapsuleCollisionShapeRadiusAction.h"
 #include "Actions/SetCollisionObjectActiveAction.h"
 #include "Actions/SetCollisionObjectTypeAction.h"
 #include "Actions/SetCollisionShapeTypeAction.h"
@@ -12,6 +15,8 @@
 #include "Actions/SetCurveStepsAction.h"
 #include "Actions/SetPathPathStepsAction.h"
 #include "Actions/SetPathShapeStepsAction.h"
+#include "Actions/SetPlaneCollisionShapeDirectionAction.h"
+#include "Actions/SetPlaneCollisionShapeDistanceAction.h"
 #include "Actions/SetRigidbodyMassAction.h"
 #include "Actions/SetSphereCollisionShapeRadiusAction.h"
 #include "Actions/TranslateObjectAction.h"
@@ -22,6 +27,9 @@
 #include "LongTasks/TriangulateCurveLongTask.h"
 #include "Object.h"
 #include "PathModel.h"
+#include "Physics/CollisionShapes/BoxCollisionShape.h"
+#include "Physics/CollisionShapes/CapsuleCollisionShape.h"
+#include "Physics/CollisionShapes/PlaneCollisionShape.h"
 #include "Physics/CollisionShapes/SphereCollisionShape.h"
 #include "Physics/Rigidbody.h"
 #include "Transform.h"
@@ -29,7 +37,7 @@
 
 const char* RotationMode_String[] = { "Axis Angle", "Quaternion", "Euler Angle" };
 const char* CollisionObject_String[] = { "Null", "Collision Object", "Rigidbody" };
-const char* CollisionShape_String[] = { "Null", "Sphere" };
+const char* CollisionShape_String[] = { "Null", "Box", "Capsule", "Plane", "Sphere" };
 
 #define ANIMATE_TOOLTIP "Contains object animation settings"
 #define OBJECT_TOOLTIP "Contains object settings"
@@ -748,6 +756,8 @@ void PropertiesWindow::PathTab()
 }
 void PropertiesWindow::PhysicsTab()
 {
+    constexpr float infinity = std::numeric_limits<float>::infinity();
+
     Object* obj = m_workspace->GetSelectedObject();
     if (obj != nullptr)
     {
@@ -826,7 +836,7 @@ void PropertiesWindow::PhysicsTab()
                 const Rigidbody* body = (Rigidbody*)cObj;
 
                 float mass = body->GetMass();
-                if (ImGui::DragFloat("Mass", &mass, 0.1f, 0.0f, std::numeric_limits<float>::infinity()))
+                if (ImGui::DragFloat("Mass", &mass, 0.1f, 0.0f, infinity))
                 {
                     if (m_workspace->GetCurrentActionType() == ActionType_SetRigidbodyMass)
                     {
@@ -894,12 +904,161 @@ void PropertiesWindow::PhysicsTab()
             sType = obj->GetCollisionShapeType();
             switch (sType)
             {
+            case CollisionShapeType_Box:
+            {
+                const BoxCollisionShape* box = (BoxCollisionShape*)obj->GetCollisionShape();
+
+                const glm::vec3 halfExtents = box->GetHalfExtents();
+                glm::vec3 extents = halfExtents * 2.0f;
+                if (ImGui::DragFloat3("Extents", (float*)&extents, 0.1f, 0.0f, infinity))
+                {
+                    if (m_workspace->GetCurrentActionType() == ActionType_SetBoxCollisionShapeHalfExtents)
+                    {
+                        SetBoxCollisionShapeHalfExtentsAction* action = (SetBoxCollisionShapeHalfExtentsAction*)m_workspace->GetCurrentAction();
+                        action->SetHalfExtents(extents * 0.5f);
+
+                        action->Execute();
+                    }
+                    else
+                    {
+                        Action* action = new SetBoxCollisionShapeHalfExtentsAction(objs, objectCount, extents * 0.5f);
+                        if (!m_workspace->PushAction(action))
+                        {
+                            printf("Error setting box extents \n");
+
+                            delete action;
+                        }
+                        else
+                        {
+                            m_workspace->SetCurrentAction(action);
+                        }
+                    }
+                }
+
+                break;
+            }
+            case CollisionShapeType_Capsule:
+            {
+                const CapsuleCollisionShape* capsule = (CapsuleCollisionShape*)obj->GetCollisionShape();
+
+                float height = capsule->GetHeight();
+                if (ImGui::DragFloat("Height", &height, 0.1f, 0.0f, infinity))
+                {
+                    if (m_workspace->GetCurrentActionType() == ActionType_SetCapsuleCollisionShapeHeight)
+                    {
+                        SetCapsuleCollisionShapeHeightAction* action = (SetCapsuleCollisionShapeHeightAction*)m_workspace->GetCurrentAction();
+                        action->SetHeight(height);
+
+                        action->Execute();
+                    }
+                    else
+                    {
+                        Action* action = new SetCapsuleCollisionShapeHeightAction(objs, objectCount, height);
+                        if (!m_workspace->PushAction(action))
+                        {
+                            printf("Error setting capsule height \n");
+
+                            delete action;
+                        }
+                        else
+                        {
+                            m_workspace->SetCurrentAction(action);
+                        }
+                    }
+                }
+
+                float radius = capsule->GetRadius();
+                if (ImGui::DragFloat("Radius", &radius, 0.1f, 0.0f, infinity))
+                {
+                    if (m_workspace->GetCurrentActionType() == ActionType_SetCapsuleCollisionShapeRadius)
+                    {
+                        SetCapsuleCollisionShapeRadiusAction* action = (SetCapsuleCollisionShapeRadiusAction*)m_workspace->GetCurrentAction();
+                        action->SetRadius(radius);
+
+                        action->Execute();
+                    }
+                    else
+                    {
+                        Action* action = new SetCapsuleCollisionShapeRadiusAction(objs, objectCount, radius);
+                        if (!m_workspace->PushAction(action))
+                        {
+                            printf("Error setting capsule radius \n");
+
+                            delete action;
+                        }
+                        else
+                        {
+                            m_workspace->SetCurrentAction(action);
+                        }
+                    }
+                }
+
+                break;
+            }
+            case CollisionShapeType_Plane:
+            {
+                const PlaneCollisionShape* plane = (PlaneCollisionShape*)obj->GetCollisionShape();
+
+                glm::vec3 dir = plane->GetDirection();
+                if (ImGui::DragFloat3("Direction", (float*)&dir, 0.1f))
+                {
+                    if (m_workspace->GetCurrentActionType() == ActionType_SetPlaneCollisionShapeDirection)
+                    {
+                        SetPlaneCollisionShapeDirectionAction* action = (SetPlaneCollisionShapeDirectionAction*)m_workspace->GetCurrentAction();
+                        action->SetDirection(dir);
+
+                        action->Execute();
+                    }
+                    else
+                    {
+                        Action* action = new SetPlaneCollisionShapeDirectionAction(objs, objectCount, dir);
+                        if (!m_workspace->PushAction(action))
+                        {
+                            printf("Error setting plane direction \n");
+
+                            delete action;
+                        }
+                        else
+                        {
+                            m_workspace->SetCurrentAction(action);
+                        }
+                    }
+                }
+
+                float distance = plane->GetDistance();
+                if (ImGui::DragFloat("Distance", &distance, 0.1f))
+                {
+                    if (m_workspace->GetCurrentActionType() == ActionType_SetPlaneCollisionShapeDistance)
+                    {
+                        SetPlaneCollisionShapeDistanceAction* action = (SetPlaneCollisionShapeDistanceAction*)m_workspace->GetCurrentAction();
+                        action->SetDistance(distance);
+
+                        action->Execute();
+                    }
+                    else
+                    {
+                        Action* action = new SetPlaneCollisionShapeDistanceAction(objs, objectCount, distance);
+                        if (!m_workspace->PushAction(action))
+                        {
+                            printf("Error setting plane distance \n");
+
+                            delete action;
+                        }
+                        else
+                        {
+                            m_workspace->SetCurrentAction(action);
+                        }
+                    }
+                }
+
+                break;
+            }
             case CollisionShapeType_Sphere:
             {
                 const SphereCollisionShape* sphere = (SphereCollisionShape*)obj->GetCollisionShape();
 
                 float radius = sphere->GetRadius();
-                if (ImGui::DragFloat("Radius", &radius, 0.1f, 0.0f, std::numeric_limits<float>::infinity()))
+                if (ImGui::DragFloat("Radius", &radius, 0.1f, 0.0f, infinity))
                 {
                     if (m_workspace->GetCurrentActionType() == ActionType_SetSphereCollisionShapeRadius)
                     {
