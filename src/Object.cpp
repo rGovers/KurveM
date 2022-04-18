@@ -422,6 +422,16 @@ void UpdateMatrices(const glm::mat4& a_parent, const glm::mat4& a_animParent, Ob
     }
 }
 
+void Object::ResetAnimation()
+{
+    *m_animationTransform = *m_transform;
+
+    if (m_collisionObject != nullptr)
+    {
+        m_collisionObject->Reset();
+    }
+}
+
 void Object::DrawModelAnim(const Model* a_model, const Object* a_armature, const glm::mat4& a_world, const glm::mat4& a_view, const glm::mat4& a_proj)
 {
     unsigned int programHandle = m_baseProgram->GetHandle();

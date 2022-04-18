@@ -19,6 +19,7 @@ protected:
 
 public:
     Transform();
+    Transform(const Transform& a_other);
     ~Transform();
 
     inline glm::vec3& Translation()
@@ -65,6 +66,8 @@ public:
     }
 
     glm::mat4 ToMatrix() const;
+
+    Transform& operator =(const Transform& a_other);
 
     void Serialize(tinyxml2::XMLDocument* a_doc, tinyxml2::XMLElement* a_parent) const;
     void ParseData(const tinyxml2::XMLElement* a_element);

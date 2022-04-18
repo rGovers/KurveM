@@ -222,6 +222,8 @@ public:
     void AddObject(Object* a_object);
     void RemoveObject(Object* a_object);
 
+    void ResetAnimationObjects();
+
     void DefaultWindowConfig();
     void UVWindowConfig();
 

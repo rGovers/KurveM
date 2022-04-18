@@ -45,6 +45,8 @@ public:
 
     virtual e_CollisionObjectType GetCollisionObjectType();
 
+    virtual void Reset() { }
+
     virtual void SetCollisionShape(CollisionShape* a_shape);
     inline CollisionShape* GetCollisionShape() const
     {

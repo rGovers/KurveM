@@ -36,6 +36,8 @@ enum e_ActionType
     ActionType_SetAnimationFramerate,
     ActionType_SetAnimationLength,
     ActionType_SetAnimationNode,
+    ActionType_SetSphereCollisionShapeRadius,
+    ActionType_SetCollisionObjectActive,
     ActionType_SetCollisionObjectType,
     ActionType_SetCollisionShapeType,
     ActionType_SetCurveArmature,
@@ -43,6 +45,7 @@ enum e_ActionType
     ActionType_SetCurveSteps,
     ActionType_SetPathPathSteps,
     ActionType_SetPathShapeSteps,
+    ActionType_SetRigidbodyMass,
     ActionType_TranslateObject,
     ActionType_TranslateObjectRelative,
     ActionType_End

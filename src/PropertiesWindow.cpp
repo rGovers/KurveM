@@ -4,6 +4,7 @@
 #include "Actions/RotateObjectAction.h"
 #include "Actions/ScaleObjectAction.h"
 #include "Actions/SetAnimationNodeAction.h"
+#include "Actions/SetCollisionObjectActiveAction.h"
 #include "Actions/SetCollisionObjectTypeAction.h"
 #include "Actions/SetCollisionShapeTypeAction.h"
 #include "Actions/SetCurveArmatureAction.h"
@@ -11,6 +12,8 @@
 #include "Actions/SetCurveStepsAction.h"
 #include "Actions/SetPathPathStepsAction.h"
 #include "Actions/SetPathShapeStepsAction.h"
+#include "Actions/SetRigidbodyMassAction.h"
+#include "Actions/SetSphereCollisionShapeRadiusAction.h"
 #include "Actions/TranslateObjectAction.h"
 #include "CurveModel.h"
 #include "EditorControls/Editor.h"
@@ -19,6 +22,8 @@
 #include "LongTasks/TriangulateCurveLongTask.h"
 #include "Object.h"
 #include "PathModel.h"
+#include "Physics/CollisionShapes/SphereCollisionShape.h"
+#include "Physics/Rigidbody.h"
 #include "Transform.h"
 #include "Workspace.h"
 
@@ -782,11 +787,77 @@ void PropertiesWindow::PhysicsTab()
 
             ImGui::EndCombo();
         }
-
+        
         cOType = obj->GetCollisionObjectType();
         if (cOType != CollisionObjectType_Null)
         {
-            const e_CollisionShapeType sType = obj->GetCollisionShapeType();
+            const CollisionObject* cObj = obj->GetCollisionObject();
+
+            bool active = cObj->IsActive();
+            if (ImGui::Checkbox("Active", &active))
+            {
+                if (m_workspace->GetCurrentActionType() == ActionType_SetCollisionObjectActive)
+                {
+                    SetCollisionObjectActiveAction* action = (SetCollisionObjectActiveAction*)m_workspace->GetCurrentAction();
+                    action->SetState(active);
+
+                    action->Execute();
+                }
+                else
+                {
+                    Action* action = new SetCollisionObjectActiveAction(objs, objectCount, active);
+                    if (!m_workspace->PushAction(action))
+                    {
+                        printf("Error setting collsion object state \n");
+
+                        delete action;
+                    }
+                    else
+                    {
+                        m_workspace->SetCurrentAction(action);
+                    }
+                }
+            }
+
+            switch (cOType)
+            {
+            case CollisionObjectType_Rigidbody:
+            {
+                const Rigidbody* body = (Rigidbody*)cObj;
+
+                float mass = body->GetMass();
+                if (ImGui::DragFloat("Mass", &mass, 0.1f, 0.0f, std::numeric_limits<float>::infinity()))
+                {
+                    if (m_workspace->GetCurrentActionType() == ActionType_SetRigidbodyMass)
+                    {
+                        SetRigidbodyMassAction* action = (SetRigidbodyMassAction*)m_workspace->GetCurrentAction();
+                        action->SetMass(mass);
+
+                        action->Execute();
+                    }
+                    else
+                    {
+                        Action* action = new SetRigidbodyMassAction(objs, objectCount, mass);
+                        if (!m_workspace->PushAction(action))
+                        {
+                            printf("Error setting rigidbody mass \n");
+
+                            delete action;
+                        }
+                        else
+                        {
+                            m_workspace->SetCurrentAction(action);
+                        }
+                    }
+                }
+
+                break;
+            }
+            }
+
+            ImGui::Separator();
+
+            e_CollisionShapeType sType = obj->GetCollisionShapeType();
             if (ImGui::BeginCombo("Collision Shape Type", CollisionShape_String[sType]))
             {
                 for (int i = 0; i < CollisionShapeType_End; ++i)
@@ -818,6 +889,43 @@ void PropertiesWindow::PhysicsTab()
                 }
 
                 ImGui::EndCombo();
+            }
+
+            sType = obj->GetCollisionShapeType();
+            switch (sType)
+            {
+            case CollisionShapeType_Sphere:
+            {
+                const SphereCollisionShape* sphere = (SphereCollisionShape*)obj->GetCollisionShape();
+
+                float radius = sphere->GetRadius();
+                if (ImGui::DragFloat("Radius", &radius, 0.1f, 0.0f, std::numeric_limits<float>::infinity()))
+                {
+                    if (m_workspace->GetCurrentActionType() == ActionType_SetSphereCollisionShapeRadius)
+                    {
+                        SetSphereCollisionShapeRadiusAction* action = (SetSphereCollisionShapeRadiusAction*)m_workspace->GetCurrentAction();
+                        action->SetRadius(radius);
+
+                        action->Execute();
+                    }
+                    else
+                    {
+                        Action* action = new SetSphereCollisionShapeRadiusAction(objs, objectCount, radius);
+                        if (!m_workspace->PushAction(action))
+                        {
+                            printf("Error setting sphere radius \n");
+
+                            delete action;
+                        }
+                        else
+                        {
+                            m_workspace->SetCurrentAction(action);
+                        }
+                    }
+                }
+
+                break;
+            }
             }
         }
 

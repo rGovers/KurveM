@@ -5,6 +5,7 @@
 #include "ColorTheme.h"
 #include "Gizmos.h"
 #include "Object.h"
+#include "PhysicsEngine.h"
 #include "Transform.h"
 #include "Workspace.h"
 
@@ -99,4 +100,6 @@ void AnimateEditor::Update(Camera* a_camera, const glm::vec2& a_cursorPos, const
     {
         UpdateObject(*iter);
     }
+
+    m_editor->GetPhysicsEngine()->Draw();
 }

@@ -10,6 +10,12 @@ Transform::Transform()
     m_rotation = glm::identity<glm::quat>();
     m_scale = glm::vec3(1.0f);
 }
+Transform::Transform(const Transform& a_other)
+{
+    m_translation = a_other.m_translation;
+    m_rotation = a_other.m_rotation;
+    m_scale = a_other.m_scale;
+}
 Transform::~Transform()
 {
 
@@ -24,6 +30,15 @@ glm::mat4 Transform::ToMatrix() const
     const glm::mat4 scale = glm::scale(iden, m_scale);
 
     return translation * rotation * scale;
+}
+
+Transform& Transform::operator =(const Transform& a_other)
+{
+    m_translation = a_other.m_translation;
+    m_rotation = a_other.m_rotation;
+    m_scale = a_other.m_scale;
+
+    return *this;
 }
 
 void Transform::Serialize(tinyxml2::XMLDocument* a_doc, tinyxml2::XMLElement* a_parent) const

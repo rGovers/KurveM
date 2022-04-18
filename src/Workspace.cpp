@@ -795,6 +795,28 @@ void Workspace::RemoveObject(Object* a_object)
     }
 }
 
+void ResetAnimationObject(Object* a_parent)
+{
+    if (a_parent != nullptr)
+    {
+        a_parent->ResetAnimation();
+
+        const std::list<Object*> children = a_parent->GetChildren();
+
+        for (auto iter = children.begin(); iter != children.end(); ++iter)
+        {
+            ResetAnimationObject(*iter);
+        }
+    }
+}
+void Workspace::ResetAnimationObjects()
+{
+    for (auto iter = m_objectList.begin(); iter != m_objectList.end(); ++iter)
+    {
+        ResetAnimationObject(*iter);
+    }
+}
+
 void Workspace::ClearSelectedObjects()
 {
     m_selectedObjects.clear();

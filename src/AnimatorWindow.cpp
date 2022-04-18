@@ -27,7 +27,7 @@ void AnimatorWindow::Update(double a_delta)
 {
     if (m_editor->GetEditorMode() == EditorMode_Animate)
     {
-        const ImGuiStyle style = ImGui::GetStyle();
+        const ImGuiStyle& style = ImGui::GetStyle();
 
         if (ImGui::Begin("Animator"))
         {
@@ -42,19 +42,23 @@ void AnimatorWindow::Update(double a_delta)
                 const int animLength = refFrameRate * animationLength;
                 const float animStep = 1.0f / refFrameRate;
 
-                if (ImGuiExt::ImageButton("Start", "Textures/ANIMATOR_START.png", glm::vec2(16)))
+                if (ImGuiExt::ImageButton("Start", "Textures/ANIMATOR_START.png", glm::vec2(16.0f)))
                 {
-                    m_editor->SetSelectedTime(0);
-                    m_editor->SetAnimationTime(0);
+                    m_workspace->ResetAnimationObjects();
+                    
+                    m_editor->SetSelectedTime(0.0f);
+                    m_editor->SetAnimationTime(0.0f);
                 }
                 ImGui::SameLine();
-                if (ImGuiExt::ImageSwitchButton("Play", "Textures/ANIMATOR_STOP.png", "Textures/ANIMATOR_PLAY.png", &m_playing, glm::vec2(16), true))
+                if (ImGuiExt::ImageSwitchButton("Play", "Textures/ANIMATOR_STOP.png", "Textures/ANIMATOR_PLAY.png", &m_playing, glm::vec2(16.0f), true))
                 {
                     m_editor->SetAnimationTime(time);
                 }
                 ImGui::SameLine();
-                if (ImGuiExt::ImageButton("End", "Textures/ANIMATOR_END.png", glm::vec2(16)))
+                if (ImGuiExt::ImageButton("End", "Textures/ANIMATOR_END.png", glm::vec2(16.0f)))
                 {
+                    m_workspace->ResetAnimationObjects();
+                    
                     m_editor->SetSelectedTime(animationLength);
                     m_editor->SetAnimationTime(animationLength);
                 }
@@ -65,19 +69,21 @@ void AnimatorWindow::Update(double a_delta)
                     if (time > animationLength)
                     {
                         time -= animationLength;
+
+                        m_workspace->ResetAnimationObjects();
                     }
 
                     m_editor->SetAnimationTime((float)time);
                     m_editor->GetPhysicsEngine()->Update(a_delta);
                 }
 
-                if (ImGui::BeginChild("Outter Frame", {0, 0}, false, ImGuiWindowFlags_AlwaysVerticalScrollbar))
+                if (ImGui::BeginChild("Outter Frame", { 0.0f, 0.0f }, false, ImGuiWindowFlags_AlwaysVerticalScrollbar))
                 {
                     const float frameHeight = ImGui::GetTextLineHeight();
 
                     ImGui::BeginGroup();
 
-                    ImGui::Dummy({ 256, frameHeight });
+                    ImGui::Dummy({ 256.0f, frameHeight });
 
                     const std::list<Object*> objs = m_workspace->GetAllObjectsList();
                     std::list<AnimationGroup> animationNodes = animation->GetNodes();
@@ -194,7 +200,7 @@ void AnimatorWindow::Update(double a_delta)
 
                     ImGui::SameLine();
 
-                    if (ImGui::BeginChild("Inner Frame", { 0, 0 }, false, ImGuiWindowFlags_AlwaysHorizontalScrollbar))
+                    if (ImGui::BeginChild("Inner Frame", { 0.0f, 0.0f }, false, ImGuiWindowFlags_AlwaysHorizontalScrollbar))
                     {
                         const int timeStep = animationLength / 0.5f;
                         const float referenceStep = refFrameRate * 0.5f;
@@ -276,6 +282,8 @@ void AnimatorWindow::Update(double a_delta)
 
                                     if (ImGuiExt::ColoredButton(buttonStr.c_str(), color, glm::vec2(20)))
                                     {
+                                        m_workspace->ResetAnimationObjects();
+
                                         m_editor->SetSelectedTime(curTime);
                                         m_editor->SetAnimationTime(curTime);
                                     }

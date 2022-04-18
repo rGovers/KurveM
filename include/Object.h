@@ -188,7 +188,7 @@ public:
     glm::vec3 GetGlobalTranslation() const;
     void SetGlobalTranslation(const glm::vec3& a_pos);
 
-    void Update(double a_delta, float a_time);
+    void ResetAnimation();
 
     void DrawBase(Camera* a_camera, const glm::vec2& a_winSize);
     void DrawAnimator(Camera* a_camera, const glm::vec2& a_winSize);

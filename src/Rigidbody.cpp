@@ -44,7 +44,7 @@ void Rigidbody::SetActiveState(bool a_state)
         m_collisionObject = body;
         m_engine->GetDynamicsWorld()->addRigidBody(body);
     }
-    else
+    else if (m_collisionObject != nullptr)
     {
         m_engine->GetDynamicsWorld()->removeRigidBody((btRigidBody*)m_collisionObject);
             
@@ -62,7 +62,28 @@ void Rigidbody::SetMass(float a_value)
 {
     m_mass = a_value;
 
-    ((btRigidBody*)m_collisionObject)->setMassProps(m_mass, btVector3(0.0f, 0.0f, 0.0f));
+    if (m_collisionObject != nullptr)
+    {
+        ((btRigidBody*)m_collisionObject)->setMassProps(m_mass, btVector3(0.0f, 0.0f, 0.0f));
+    }
+}
+
+void Rigidbody::Reset()
+{
+    if (m_collisionObject != nullptr)
+    {
+        btRigidBody* body = (btRigidBody*)m_collisionObject;
+
+        // Need to do this because bullet does not auto update
+        btTransform transform;
+        m_transformState->getWorldTransform(transform);
+        body->setCenterOfMassTransform(transform);
+
+        body->setAngularVelocity(btVector3(0.0f, 0.0f, 0.0f));
+        body->setLinearVelocity(btVector3(0.0f, 0.0f, 0.0f));
+
+        body->clearForces();
+    }
 }
 
 void Rigidbody::SetCollisionShape(CollisionShape* a_shape)

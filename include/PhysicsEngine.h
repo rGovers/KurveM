@@ -6,9 +6,13 @@
 #include <BulletDynamics/ConstraintSolver/btConstraintSolver.h>
 #include <BulletDynamics/Dynamics/btDynamicsWorld.h>
 
+class PhysicsDebugDrawer;
+
 class PhysicsEngine
 {
 private:
+    PhysicsDebugDrawer*       m_debugDraw;
+
     btCollisionConfiguration* m_collisionConfiguration;
     btCollisionDispatcher*    m_collisionDispatcher;
     btBroadphaseInterface*    m_broadphaseCollision;
@@ -28,4 +32,5 @@ public:
     }
 
     void Update(double a_delta);
+    void Draw();
 };

@@ -23,5 +23,7 @@ public:
     }
     void SetMass(float a_value);
 
+    virtual void Reset();
+
     virtual void SetCollisionShape(CollisionShape* a_shape);
 };
