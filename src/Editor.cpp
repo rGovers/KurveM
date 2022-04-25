@@ -7,6 +7,7 @@
 #include "Actions/ExtrudeArmatureNodeAction.h"
 #include "Actions/FlipFaceAction.h"
 #include "Actions/InsertFaceAction.h"
+#include "Actions/InsertPathLineAction.h"
 #include "Actions/MoveCurveNodeHandleAction.h"
 #include "Actions/MovePathNodeHandleAction.h"
 #include "Actions/RotateObjectRelativeAction.h"
@@ -109,79 +110,6 @@ void Editor::Init()
 
     m_editorMode = EditorMode_Object;
     m_faceCullingMode = EditorFaceCullingMode_Back;
-}
-
-bool Editor::IsFaceSelected() const
-{
-    const Object* obj = m_workspace->GetSelectedObject();
-    if (obj != nullptr)
-    {
-        const CurveModel* curveModel = obj->GetCurveModel();
-        if (curveModel != nullptr)
-        {
-            const unsigned int nodeCount = m_selectedNodes.size();
-
-            unsigned int* nodes = new unsigned int[nodeCount];
-
-            unsigned int index = 0;
-            for (auto iter = m_selectedNodes.begin(); iter != m_selectedNodes.end(); ++iter)
-            {
-                nodes[index++] = *iter;
-            }
-
-            bool ret = false;
-
-            switch (nodeCount)
-            {
-            case 3:
-            {
-                ret = curveModel->Get3PointFaceIndex(nodes[0], nodes[1], nodes[2]) != -1;
-
-                break;
-            }
-            case 6:
-            {
-                ret = curveModel->Get3PointFaceIndex(nodes) != -1;
-
-                break;
-            }
-            case 4:
-            {
-                ret = curveModel->Get4PointFaceIndex(nodes[0], nodes[1], nodes[2], nodes[3]) != -1;
-
-                break;
-            }
-            case 8:
-            {
-                ret = curveModel->Get4PointFaceIndex(nodes) != -1;
-
-                break;
-            }
-            }
-
-            delete[] nodes;
-
-            return ret;
-        }
-    }
-
-    return false;
-}
-bool Editor::CanInsertFace() const
-{
-    const Object* obj = m_workspace->GetSelectedObject();
-    if (obj != nullptr)
-    {
-        const CurveModel* curveModel = obj->GetCurveModel();
-        if (curveModel != nullptr)
-        {
-            const unsigned int nodeCount = m_selectedNodes.size();
-
-            return nodeCount == 3 || nodeCount == 4;
-        }
-    }
-
-    return false;
 }
 
 void Editor::SetSelectedWeightNode(Object* a_value)
@@ -436,7 +364,7 @@ void Editor::CurveFDown(Object* a_object)
     if (model != nullptr)
     {
         const unsigned int indexCount = m_selectedNodes.size();
-        unsigned int* indices = GetSelectedNodesArray();
+        const unsigned int* indices = GetSelectedNodesArray();
 
         m_curAction = new InsertFaceAction(m_workspace, indices, indexCount, model);
         if (!m_workspace->PushAction(m_curAction))
@@ -456,8 +384,7 @@ void Editor::CurveNDown(Object* a_object)
     if (model != nullptr)
     {
         const unsigned int size = m_selectedNodes.size();
-
-        unsigned int* indices = GetSelectedNodesArray();
+        const unsigned int* indices = GetSelectedNodesArray();
 
         m_curAction = new FlipFaceAction(m_workspace, indices, size, model);
         if (!m_workspace->PushAction(m_curAction))
@@ -486,6 +413,26 @@ void Editor::PathDeleteDown(Object* a_object)
 
             delete[] indices;
         }
+    }
+}
+void Editor::PathFDown(Object* a_object)
+{
+    PathModel* model = a_object->GetPathModel();
+    if (model != nullptr)
+    {
+        const unsigned int size = m_selectedNodes.size();
+        const unsigned int* indices = GetSelectedNodesArray();
+
+        m_curAction = new InsertPathLineAction(m_workspace, indices, size, model);
+        if (!m_workspace->PushAction(m_curAction))
+        {
+            printf("Cannot insert path line \n");
+
+            delete m_curAction;
+            m_curAction = nullptr;
+        }
+
+        delete[] indices;
     }
 }
 
@@ -578,6 +525,8 @@ void Editor::Update(double a_delta, const glm::vec2& a_winPos, const glm::vec2& 
             if (editor->GetEditorMode() == m_editorMode)
             {
                 editor->LeftReleased(m_camera, m_startPos, curCursorPos, a_winSize);
+
+                break;
             }
         }
     }
@@ -767,4 +716,17 @@ void Editor::Update(double a_delta, const glm::vec2& a_winPos, const glm::vec2& 
     glViewport(viewCache[0], viewCache[1], viewCache[2], viewCache[3]);
 
     glEnable(GL_CULL_FACE);  
+}
+void Editor::UpdateContextMenu(const glm::vec2& a_winPos, const glm::vec2& a_winSize)
+{
+    for (auto iter = m_editorControls.begin(); iter != m_editorControls.end(); ++iter)
+    {
+        ControlEditor* editor = *iter;
+        if (editor->GetEditorMode() == m_editorMode)
+        {
+            editor->UpdateContextMenu(a_winPos, a_winSize);
+
+            break;
+        }
+    }
 }

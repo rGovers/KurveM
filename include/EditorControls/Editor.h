@@ -133,9 +133,6 @@ public:
 
     void Init();
 
-    bool IsFaceSelected() const;
-    bool CanInsertFace() const;
-
     inline long long GetSelectedWeightNode() const
     {
         return m_selectedWeightNode;
@@ -200,8 +197,10 @@ public:
     void CurveNDown(Object* a_object);
 
     void PathDeleteDown(Object* a_object);
+    void PathFDown(Object* a_object);
 
     void Update(double a_delta, const glm::vec2& a_winPos, const glm::vec2& a_winSize);
+    void UpdateContextMenu(const glm::vec2& a_winPos, const glm::vec2& a_winSize);
 
     inline RenderTexture* GetRenderTexture() const
     {

@@ -359,35 +359,6 @@ void CurveModel::DestroyFaces(unsigned int a_start, unsigned int a_end)
             newFaces[i + a_start] = m_faces[i + a_end];
         }
 
-        for (unsigned int i = a_start; i < a_end; ++i)
-        {
-            const CurveFace face = m_faces[i];
-
-            switch (face.FaceMode)
-            {
-            case FaceMode_3Point:
-            {
-                for (int j = 0; j < 6; ++j)
-                {
-                    --m_nodes[face.Index[j]].Nodes[face.Index[j]].FaceCount;
-                }
-
-                break;
-            }
-            case FaceMode_4Point:
-            {
-                for (int j = 0; j < 8; ++j)
-                {
-                    --m_nodes[face.Index[j]].Nodes[face.Index[j]].FaceCount;
-                }
-
-                break;
-            }
-            }
-
-            
-        }
-
         delete[] m_faces;
         m_faces = nullptr;
     }

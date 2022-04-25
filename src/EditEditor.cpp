@@ -2,6 +2,9 @@
 
 #include <glm/gtx/quaternion.hpp>
 
+#include "Actions/FlipFaceAction.h"
+#include "Actions/InsertFaceAction.h"
+#include "Actions/InsertPathLineAction.h"
 #include "Actions/MoveCurveNodeHandleAction.h"
 #include "Actions/MovePathNodeHandleAction.h"
 #include "Camera.h"
@@ -129,6 +132,90 @@ bool EditEditor::IsInteractingPathNodeHandle(const PathNodeCluster& a_node, unsi
             }
 
             return true;
+        }
+    }
+
+    return false;
+}
+
+bool EditEditor::CanInsertCurveFace() const
+{
+    const Object* obj = m_workspace->GetSelectedObject();
+    if (obj != nullptr)
+    {
+        const CurveModel* curveModel = obj->GetCurveModel();
+        if (curveModel != nullptr)
+        {
+            const unsigned int nodeCount = m_editor->GetSelectedNodeCount();
+
+            return nodeCount == 3 || nodeCount == 4;
+        }
+    }
+
+    return false;
+}
+bool EditEditor::IsCurveFaceSelected() const
+{
+    const Object* obj = m_workspace->GetSelectedObject();
+    if (obj != nullptr)
+    {
+        const CurveModel* curveModel = obj->GetCurveModel();
+        if (curveModel != nullptr)
+        {
+            const unsigned int nodeCount = m_editor->GetSelectedNodeCount();
+
+            const unsigned int* nodes = m_editor->GetSelectedNodesArray();
+
+            bool ret = false;
+
+            switch (nodeCount)
+            {
+            case 3:
+            {
+                ret = curveModel->Get3PointFaceIndex(nodes[0], nodes[1], nodes[2]) != -1;
+
+                break;
+            }
+            case 6:
+            {
+                ret = curveModel->Get3PointFaceIndex(nodes) != -1;
+
+                break;
+            }
+            case 4:
+            {
+                ret = curveModel->Get4PointFaceIndex(nodes[0], nodes[1], nodes[2], nodes[3]) != -1;
+
+                break;
+            }
+            case 8:
+            {
+                ret = curveModel->Get4PointFaceIndex(nodes) != -1;
+
+                break;
+            }
+            }
+
+            delete[] nodes;
+
+            return ret;
+        }
+    }
+
+    return false;
+}
+
+bool EditEditor::CanInsertPathLine() const
+{
+    const Object* obj = m_workspace->GetSelectedObject();
+    if (obj != nullptr)
+    {
+        const PathModel* pathModel = obj->GetPathModel();
+        if (pathModel != nullptr)
+        {
+            const unsigned int nodeCount = m_editor->GetSelectedNodeCount();
+
+            return nodeCount == 2;
         }
     }
 
@@ -836,5 +923,57 @@ void EditEditor::Update(Camera* a_camera, const glm::vec2& a_cursorPos, const gl
             break;
         }
         }
+    }
+}
+void EditEditor::UpdateContextMenu(const glm::vec2& a_winPos, const glm::vec2& a_winSize)
+{
+    const Object* obj = m_workspace->GetSelectedObject();
+    if (obj != nullptr)
+    {
+        const unsigned int nodeCount = m_editor->GetSelectedNodeCount();
+        const unsigned int* nodes = m_editor->GetSelectedNodesArray();
+
+        CurveModel* curveModel = obj->GetCurveModel();
+        if (curveModel != nullptr)
+        {
+            if (ImGui::MenuItem("Insert Face", nullptr, false, CanInsertCurveFace()))
+            {
+                Action* action = new InsertFaceAction(m_workspace, nodes, nodeCount, curveModel);
+                if (!m_workspace->PushAction(action))
+                {
+                    printf("Error creating face \n");
+
+                    delete action;
+                }
+            }
+
+            if (ImGui::MenuItem("Flip Face", nullptr, false, IsCurveFaceSelected()))
+            {
+                Action* action = new FlipFaceAction(m_workspace, nodes, nodeCount, curveModel);
+                if (!m_workspace->PushAction(action))
+                {
+                    printf("Error fliping face \n");
+
+                    delete action;
+                }
+            }
+        }
+
+        PathModel* pathModel = obj->GetPathModel();
+        if (pathModel != nullptr)
+        {
+            if (ImGui::MenuItem("Insert Line", nullptr, false, CanInsertPathLine()))
+            {
+                Action* action = new InsertPathLineAction(m_workspace, nodes, nodeCount, pathModel);
+                if (!m_workspace->PushAction(action))
+                {
+                    printf("Error inserting path line \n");
+
+                    delete action;
+                }
+            }
+        }
+
+        delete[] nodes;
     }
 }

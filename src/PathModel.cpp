@@ -101,6 +101,10 @@ void PathModel::DestroyPathNodes(unsigned int a_startIndex, unsigned int a_endIn
     m_pathNodeCount = size;
 }
 
+void PathModel::EmplacePathLine(const PathLine& a_line)
+{
+    EmplacePathLines(&a_line, 1);
+}
 void PathModel::EmplacePathLines(const PathLine* a_lines, unsigned int a_lineCount)
 {
     const unsigned int size = m_pathLineCount + a_lineCount;
@@ -125,6 +129,10 @@ void PathModel::EmplacePathLines(const PathLine* a_lines, unsigned int a_lineCou
 
     m_pathLines = newLines;
     m_pathLineCount = size;
+}
+void PathModel::DestroyPathLine(unsigned int a_index)
+{
+    DestroyPathLines(a_index, a_index + 1);
 }
 void PathModel::DestroyPathLines(unsigned int a_startIndex, unsigned int a_endIndex)
 {

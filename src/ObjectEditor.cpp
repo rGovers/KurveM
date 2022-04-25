@@ -1,11 +1,13 @@
 #include "Editors/ObjectEditor.h"
 
+#include "Actions/CreateObjectAction.h"
 #include "Actions/RotateObjectRelativeAction.h"
 #include "Actions/ScaleObjectRelativeAction.h"
 #include "Actions/TranslateObjectRelativeAction.h"
 #include "Camera.h"
 #include "EditorControls/Editor.h"
 #include "Gizmos.h"
+#include "ImGuiExt.h"
 #include "Object.h"
 #include "SelectionControl.h"
 #include "Transform.h"
@@ -221,6 +223,23 @@ void ObjectEditor::Update(Camera* a_camera, const glm::vec2& a_cursorPos, const 
 
             break;
         }
+        }
+    }
+}
+void ObjectEditor::UpdateContextMenu(const glm::vec2& a_winPos, const glm::vec2& a_winSize)
+{
+    m_workspace->CreateCurveObjectMenuList(nullptr);
+    m_workspace->CreatePathObjectMenuList(nullptr);
+    m_workspace->ImportObjectMenuList(nullptr);
+
+    if (ImGui::MenuItem("New Armature"))
+    {
+        Action *action = new CreateObjectAction(m_workspace, nullptr, CreateObjectType_Armature);
+        if (!m_workspace->PushAction(action))
+        {
+            printf("Error Creating Armature \n");
+
+            delete action;
         }
     }
 }

@@ -4,7 +4,7 @@
 #include "LongTasks/TriangulateCurveLongTask.h"
 #include "Workspace.h"
 
-FlipFaceAction::FlipFaceAction(Workspace* a_workspace, unsigned int* a_nodeIndices, unsigned int a_nodeCount, CurveModel* a_curveModel)
+FlipFaceAction::FlipFaceAction(Workspace* a_workspace, const unsigned int* a_nodeIndices, unsigned int a_nodeCount, CurveModel* a_curveModel)
 {
     m_workspace = a_workspace;
 

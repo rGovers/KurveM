@@ -4,27 +4,41 @@
 #include "LongTasks/TriangulateCurveLongTask.h"
 #include "Workspace.h"
 
-void Wind3Points(Node3Cluster* a_nodes, unsigned int& a_a, unsigned int& a_b, unsigned int& a_c)
+void InsertFaceAction::Wind3Points(const Node3Cluster* a_nodes, unsigned int* a_a, unsigned int* a_b, unsigned int* a_c) const
 {
-    const glm::vec2 posA = a_nodes[a_a].Nodes[0].Node.GetPosition();
-    const glm::vec2 posB = a_nodes[a_b].Nodes[0].Node.GetPosition();
-    const glm::vec2 posC = a_nodes[a_c].Nodes[0].Node.GetPosition();
+    const glm::vec3 posA = a_nodes[*a_a].Nodes[0].Node.GetPosition();
+    const glm::vec3 posB = a_nodes[*a_b].Nodes[0].Node.GetPosition();
+    const glm::vec3 posC = a_nodes[*a_c].Nodes[0].Node.GetPosition();
 
-    const glm::vec2 mid = (posA + posB + posC) * 0.33f;
+    const glm::vec3 mid = (posA + posB + posC) * 0.33f;
 
-    const glm::vec2 normA = glm::normalize(posA - mid);
-    const glm::vec2 normB = glm::normalize(posB - mid);
-    const glm::vec2 normC = glm::normalize(posC - mid);
+    const glm::vec3 normA = glm::normalize(posA - mid);
+    const glm::vec3 normB = glm::normalize(posB - mid);
+    const glm::vec3 normC = glm::normalize(posC - mid);
 
-    float angleA = atan2(normA.x, normA.y);
-    float angleB = atan2(normB.x, normB.y);
-    float angleC = atan2(normC.x, normC.y);
+    glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
+    if (glm::abs(glm::dot(up, normA)) >= 0.95f)
+    {
+        up = glm::vec3(0.0f, 0.0f, 1.0f);
+    }
+    const glm::vec3 forward = glm::cross(normA, up);
+    up = glm::cross(normA, forward);
+
+    const glm::mat3 invMat = glm::inverse(glm::mat3(normA, up, forward));
+
+    const glm::vec3 pNormA = invMat * normA;
+    const glm::vec3 pNormB = invMat * normB;
+    const glm::vec3 pNormC = invMat * normC;
+
+    float angleA = atan2(pNormA.x, pNormA.y);
+    float angleB = atan2(pNormB.x, pNormB.y);
+    float angleC = atan2(pNormC.x, pNormC.y);
 
     if (angleB > angleC)
     {
-        const unsigned int temp = a_b;
-        a_b = a_c;
-        a_c = temp;
+        const unsigned int temp = *a_b;
+        *a_b = *a_c;
+        *a_c = temp;
 
         const float tempAngle = angleB;
         angleB = angleC;
@@ -35,41 +49,56 @@ void Wind3Points(Node3Cluster* a_nodes, unsigned int& a_a, unsigned int& a_b, un
     {
         if (angleA > angleC)
         {
-            const unsigned int temp = a_c;
-            a_c = a_a;
-            a_a = temp;
+            const unsigned int temp = *a_c;
+            *a_c = *a_a;
+            *a_a = temp;
         }
 
-        const unsigned int temp = a_b;
-        a_b = a_a;
-        a_a = temp;
+        const unsigned int temp = *a_b;
+        *a_b = *a_a;
+        *a_a = temp;
     }
 }
 
-void Wind4Points(Node3Cluster* a_nodes, unsigned int& a_a, unsigned int& a_b, unsigned int& a_c, unsigned int& a_d)
+void InsertFaceAction::Wind4Points(const Node3Cluster* a_nodes, unsigned int* a_a, unsigned int* a_b, unsigned int* a_c, unsigned int* a_d) const
 {
-    const glm::vec2 posA = a_nodes[a_a].Nodes[0].Node.GetPosition();
-    const glm::vec2 posB = a_nodes[a_b].Nodes[0].Node.GetPosition();
-    const glm::vec2 posC = a_nodes[a_c].Nodes[0].Node.GetPosition();
-    const glm::vec2 posD = a_nodes[a_d].Nodes[0].Node.GetPosition();
+    const glm::vec3 posA = a_nodes[*a_a].Nodes[0].Node.GetPosition();
+    const glm::vec3 posB = a_nodes[*a_b].Nodes[0].Node.GetPosition();
+    const glm::vec3 posC = a_nodes[*a_c].Nodes[0].Node.GetPosition();
+    const glm::vec3 posD = a_nodes[*a_d].Nodes[0].Node.GetPosition();
 
-    const glm::vec2 mid = (posA + posB + posC + posD) * 0.25f;
+    const glm::vec3 mid = (posA + posB + posC + posD) * 0.25f;
 
-    const glm::vec2 normA = glm::normalize(posA - mid);
-    const glm::vec2 normB = glm::normalize(posB - mid);
-    const glm::vec2 normC = glm::normalize(posC - mid);
-    const glm::vec2 normD = glm::normalize(posD - mid);
+    const glm::vec3 normA = glm::normalize(posA - mid);
+    const glm::vec3 normB = glm::normalize(posB - mid);
+    const glm::vec3 normC = glm::normalize(posC - mid);
+    const glm::vec3 normD = glm::normalize(posD - mid);
 
-    float angleA = atan2(normA.x, normA.y);
-    float angleB = atan2(normB.x, normB.y);
-    float angleC = atan2(normC.x, normC.y);
-    float angleD = atan2(normD.x, normD.y);
+    glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
+    if (glm::abs(glm::dot(up, normA)) >= 0.95f)
+    {
+        up = glm::vec3(0.0f, 0.0f, 1.0f);
+    }
+    const glm::vec3 forward = glm::cross(normA, up);
+    up = glm::cross(normA, forward);
+
+    const glm::mat3 invMat = glm::inverse(glm::mat3(normA, up, forward));
+
+    const glm::vec3 pNormA = invMat * normA;
+    const glm::vec3 pNormB = invMat * normB;
+    const glm::vec3 pNormC = invMat * normC;
+    const glm::vec3 pNormD = invMat * normD;
+
+    float angleA = atan2(pNormA.x, pNormA.y);
+    float angleB = atan2(pNormB.x, pNormB.y);
+    float angleC = atan2(pNormC.x, pNormC.y);
+    float angleD = atan2(pNormD.x, pNormD.y);
 
     if (angleC > angleD)
     {
-        const unsigned int tmp = a_c;
-        a_c = a_d;
-        a_d = tmp;
+        const unsigned int tmp = *a_c;
+        *a_c = *a_d;
+        *a_d = tmp;
 
         const float tmpAngle = angleC;
         angleC = angleD;
@@ -80,18 +109,18 @@ void Wind4Points(Node3Cluster* a_nodes, unsigned int& a_a, unsigned int& a_b, un
     {
         if (angleB > angleD)
         {
-            const unsigned int tmp = a_b;
-            a_b = a_d;
-            a_d = tmp;
+            const unsigned int tmp = *a_b;
+            *a_b = *a_d;
+            *a_d = tmp;
 
             const float tmpAngle = angleB;
             angleB = angleD;
             angleD = tmpAngle;
         }
 
-        const unsigned int tmp = a_b;
-        a_b = a_c;
-        a_c = tmp;
+        const unsigned int tmp = *a_b;
+        *a_b = *a_c;
+        *a_c = tmp;
 
         const float tmpAngle = angleB;
         angleB = angleC;
@@ -104,23 +133,23 @@ void Wind4Points(Node3Cluster* a_nodes, unsigned int& a_a, unsigned int& a_b, un
         {
             if (angleA > angleD)
             {
-                const unsigned int tmp = a_a;
-                a_a = a_d;
-                a_d = tmp;
+                const unsigned int tmp = *a_a;
+                *a_a = *a_d;
+                *a_d = tmp;
             }
 
-            const unsigned int tmp = a_a;
-            a_a = a_c;
-            a_c = tmp;
+            const unsigned int tmp = *a_a;
+            *a_a = *a_c;
+            *a_c = tmp;
         }
 
-        const unsigned int tmp = a_a;
-        a_a = a_b;
-        a_b = tmp;
+        const unsigned int tmp = *a_a;
+        *a_a = *a_b;
+        *a_b = tmp;
     }
 }
 
-inline bool GetIndex(const CurveFace& a_face, e_FaceIndex a_faceIndexA, e_FaceIndex a_faceIndexB, unsigned int a_indexA, unsigned int a_indexB, unsigned int* a_out)
+bool InsertFaceAction::GetIndex(const CurveFace& a_face, e_FaceIndex a_faceIndexA, e_FaceIndex a_faceIndexB, unsigned int a_indexA, unsigned int a_indexB, unsigned int* a_out) const
 {
     const unsigned int indA = a_face.Index[a_faceIndexA];
     const unsigned int indB = a_face.Index[a_faceIndexB];
@@ -140,8 +169,10 @@ inline bool GetIndex(const CurveFace& a_face, e_FaceIndex a_faceIndexA, e_FaceIn
 
     return false;
 }
-unsigned int PushNode(Node3Cluster* a_cluster, unsigned int a_startIndex, unsigned int a_endIndex, const CurveFace* a_faces, unsigned int a_faceCount)
+unsigned int InsertFaceAction::PushNode(Node3Cluster* a_cluster, unsigned int a_startIndex, unsigned int a_endIndex, const CurveFace* a_faces, unsigned int a_faceCount) const
 {
+    constexpr float infinity = std::numeric_limits<float>::infinity();
+
     for (unsigned int i = 0; i < a_faceCount; ++i)
     {
         const CurveFace face = a_faces[i];
@@ -152,20 +183,14 @@ unsigned int PushNode(Node3Cluster* a_cluster, unsigned int a_startIndex, unsign
             unsigned int index;
             if (GetIndex(face, FaceIndex_3Point_AB, FaceIndex_3Point_BA, a_startIndex, a_endIndex, &index))
             {
-                ++a_cluster->Nodes[index].FaceCount;
-
                 return index;
             }
             else if (GetIndex(face, FaceIndex_3Point_AC, FaceIndex_3Point_CA, a_startIndex, a_endIndex, &index))
             {
-                ++a_cluster->Nodes[index].FaceCount;
-
                 return index;
             }
             else if (GetIndex(face, FaceIndex_3Point_BC, FaceIndex_3Point_CB, a_startIndex, a_endIndex, &index))
             {
-                ++a_cluster->Nodes[index].FaceCount;
-
                 return index;
             }
 
@@ -176,26 +201,18 @@ unsigned int PushNode(Node3Cluster* a_cluster, unsigned int a_startIndex, unsign
             unsigned int index;
             if (GetIndex(face, FaceIndex_4Point_AB, FaceIndex_4Point_BA, a_startIndex, a_endIndex, &index))
             {
-                ++a_cluster->Nodes[index].FaceCount;
-
                 return index;
             }
             else if (GetIndex(face, FaceIndex_4Point_AC, FaceIndex_4Point_CA, a_startIndex, a_endIndex, &index))
             {
-                ++a_cluster->Nodes[index].FaceCount;
-
                 return index;
             }
             else if (GetIndex(face, FaceIndex_4Point_BD, FaceIndex_4Point_DB, a_startIndex, a_endIndex, &index))
             {
-                ++a_cluster->Nodes[index].FaceCount;
-
                 return index;
             }
             else if (GetIndex(face, FaceIndex_4Point_CD, FaceIndex_4Point_DC, a_startIndex, a_endIndex, &index))
             {
-                ++a_cluster->Nodes[index].FaceCount;
-
                 return index;
             }
 
@@ -204,14 +221,14 @@ unsigned int PushNode(Node3Cluster* a_cluster, unsigned int a_startIndex, unsign
         }
     }
 
-    const unsigned int size = a_cluster->Nodes.size();
+    const unsigned int size = (unsigned int)a_cluster->Nodes.size();
 
     for (unsigned int i = 0; i < size; ++i)
     {
-        if (a_cluster->Nodes[i].Node.GetHandlePosition().x == std::numeric_limits<float>::infinity())
+        NodeGroup& node = a_cluster->Nodes[i];
+        if (node.Node.GetHandlePosition().x == infinity)
         {
-            a_cluster->Nodes[i].FaceCount = 1;
-            a_cluster->Nodes[i].Node.SetHandlePosition(a_cluster->Nodes[i].Node.GetPosition());
+            node.Node.SetHandlePosition(a_cluster->Nodes[i].Node.GetPosition());
 
             return i;
         }
@@ -223,35 +240,25 @@ unsigned int PushNode(Node3Cluster* a_cluster, unsigned int a_startIndex, unsign
     node.SetPosition(pos);
     node.SetHandlePosition(pos);
 
-    NodeGroup nodeG;
-    nodeG.Node = node;
-    nodeG.FaceCount = 1;
-
-    a_cluster->Nodes.emplace_back(nodeG);
+    a_cluster->Nodes.emplace_back(node);
 
     return size;
 }
 
-void PopNode(Node3Cluster* a_cluster, const std::vector<NodeGroup>::iterator& a_iter)
+void InsertFaceAction::PopNode(Node3Cluster* a_cluster, unsigned int a_index) const
 {
-    if (a_cluster->Nodes.size() > 1)
+    constexpr float infinity = std::numeric_limits<float>::infinity();
+
+    NodeGroup& nGroup = a_cluster->Nodes[a_index];
+
+    if (--nGroup.FaceCount <= 0)
     {
-        if (--a_iter->FaceCount <= 0)
-        {
-            a_cluster->Nodes.erase(a_iter);
-        }
-    }
-    else if (a_cluster->Nodes.size() == 1)
-    {
-        if (--a_iter->FaceCount <= 0)
-        {
-            a_cluster->Nodes.begin()->Node.SetHandlePosition(glm::vec3(std::numeric_limits<float>().infinity()));
-            a_cluster->Nodes.begin()->FaceCount = 0;
-        }
+        nGroup.Node.SetHandlePosition(glm::vec3(infinity));
+        nGroup.FaceCount = 0;
     }
 }
 
-InsertFaceAction::InsertFaceAction(Workspace* a_workspace, unsigned int* a_nodeIndices, unsigned int a_nodeCount, CurveModel* a_curveModel)
+InsertFaceAction::InsertFaceAction(Workspace* a_workspace, const unsigned int* a_nodeIndices, unsigned int a_nodeCount, CurveModel* a_curveModel)
 {
     m_workspace = a_workspace;
 
@@ -294,7 +301,7 @@ bool InsertFaceAction::Execute()
         unsigned int pointB = m_nodeIndices[1];
         unsigned int pointC = m_nodeIndices[2];
         
-        Wind3Points(nodes, pointA, pointB, pointC);
+        Wind3Points(nodes, &pointA, &pointB, &pointC);
 
         m_faceIndex = m_curveModel->GetFaceCount();
 
@@ -329,7 +336,7 @@ bool InsertFaceAction::Execute()
         unsigned int pointC = m_nodeIndices[2];
         unsigned int pointD = m_nodeIndices[3];
 
-        Wind4Points(nodes, pointA, pointB, pointC, pointD);
+        Wind4Points(nodes, &pointA, &pointB, &pointC, &pointD);
 
         m_faceIndex = m_curveModel->GetFaceCount();
 
@@ -337,7 +344,6 @@ bool InsertFaceAction::Execute()
 
         face.FaceMode = FaceMode_4Point;
 
-        // TODO: Fix me
         face.Index[FaceIndex_4Point_AB] = pointA;
         face.Index[FaceIndex_4Point_AC] = pointA;
         face.Index[FaceIndex_4Point_BA] = pointB;
@@ -377,41 +383,19 @@ bool InsertFaceAction::Revert()
         {
         case FaceMode_3Point:
         {
-            const std::vector<NodeGroup>::iterator iterAB = nodes[face.Index[FaceIndex_3Point_AB]].Nodes.begin() + face.ClusterIndex[FaceIndex_3Point_AB];
-            const std::vector<NodeGroup>::iterator iterAC = nodes[face.Index[FaceIndex_3Point_AC]].Nodes.begin() + face.ClusterIndex[FaceIndex_3Point_AC];
-            const std::vector<NodeGroup>::iterator iterBA = nodes[face.Index[FaceIndex_3Point_BA]].Nodes.begin() + face.ClusterIndex[FaceIndex_3Point_BA];
-            const std::vector<NodeGroup>::iterator iterBC = nodes[face.Index[FaceIndex_3Point_BC]].Nodes.begin() + face.ClusterIndex[FaceIndex_3Point_BC];
-            const std::vector<NodeGroup>::iterator iterCA = nodes[face.Index[FaceIndex_3Point_CA]].Nodes.begin() + face.ClusterIndex[FaceIndex_3Point_CA];
-            const std::vector<NodeGroup>::iterator iterCB = nodes[face.Index[FaceIndex_3Point_CB]].Nodes.begin() + face.ClusterIndex[FaceIndex_3Point_CB];
-
-            PopNode(&(nodes[face.Index[FaceIndex_3Point_AB]]), iterAB);
-            PopNode(&(nodes[face.Index[FaceIndex_3Point_AC]]), iterAC);
-            PopNode(&(nodes[face.Index[FaceIndex_3Point_BA]]), iterBA);
-            PopNode(&(nodes[face.Index[FaceIndex_3Point_BC]]), iterBC);
-            PopNode(&(nodes[face.Index[FaceIndex_3Point_CA]]), iterCA);
-            PopNode(&(nodes[face.Index[FaceIndex_3Point_CB]]), iterCB);
+            for (int i = 0; i < 6; ++i)
+            {
+                PopNode(&nodes[face.Index[i]], face.ClusterIndex[i]);
+            }
 
             break;
         }
         case FaceMode_4Point:
         {
-            const std::vector<NodeGroup>::iterator iterAB = nodes[face.Index[FaceIndex_4Point_AB]].Nodes.begin() + face.ClusterIndex[FaceIndex_4Point_AB];
-            const std::vector<NodeGroup>::iterator iterAC = nodes[face.Index[FaceIndex_4Point_AC]].Nodes.begin() + face.ClusterIndex[FaceIndex_4Point_AC];
-            const std::vector<NodeGroup>::iterator iterBA = nodes[face.Index[FaceIndex_4Point_BA]].Nodes.begin() + face.ClusterIndex[FaceIndex_4Point_BA];
-            const std::vector<NodeGroup>::iterator iterBD = nodes[face.Index[FaceIndex_4Point_BD]].Nodes.begin() + face.ClusterIndex[FaceIndex_4Point_BD];
-            const std::vector<NodeGroup>::iterator iterCA = nodes[face.Index[FaceIndex_4Point_CA]].Nodes.begin() + face.ClusterIndex[FaceIndex_4Point_CA];
-            const std::vector<NodeGroup>::iterator iterCD = nodes[face.Index[FaceIndex_4Point_CD]].Nodes.begin() + face.ClusterIndex[FaceIndex_4Point_CD];
-            const std::vector<NodeGroup>::iterator iterDB = nodes[face.Index[FaceIndex_4Point_DB]].Nodes.begin() + face.ClusterIndex[FaceIndex_4Point_DB];
-            const std::vector<NodeGroup>::iterator iterDC = nodes[face.Index[FaceIndex_4Point_DC]].Nodes.begin() + face.ClusterIndex[FaceIndex_4Point_DC];
-
-            PopNode(&(nodes[face.Index[FaceIndex_4Point_AB]]), iterAB);
-            PopNode(&(nodes[face.Index[FaceIndex_4Point_AC]]), iterAC);
-            PopNode(&(nodes[face.Index[FaceIndex_4Point_BA]]), iterBA);
-            PopNode(&(nodes[face.Index[FaceIndex_4Point_BD]]), iterBD);
-            PopNode(&(nodes[face.Index[FaceIndex_4Point_CA]]), iterCA);
-            PopNode(&(nodes[face.Index[FaceIndex_4Point_CD]]), iterCD);
-            PopNode(&(nodes[face.Index[FaceIndex_4Point_DB]]), iterDB);
-            PopNode(&(nodes[face.Index[FaceIndex_4Point_DC]]), iterDC);
+            for (int i = 0; i < 8; ++i)
+            {
+                PopNode(&nodes[face.Index[i]], face.ClusterIndex[i]);
+            }
 
             break;
         }
@@ -419,9 +403,9 @@ bool InsertFaceAction::Revert()
 
         m_curveModel->DestroyFace(m_faceIndex);
 
-        m_workspace->PushLongTask(new TriangulateCurveLongTask(m_curveModel));
-
         m_faceIndex = -1;
+        
+        m_workspace->PushLongTask(new TriangulateCurveLongTask(m_curveModel));
     }
 
     return true;

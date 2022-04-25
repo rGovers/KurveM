@@ -202,7 +202,9 @@ public:
     void EmplacePathNodes(const PathNodeCluster* a_nodes, unsigned int a_nodeCount);
     void DestroyPathNodes(unsigned int a_startIndex, unsigned int a_endIndex);
 
+    void EmplacePathLine(const PathLine& a_line);
     void EmplacePathLines(const PathLine* a_lines, unsigned int a_lineCount);
+    void DestroyPathLine(unsigned int a_index);
     void DestroyPathLines(unsigned int a_startIndex, unsigned int a_endIndex);
 
     void EmplaceShapeNodes(const ShapeNodeCluster* a_nodes, unsigned int a_nodeCount);
