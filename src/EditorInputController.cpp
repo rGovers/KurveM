@@ -23,6 +23,8 @@ EditorInputController::EditorInputController(Workspace* a_workspace, Editor* a_e
     m_curveFunctions[GLFW_KEY_DELETE] = new std::function<void(Object*)>(std::bind(&Editor::CurveDeleteDown, m_editor, std::placeholders::_1));
     m_curveFunctions[GLFW_KEY_F] = new std::function<void(Object*)>(std::bind(&Editor::CurveFDown, m_editor, std::placeholders::_1));
     m_curveFunctions[GLFW_KEY_N] = new std::function<void(Object*)>(std::bind(&Editor::CurveNDown, m_editor, std::placeholders::_1));
+
+    m_pathFunctions[GLFW_KEY_DELETE] = new std::function<void(Object*)>(std::bind(&Editor::PathDeleteDown, m_editor, std::placeholders::_1));
 }
 EditorInputController::~EditorInputController()
 {

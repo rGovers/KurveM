@@ -199,6 +199,8 @@ public:
     void CurveFDown(Object* a_object);
     void CurveNDown(Object* a_object);
 
+    void PathDeleteDown(Object* a_object);
+
     void Update(double a_delta, const glm::vec2& a_winPos, const glm::vec2& a_winSize);
 
     inline RenderTexture* GetRenderTexture() const

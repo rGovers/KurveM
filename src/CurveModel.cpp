@@ -458,17 +458,6 @@ void CurveModel::SetModelData(const Node3Cluster* a_nodes, unsigned int a_nodeCo
 }
 void CurveModel::PassModelData(Node3Cluster* a_nodes, unsigned int a_nodeCount, CurveFace* a_faces, unsigned int a_faceCount)
 {
-    if (m_nodes != nullptr)
-    {
-        delete[] m_nodes;
-        m_nodes = nullptr;
-    }
-    if (m_faces != nullptr)
-    {
-        delete[] m_faces;
-        m_faces = nullptr;
-    }
-
     m_nodes = a_nodes;
     m_faces = a_faces;
 

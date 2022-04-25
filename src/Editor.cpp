@@ -472,6 +472,23 @@ void Editor::CurveNDown(Object* a_object)
     }
 }
 
+void Editor::PathDeleteDown(Object* a_object)
+{
+    PathModel* model = a_object->GetPathModel();
+    if (model != nullptr)
+    {
+        const unsigned int size = m_selectedNodes.size();
+        if (size > 0)
+        {
+            unsigned int* indices = GetSelectedNodesArray();
+
+            m_workspace->PushModal(new DeleteNodesModal(m_workspace, this, indices, size, model));
+
+            delete[] indices;
+        }
+    }
+}
+
 void Editor::Update(double a_delta, const glm::vec2& a_winPos, const glm::vec2& a_winSize)
 {
     if (a_winSize.x != m_renderTexture->GetWidth() || a_winSize.y != m_renderTexture->GetHeight())

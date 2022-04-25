@@ -9,7 +9,7 @@
 class Editor;
 class Workspace;
 
-class DeleteNodeAction : public Action
+class DeleteCurveNodeAction : public Action
 {
 private:
     Workspace*    m_workspace;
@@ -31,8 +31,8 @@ private:
 protected:
 
 public:
-    DeleteNodeAction(Workspace* a_workspace, Editor* a_editor, const unsigned int* a_nodeIndices, unsigned int a_nodeCount, CurveModel* a_curveModel);
-    virtual ~DeleteNodeAction();
+    DeleteCurveNodeAction(Workspace* a_workspace, Editor* a_editor, const unsigned int* a_nodeIndices, unsigned int a_nodeCount, CurveModel* a_curveModel);
+    virtual ~DeleteCurveNodeAction();
 
     virtual e_ActionType GetActionType();
 

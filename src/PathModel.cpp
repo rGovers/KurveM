@@ -230,6 +230,18 @@ void PathModel::DestroyShapeLines(unsigned int a_startIndex, unsigned int a_endI
 void PathModel::SetModelData(const PathNodeCluster* a_pathNodes, unsigned int a_pathNodeCount, const PathLine* a_pathLines, unsigned int a_pathLineCount, 
     const ShapeNodeCluster* a_shapeNodes, unsigned int a_shapeNodeCount, const ShapeLine* a_shapeLines, unsigned int a_shapeLineCount)
 {
+    SetPathModelData(a_pathNodes, a_pathNodeCount, a_pathLines, a_pathLineCount);
+    SetShapeModelData(a_shapeNodes, a_shapeNodeCount, a_shapeLines, a_shapeLineCount);    
+}
+void PathModel::PassModelData(PathNodeCluster* a_pathNodes, unsigned int a_pathNodeCount, PathLine* a_pathLines, unsigned int a_pathLineCount,
+    ShapeNodeCluster* a_shapeNodes, unsigned int a_shapeNodeCount, ShapeLine* a_shapeLines, unsigned int a_shapeLineCount)
+{
+   PassPathModelData(a_pathNodes, a_pathNodeCount, a_pathLines, a_pathLineCount);
+   PassShapeModelData(a_shapeNodes, a_shapeNodeCount, a_shapeLines, a_shapeLineCount);
+}
+
+void PathModel::SetPathModelData(const PathNodeCluster* a_pathNodes, unsigned int a_pathNodeCount, const PathLine* a_pathLines, unsigned int a_pathLineCount)
+{
     if (m_pathNodes != nullptr)
     {
         delete[] m_pathNodes;
@@ -255,7 +267,18 @@ void PathModel::SetModelData(const PathNodeCluster* a_pathNodes, unsigned int a_
     {
         m_pathLines[i] = a_pathLines[i];
     }
+}
+void PathModel::PassPathModelData(PathNodeCluster* a_pathNodes, unsigned int a_pathNodeCount, PathLine* a_pathLines, unsigned int a_pathLineCount)
+{
+    m_pathNodeCount = a_pathNodeCount;
+    m_pathLineCount = a_pathLineCount;
 
+    m_pathNodes = a_pathNodes;
+    m_pathLines = a_pathLines;
+}
+
+void PathModel::SetShapeModelData(const ShapeNodeCluster* a_shapeNodes, unsigned int a_shapeNodeCount, const ShapeLine* a_shapeLines, unsigned int a_shapeLineCount)
+{
     if (m_shapeNodes != nullptr)
     {
         delete[] m_shapeNodes;
@@ -282,37 +305,8 @@ void PathModel::SetModelData(const PathNodeCluster* a_pathNodes, unsigned int a_
         m_shapeLines[i] = a_shapeLines[i];
     }
 }
-void PathModel::PassModelData(PathNodeCluster* a_pathNodes, unsigned int a_pathNodeCount, PathLine* a_pathLines, unsigned int a_pathLineCount,
-    ShapeNodeCluster* a_shapeNodes, unsigned int a_shapeNodeCount, ShapeLine* a_shapeLines, unsigned int a_shapeLineCount)
+void PathModel::PassShapeModelData(ShapeNodeCluster* a_shapeNodes, unsigned int a_shapeNodeCount, ShapeLine* a_shapeLines, unsigned int a_shapeLineCount)
 {
-    if (m_pathNodes != nullptr)
-    {
-        delete[] m_pathNodes;
-        m_pathNodes = nullptr;
-    }
-    if (m_pathLines != nullptr)
-    {
-        delete[] m_pathLines;
-        m_pathLines = nullptr;
-    }
-
-    m_pathNodeCount = a_pathNodeCount;
-    m_pathLineCount = a_pathLineCount;
-
-    m_pathNodes = a_pathNodes;
-    m_pathLines = a_pathLines;
-
-    if (m_shapeNodes != nullptr)
-    {
-        delete[] m_shapeNodes;
-        m_shapeNodes = nullptr;
-    }
-    if (m_shapeLines != nullptr)
-    {
-        delete[] m_shapeLines;
-        m_shapeLines = nullptr;
-    }
-
     m_shapeNodeCount = a_shapeNodeCount;
     m_shapeLineCount = a_shapeLineCount;
 

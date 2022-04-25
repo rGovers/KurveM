@@ -1,4 +1,4 @@
-#include "Actions/DeleteNodeAction.h"
+#include "Actions/DeleteCurveNodeAction.h"
 
 #include <vector>
 #include <unordered_map>
@@ -6,14 +6,6 @@
 #include "EditorControls/Editor.h"
 #include "LongTasks/TriangulateCurveLongTask.h"
 #include "Workspace.h"
-
-struct DeleteClusterNode
-{
-    unsigned int Index;
-    unsigned int ClusterIndex;
-
-    BezierCurveNode3 Node;
-};
 
 unsigned int GetClusterIndex(const BezierCurveNode3& a_node, Node3Cluster* a_newNode)
 {
@@ -41,7 +33,7 @@ unsigned int GetClusterIndex(const BezierCurveNode3& a_node, Node3Cluster* a_new
     return size;
 }
 
-DeleteNodeAction::DeleteNodeAction(Workspace* a_workspace, Editor* a_editor, const unsigned int* a_nodeIndices, unsigned int a_nodeCount, CurveModel* a_curveModel)
+DeleteCurveNodeAction::DeleteCurveNodeAction(Workspace* a_workspace, Editor* a_editor, const unsigned int* a_nodeIndices, unsigned int a_nodeCount, CurveModel* a_curveModel)
 {
     m_workspace = a_workspace;
     m_editor = a_editor;
@@ -63,27 +55,24 @@ DeleteNodeAction::DeleteNodeAction(Workspace* a_workspace, Editor* a_editor, con
     m_nodeCount = 0;
     for (unsigned int i = 0; i < m_oldNodeCount; ++i)
     {
-        bool found = false;
+        NodeGroup nGroup;
         for (int j = 0; j < a_nodeCount; ++j)
         {
             if (a_nodeIndices[j] == i)
             {
-                found = true;
-
-                break;
+                goto NextNode;
             }
         }
 
-        if (!found)
-        {
-            NodeGroup nGroup = m_oldNodes[i].Nodes[0];
-            nGroup.FaceCount = 0;
-            nGroup.Node.SetHandlePosition(glm::vec3(std::numeric_limits<float>::infinity()));
+        nGroup = m_oldNodes[i].Nodes[0];
+        nGroup.FaceCount = 0;
+        nGroup.Node.SetHandlePosition(glm::vec3(std::numeric_limits<float>::infinity()));
 
-            m_nodes[m_nodeCount] = nGroup;
+        m_nodes[m_nodeCount] = nGroup;
 
-            lookup.emplace(i, m_nodeCount++);
-        }
+        lookup.emplace(i, m_nodeCount++);
+
+NextNode:;
     }
 
     m_faces = new CurveFace[m_oldFaceCount];
@@ -91,40 +80,34 @@ DeleteNodeAction::DeleteNodeAction(Workspace* a_workspace, Editor* a_editor, con
     m_faceCount = 0;
     for (unsigned int i = 0; i < m_oldFaceCount; ++i)
     {
-        const CurveFace face = m_oldFaces[i];
+        const CurveFace& face = m_oldFaces[i];
         const int iterCount = face.FaceMode == FaceMode_3Point ? 6 : 8;
+        CurveFace newFace;
 
-        bool found = true;
         for (int j = 0; j < iterCount; ++j)
         {
             if (lookup.find(face.Index[j]) == lookup.end())
             {
-                found = false;
-
-                break;
+                goto NextFace;
             }
         }
+        
+        newFace.FaceMode = face.FaceMode;
 
-        if (found)
+        for (int j = 0; j < iterCount; ++j)
         {
-            CurveFace newFace;
+            const unsigned int index = face.Index[j];
+            const unsigned int newIndex = lookup[index];
 
-            newFace.FaceMode = face.FaceMode;
-
-            for (int j = 0; j < iterCount; ++j)
-            {
-                const unsigned int index = face.Index[j];
-                const unsigned int newIndex = lookup[index];
-
-                newFace.Index[j] = newIndex;
-                newFace.ClusterIndex[j] = GetClusterIndex(m_oldNodes[index].Nodes[face.ClusterIndex[j]].Node, &m_nodes[newIndex]);
-            }
-
-            m_faces[m_faceCount++] = newFace;
+            newFace.Index[j] = newIndex;
+            newFace.ClusterIndex[j] = GetClusterIndex(m_oldNodes[index].Nodes[face.ClusterIndex[j]].Node, &m_nodes[newIndex]);
         }
+
+        m_faces[m_faceCount++] = newFace;
+NextFace:;
     }
 }
-DeleteNodeAction::~DeleteNodeAction()
+DeleteCurveNodeAction::~DeleteCurveNodeAction()
 {
     if (m_own)
     {
@@ -138,16 +121,16 @@ DeleteNodeAction::~DeleteNodeAction()
     }
 }
 
-e_ActionType DeleteNodeAction::GetActionType()
+e_ActionType DeleteCurveNodeAction::GetActionType()
 {
-    return ActionType_DeleteNode;
+    return ActionType_DeleteCurveNode;
 }
 
-bool DeleteNodeAction::Redo()
+bool DeleteCurveNodeAction::Redo()
 {
     return Execute();
 }
-bool DeleteNodeAction::Execute()
+bool DeleteCurveNodeAction::Execute()
 {
     if (m_nodeCount != m_oldNodeCount || m_faceCount != m_oldFaceCount)
     {
@@ -164,7 +147,7 @@ bool DeleteNodeAction::Execute()
 
     return false;
 }
-bool DeleteNodeAction::Revert()
+bool DeleteCurveNodeAction::Revert()
 {
     if (m_nodeCount != m_oldNodeCount || m_faceCount != m_oldFaceCount)
     {
