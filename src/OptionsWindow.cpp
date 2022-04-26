@@ -12,6 +12,7 @@
 #include "Modals/ConfirmModal.h"
 #include "Modals/CreateAnimationModal.h"
 #include "Object.h"
+#include "PathModel.h"
 #include "Workspace.h"
 
 const char* EditorMode_String[] = 
@@ -281,6 +282,16 @@ void OptionsWindow::Update(double a_delta)
                 case ObjectType_CurveModel:
                 {
                     const CurveModel* model = obj->GetCurveModel();
+                    if (model != nullptr)
+                    {
+                        nodes = model->GetArmatureNodes();
+                    }
+
+                    break;
+                }
+                case ObjectType_PathModel:
+                {
+                    const PathModel* model = obj->GetPathModel();
                     if (model != nullptr)
                     {
                         nodes = model->GetArmatureNodes();

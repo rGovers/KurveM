@@ -30,6 +30,7 @@
 #include "Modals/DeleteNodesModal.h"
 #include "Model.h"
 #include "Object.h"
+#include "PathModel.h"
 #include "PhysicsEngine.h"
 #include "RenderTexture.h"
 #include "ShaderPixel.h"
@@ -112,7 +113,7 @@ void Editor::Init()
     m_faceCullingMode = EditorFaceCullingMode_Back;
 }
 
-void Editor::SetSelectedWeightNode(Object* a_value)
+void Editor::SetSelectedWeightNode(const Object* a_value)
 {
     m_selectedWeightNode = -1;
 
@@ -228,6 +229,18 @@ bool Editor::IsEditorModeEnabled(e_EditorMode a_editorMode) const
                     {
                         return model->GetArmatureID() != -1;
                     }
+
+                    break;
+                }
+                case ObjectType_PathModel:
+                {
+                    const PathModel* model = obj->GetPathModel();
+                    if (model != nullptr)
+                    {
+                        return model->GetArmatureID() != -1;
+                    }
+
+                    break;
                 }
                 }
             }

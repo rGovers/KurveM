@@ -21,6 +21,8 @@ private:
 
     std::vector<BoneCluster> m_bones;
 
+    static float WeightBlend(float a_start, const float a_end, float a_lerp);
+
 protected:
 
 public:

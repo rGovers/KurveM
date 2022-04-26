@@ -1,10 +1,12 @@
 #include "Editors/WeightPaintingEditor.h"
 
 #include "Actions/AddCurveNodeWeightAction.h"
+#include "Actions/AddPathNodeWeightAction.h"
 #include "Camera.h"
 #include "CurveModel.h"
 #include "Gizmos.h"
 #include "Object.h"
+#include "PathModel.h"
 #include "SelectionControl.h"
 #include "Transform.h"
 #include "Workspace.h"
@@ -30,38 +32,51 @@ void WeightPaintingEditor::DrawObject(Camera* a_camera, Object* a_object, const 
     if (a_object == m_workspace->GetSelectedObject())
     {
         const e_ObjectType objectType = a_object->GetObjectType();
-
-        unsigned int index = 0;
-        unsigned int size = 0;
-
+    
+        std::list<Object*> nodes;
         switch (objectType)
         {
         case ObjectType_CurveModel:
         {
             const CurveModel* model = a_object->GetCurveModel();
-
-            const std::list<Object*> nodes = model->GetArmatureNodes();
-            size = nodes.size();
-
-            const long long selectedID = m_editor->GetSelectedWeightNode();
-
-            unsigned int iterIndex = 0;
-            for (auto iter = nodes.begin(); iter != nodes.end(); ++iter)
+            if (model != nullptr)
             {
-                const Object* obj = *iter;
-                if (obj->GetID() == selectedID)
-                {
-                    index = iterIndex;
-
-                    break;
-                }
-
-                ++iterIndex;
+                nodes = model->GetArmatureNodes();
             }
+
+            break;           
+        }
+        case ObjectType_PathModel:
+        {
+            const PathModel* model = a_object->GetPathModel();
+            if (model != nullptr)
+            {
+                nodes = model->GetArmatureNodes();
+            }
+
+            break;
         }
         }
 
-        a_object->DrawWeight(a_camera, a_winSize, index, size);
+        const unsigned int size = (unsigned int)nodes.size();
+
+        const long long selectedID = m_editor->GetSelectedWeightNode();
+
+        unsigned int index = 0;
+        unsigned int iterIndex = 0;
+        for (auto iter = nodes.begin(); iter != nodes.end(); ++iter)
+        {
+            if ((*iter)->GetID() == selectedID)
+            {
+                index = iterIndex;
+
+                break;
+            }
+
+            ++iterIndex;
+        }
+
+        a_object->DrawWeight(a_camera, a_winSize, iterIndex, size);
     }
 }
 
@@ -78,13 +93,32 @@ void WeightPaintingEditor::LeftClicked(Camera* a_camera, const glm::vec2& a_curs
         case ObjectType_CurveModel:
         {
             CurveModel* model = obj->GetCurveModel();
-
             if (model != nullptr)
             {
                 Action* action = new AddCurveNodeWeightAction(model, m_workspace);
                 if (!m_workspace->PushAction(action))
                 {
-                    printf("Cannot paint weights \n");
+                    printf("Cannot paint curve weights \n");
+
+                    delete action;
+                }
+                else
+                {
+                    m_editor->SetCurrentAction(action);
+                }
+            }
+
+            break;
+        }
+        case ObjectType_PathModel:
+        {
+            PathModel* model = obj->GetPathModel();
+            if (model != nullptr)
+            {
+                Action* action = new AddPathNodeWeightAction(model, m_workspace);
+                if (!m_workspace->PushAction(action))
+                {
+                    printf("Cannot paint path weights \n");
 
                     delete action;
                 }
@@ -106,8 +140,11 @@ void WeightPaintingEditor::LeftDown(double a_delta, Camera* a_camera, const glm:
     const glm::mat4 proj = a_camera->GetProjection((int)a_winSize.x, (int)a_winSize.y);
     const glm::mat4 viewProj = proj * view;
 
-    const Object* obj = m_workspace->GetSelectedObject();
+    const float intensity = m_editor->GetBrushIntensity();
+    const float radius = m_editor->GetBrushRadius() / 10.0f;
+    const float deltaShift = (float)(intensity * a_delta);
 
+    const Object* obj = m_workspace->GetSelectedObject();
     if (obj != nullptr)
     {
         const e_ObjectType objectType = obj->GetObjectType();
@@ -132,7 +169,7 @@ void WeightPaintingEditor::LeftDown(double a_delta, Camera* a_camera, const glm:
 
                     if (weightNode == -1)
                     {
-                        Object* arm = model->GetArmature();
+                        const Object* arm = model->GetArmature();
                         if (arm != nullptr)
                         {
                             const std::list<Object*> armNodes = arm->GetChildren();
@@ -158,19 +195,16 @@ void WeightPaintingEditor::LeftDown(double a_delta, Camera* a_camera, const glm:
 
                     AddCurveNodeWeightAction* weightAction = (AddCurveNodeWeightAction*)action;
 
-                    Node3Cluster* nodes = model->GetNodes();
+                    const Node3Cluster* nodes = model->GetNodes();
                     const unsigned int nodeCount = model->GetNodeCount();
-
-                    const float intensity = m_editor->GetBrushIntensity();
-                    const float radius = m_editor->GetBrushRadius() / 10.0f;
 
                     bool change = false;
                     for (unsigned int i = 0; i < nodeCount; ++i)
                     {
-                        if (SelectionControl::PointInPoint(viewProj, a_currentPos, radius, nodes[i].Nodes.begin()->Node.GetPosition()))
+                        if (SelectionControl::PointInPoint(viewProj, a_currentPos, radius, nodes[i].Nodes[0].Node.GetPosition()))
                         {
                             change = true;
-                            weightAction->AddNodeDelta(i, weightNode, (float)(intensity * a_delta));
+                            weightAction->AddNodeDelta(i, weightNode, deltaShift);
                         }
                     }
 
@@ -185,6 +219,65 @@ void WeightPaintingEditor::LeftDown(double a_delta, Camera* a_camera, const glm:
             }
 
             break;
+        }
+        case ObjectType_PathModel:
+        {
+            PathModel* model = obj->GetPathModel();
+            if (model != nullptr)
+            {
+                if (m_editor->GetCurrentActionType() == ActionType_AddPathNodeWeight)
+                {
+                    long long weightNode = m_editor->GetSelectedWeightNode();
+
+                    if (weightNode == -1)
+                    {
+                        const Object* arm = model->GetArmature();
+                        if (arm != nullptr)
+                        {
+                            const std::list<Object *> armNodes = arm->GetChildren();
+
+                            for (auto iter = armNodes.begin(); iter != armNodes.end(); ++iter)
+                            {
+                                const Object *armObj = *iter;
+                                if (armObj != nullptr && armObj->GetObjectType() == ObjectType_ArmatureNode)
+                                {
+                                    weightNode = armObj->GetID();
+
+                                    m_editor->SetSelectedWeightNode(weightNode);
+
+                                    break;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            printf("Invalid armature \n");
+                        }
+                    }
+
+                    AddPathNodeWeightAction* weightAction = (AddPathNodeWeightAction*)m_editor->GetCurrentAction();
+
+                    const PathNodeCluster* nodes = model->GetPathNodes();
+                    const unsigned int nodeCount = model->GetPathNodeCount();
+
+                    bool change = false;
+                    for (unsigned int i = 0; i < nodeCount; ++i)
+                    {
+                        if (SelectionControl::PointInPoint(viewProj, a_currentPos, radius, nodes[i].Nodes[0].Node.GetPosition()))
+                        {
+                            change = true;
+                            weightAction->AddNodeDelta(i, weightNode, deltaShift);
+                        }
+                    }
+
+                    if (change)
+                    {
+                        weightAction->Execute();
+                    }
+
+                    break;
+                }
+            }
         }
         }
     }

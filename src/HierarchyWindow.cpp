@@ -181,18 +181,10 @@ bool HierarchyWindow::ObjectHeirachyGUI(Object* a_object, bool* a_blockMenu)
             ImGui::Separator();
 
             m_workspace->CreateCurveObjectMenuList(a_object);
-
-            ImGui::Separator();
-
             m_workspace->CreatePathObjectMenuList(a_object);
-
-            ImGui::Separator();
-
             m_workspace->ImportObjectMenuList(a_object);
 
-            ImGui::Separator();
-
-            ImGuiExt::Image("Textures/OBJECT_ARMATURE.png", glm::vec2(16, 16));
+            ImGuiExt::Image("Textures/OBJECT_ARMATURE.png", glm::vec2(16.0f));
 
             ImGui::SameLine();
 
@@ -292,18 +284,9 @@ void HierarchyWindow::Update(double a_delta)
             ImGui::Separator();
 
             m_workspace->CreateCurveObjectMenuList(nullptr);
-
-            ImGui::Separator();
-
             m_workspace->CreatePathObjectMenuList(nullptr);
-
-            ImGui::Separator();
-
             m_workspace->ImportObjectMenuList(nullptr);
-
-            ImGui::Separator();
-
-            ImGuiExt::Image("Textures/OBJECT_ARMATURE.png", glm::vec2(16, 16));
+            ImGuiExt::Image("Textures/OBJECT_ARMATURE.png", glm::vec2(16.0f));
 
             ImGui::SameLine();
 

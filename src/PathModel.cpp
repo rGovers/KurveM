@@ -2,6 +2,7 @@
 
 #include "MeshExporter.h"
 #include "Model.h"
+#include "Workspace.h"
 #include "XMLIO.h"
 
 #include <glm/gtc/quaternion.hpp>
@@ -19,6 +20,8 @@ PathModel::PathModel(Workspace* a_workspace)
 
     m_shapeNodes = nullptr;
     m_shapeLines = nullptr;
+
+    m_armature = -1;
 
     m_pathNodeCount = 0;
     m_shapeNodes = 0;
@@ -55,6 +58,61 @@ PathModel::~PathModel()
         delete m_model;
         m_model = nullptr;
     }
+}
+
+void PathModel::SetArmature(long long a_value)
+{
+    const Object* obj = m_workspace->GetObject(a_value);
+
+    SetArmature(obj);
+}
+void PathModel::SetArmature(const Object* a_value)
+{
+    m_armature = -1;
+
+    if (a_value != nullptr && a_value->GetObjectType() == ObjectType_Armature)
+    {
+        m_armature = a_value->GetID();
+    }
+}
+Object* PathModel::GetArmature() const
+{
+    return m_workspace->GetObject(m_armature);
+}
+
+void PathModel::GetArmatureNodes(std::list<Object*>* a_list, Object* a_object) const
+{
+    if (a_object != nullptr && a_object->GetObjectType() == ObjectType_ArmatureNode)
+    {
+        a_list->emplace_back(a_object);
+
+        const std::list<Object*> children = a_object->GetChildren();
+        for (auto iter = children.begin(); iter != children.end(); ++iter)
+        {
+            GetArmatureNodes(a_list, *iter);
+        }
+    }
+}
+
+std::list<Object*> PathModel::GetArmatureNodes() const
+{
+    std::list<Object*> nodes;
+
+    const Object* obj = m_workspace->GetObject(m_armature);
+    if (obj != nullptr && obj->GetObjectType() == ObjectType_Armature)
+    {
+        const std::list<Object*> children = obj->GetChildren();
+        for (auto iter = children.begin(); iter != children.end(); ++iter)
+        {
+            GetArmatureNodes(&nodes, *iter);
+        }
+    }
+
+    return nodes;
+}
+unsigned int PathModel::GetArmatureNodeCount() const
+{
+    return GetArmatureNodes().size();
 }
 
 void PathModel::EmplacePathNodes(const PathNodeCluster* a_nodes, unsigned int a_nodeCount)
@@ -325,6 +383,7 @@ void PathModel::PassShapeModelData(ShapeNodeCluster* a_shapeNodes, unsigned int 
 void PathModel::GetModelData(int a_shapeSteps, int a_pathSteps, unsigned int** a_indices, unsigned int* a_indexCount, Vertex** a_vertices, unsigned int* a_vertexCount) const
 {
     constexpr glm::mat4 iden = glm::identity<glm::mat4>();
+    constexpr float infinity = std::numeric_limits<float>::infinity();
 
     const unsigned int shapeIndexCount = m_shapeLineCount * a_shapeSteps * 2;
 
@@ -414,6 +473,16 @@ void PathModel::GetModelData(int a_shapeSteps, int a_pathSteps, unsigned int** a
     const unsigned int shapeVertexCount = shapeVertices.size();
     const unsigned int dirtyVertexCount = m_pathLineCount * (a_pathSteps + 1) * shapeVertexCount; 
 
+    std::unordered_map<long long, unsigned int> idMap;
+    const std::list<Object*> armNodes = GetArmatureNodes();
+
+    const unsigned int boneCount = (unsigned int)armNodes.size();
+    index = 0;
+    for (auto iter = armNodes.begin(); iter != armNodes.end(); ++iter)
+    {
+        idMap.emplace((*iter)->GetID(), index++);
+    }
+
     Vertex* dirtyVertices = new Vertex[dirtyVertexCount];
     index = 0;
     for (unsigned int i = 0; i < m_pathLineCount; ++i)
@@ -436,8 +505,16 @@ void PathModel::GetModelData(int a_shapeSteps, int a_pathSteps, unsigned int** a
         const glm::vec3 nSDA = sNodeA.Node.GetHandlePosition() - sNodeA.Node.GetPosition();
         const glm::vec3 nSDB = sNodeB.Node.GetHandlePosition() - sNodeB.Node.GetPosition();
 
-        const float sRA = glm::sign(glm::dot(nDA, nSDA));
-        const float sRB = glm::sign(glm::dot(nDB, nSDB));
+        float sRA = -1.0f;
+        if (glm::dot(nDA, nSDA) >= 0.0f)
+        {
+            sRA = 1.0f;
+        }
+        float sRB = -1.0f;
+        if (glm::dot(nDB, nSDB) >= 0.0f)
+        {
+            sRB = 1.0f;
+        }
 
         for (unsigned int j = 0; j <= a_pathSteps; ++j)
         {
@@ -446,6 +523,39 @@ void PathModel::GetModelData(int a_shapeSteps, int a_pathSteps, unsigned int** a
 
             const glm::vec3 pos = BezierCurveNode3::GetPoint(nodeA.Node, nodeB.Node, lerp);
             const glm::vec3 nextPos = BezierCurveNode3::GetPoint(nodeA.Node, nodeB.Node, nextLerp);
+
+            unsigned int boneCount; 
+            const BoneCluster* boneCluster = BezierCurveNode3::GetBonesLerp(nodeA.Node, nodeB.Node, lerp, &boneCount);
+
+            glm::vec4 bones = glm::vec4(0.0f);
+            glm::vec4 weights = glm::vec4(0.0f);
+
+            for (unsigned int i = 0; i < boneCount; ++i)
+            {
+                const BoneCluster& bone = boneCluster[i];
+
+                float min = infinity;
+                int index = 0;
+
+                for (int j = 0; j < 4; ++j)
+                {
+                    const float weight = weights[j];
+
+                    if (weight < min)
+                    {
+                        min = weight;
+                        index = j;
+                    }
+                }
+
+                if (bone.Weight > min)
+                {
+                    weights[i] = bone.Weight;
+                    bones[i] = idMap[bone.ID] / (float)boneCount;
+                }
+            }
+
+            delete[] boneCluster;
 
             const glm::vec3 forward = glm::normalize(nextPos - pos);
             
@@ -475,7 +585,7 @@ void PathModel::GetModelData(int a_shapeSteps, int a_pathSteps, unsigned int** a
                 const glm::vec4 pos = mat * sVert.Position; 
                 const glm::vec3 norm = rotMat * sVert.Normal;
 
-                dirtyVertices[index++] = Vertex{ pos, norm };
+                dirtyVertices[index++] = Vertex{ pos, norm, glm::vec2(0.0f), bones, weights };
             }
         }
     }

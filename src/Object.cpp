@@ -325,7 +325,7 @@ void Object::DrawModel(const Model* a_model, const glm::mat4& a_world, const glm
     glDrawElements(GL_TRIANGLES, a_model->GetIndexCount(), GL_UNSIGNED_INT, nullptr);
 }
 
-void Object::DrawBase(Camera* a_camera, const glm::vec2& a_winSize)
+void Object::DrawBase(const Camera* a_camera, const glm::vec2& a_winSize)
 {
     if (IsGlobalVisible())
     {
@@ -463,7 +463,7 @@ void Object::DrawModelAnim(const Model* a_model, const Object* a_armature, const
     glDrawElements(GL_TRIANGLES, a_model->GetIndexCount(), GL_UNSIGNED_INT, nullptr);
 }
 
-void Object::DrawAnimator(Camera* a_camera, const glm::vec2& a_winSize)
+void Object::DrawAnimator(const Camera* a_camera, const glm::vec2& a_winSize)
 {
     if (IsGlobalVisible())
     {
@@ -544,7 +544,7 @@ void Object::DrawAnimator(Camera* a_camera, const glm::vec2& a_winSize)
                 const Model* model = m_pathModel->GetDisplayModel();
                 if (model != nullptr)
                 {
-                    DrawModelAnim(model, nullptr, worldAnim, view, proj);
+                    DrawModelAnim(model, m_pathModel->GetArmature(), worldAnim, view, proj);
                 }
             }
 
@@ -553,12 +553,29 @@ void Object::DrawAnimator(Camera* a_camera, const glm::vec2& a_winSize)
         }
     }
 }
-void Object::DrawWeight(Camera* a_camera, const glm::vec2& a_winSize, unsigned int a_bone, unsigned int a_boneCount)
+
+void Object::DrawModelWeight(const Model* a_model, const Object* a_armature, unsigned int a_bone, unsigned int a_boneCount, const glm::mat4& a_world, const glm::mat4& a_view, const glm::mat4& a_proj)
+{
+    const unsigned int programHandle = m_weightProgram->GetHandle();
+    glUseProgram(programHandle);
+
+    const unsigned int vao = a_model->GetVAO();
+    glBindVertexArray(vao);
+
+    glUniformMatrix4fv(0, 1, false, (float *)&a_view);
+    glUniformMatrix4fv(1, 1, false, (float *)&a_proj);
+    glUniformMatrix4fv(2, 1, false, (float *)&a_world);
+    glUniform1ui(5, a_boneCount);
+    glUniform1ui(6, a_bone);
+
+    glDrawElements(GL_TRIANGLES, a_model->GetIndexCount(), GL_UNSIGNED_INT, nullptr);
+}
+void Object::DrawWeight(const Camera* a_camera, const glm::vec2& a_winSize, unsigned int a_bone, unsigned int a_boneCount)
 {
     if (IsGlobalVisible())
     {
         const glm::mat4 view = a_camera->GetView();
-        const glm::mat4 proj = a_camera->GetProjection((int)a_winSize.x, (int)a_winSize.y);
+        const glm::mat4 proj = a_camera->GetProjection(a_winSize);
 
         const glm::mat4 world = GetGlobalMatrix();
 
@@ -573,19 +590,22 @@ void Object::DrawWeight(Camera* a_camera, const glm::vec2& a_winSize, unsigned i
 
                 if (arm != nullptr && model != nullptr)
                 {
-                    const unsigned int programHandle = m_weightProgram->GetHandle();
-                    glUseProgram(programHandle);
+                    DrawModelWeight(model, arm, a_bone, a_boneCount, world, view, proj);
+                }
+            }
 
-                    const unsigned int vao = model->GetVAO();
-                    glBindVertexArray(vao);
+            break;
+        }
+        case ObjectType_PathModel:
+        {
+            if (m_pathModel != nullptr)
+            {
+                const Model* model = m_pathModel->GetDisplayModel();
+                const Object* arm = m_pathModel->GetArmature();
 
-                    glUniformMatrix4fv(0, 1, false, (float*)&view);
-                    glUniformMatrix4fv(1, 1, false, (float*)&proj);
-                    glUniformMatrix4fv(2, 1, false, (float*)&world);
-                    glUniform1ui(5, a_boneCount);
-                    glUniform1ui(6, a_bone);
-
-                    glDrawElements(GL_TRIANGLES, model->GetIndexCount(), GL_UNSIGNED_INT, nullptr);
+                if (arm != nullptr && model != nullptr)
+                {
+                    DrawModelWeight(model, arm, a_bone, a_boneCount, world, view, proj);
                 }
             }
 

@@ -137,7 +137,7 @@ public:
     {
         return m_selectedWeightNode;
     }
-    void SetSelectedWeightNode(Object* a_value);
+    void SetSelectedWeightNode(const Object* a_value);
     inline void SetSelectedWeightNode(long long a_value)
     {
         m_selectedWeightNode = a_value;

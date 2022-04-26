@@ -100,7 +100,7 @@ glm::vec3 BezierCurveNode3::GetPointScaled(const BezierCurveNode3& a_other, floa
     return GetPointScaled(*this, a_other, a_scale, a_lerp);
 }
 
-float WeightBlend(float a_start, const float a_end, float a_lerp)
+float BezierCurveNode3::WeightBlend(float a_start, const float a_end, float a_lerp)
 {
     const float step = glm::mix(a_start, a_end, a_lerp);
 
@@ -127,25 +127,21 @@ BoneCluster* BezierCurveNode3::GetBonesLerp(const BezierCurveNode3& a_pointA, co
     {
         cluster[*a_count].ID = iter->ID;
 
-        bool found = false;
         for (auto innerIter = arrB.begin(); innerIter != arrB.end(); ++innerIter)
         {
             if (iter->ID == innerIter->ID)
             {
-                found = true;
-
                 cluster[*a_count].Weight = WeightBlend(iter->Weight, innerIter->Weight, a_lerp);
 
                 arrB.erase(innerIter);
 
-                break;
+                goto Next;
             }
         }
 
-        if (!found)
-        {
-            cluster[*a_count].Weight = WeightBlend(iter->Weight, 0.0f, a_lerp);
-        }
+        cluster[*a_count].Weight = WeightBlend(iter->Weight, 0.0f, a_lerp);
+
+Next:;
 
         ++*a_count;
     }

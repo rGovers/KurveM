@@ -5,11 +5,13 @@
 #include "tinyxml2.h"
 
 #include <fstream>
+#include <list>
 #include <vector>
 
 struct Vertex;
 
 class Model;
+class Object;
 class Workspace;
 
 struct PathNode
@@ -104,6 +106,8 @@ class PathModel
 private:
     Workspace*        m_workspace;
 
+    long long         m_armature;
+
     int               m_shapeSteps;
     int               m_pathSteps;
 
@@ -118,6 +122,9 @@ private:
     PathLine*         m_pathLines;
 
     Model*            m_model;
+
+    void GetArmatureNodes(std::list<Object*>* a_list, Object* a_object) const;
+    
 protected:
 
 public:
@@ -198,6 +205,16 @@ public:
     {
         return m_model;
     }
+
+    void SetArmature(long long a_value);
+    void SetArmature(const Object* a_value);
+    Object* GetArmature() const;
+    inline long long GetArmatureID() const
+    {
+        return m_armature;
+    }
+    std::list<Object*> GetArmatureNodes() const;
+    unsigned int GetArmatureNodeCount() const;
 
     void EmplacePathNodes(const PathNodeCluster* a_nodes, unsigned int a_nodeCount);
     void DestroyPathNodes(unsigned int a_startIndex, unsigned int a_endIndex);

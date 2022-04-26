@@ -13,6 +13,7 @@
 #include "Actions/SetCurveArmatureAction.h"
 #include "Actions/SetCurveSmartStepAction.h"
 #include "Actions/SetCurveStepsAction.h"
+#include "Actions/SetPathArmatureAction.h"
 #include "Actions/SetPathPathStepsAction.h"
 #include "Actions/SetPathShapeStepsAction.h"
 #include "Actions/SetPlaneCollisionShapeDirectionAction.h"
@@ -605,15 +606,15 @@ void PropertiesWindow::CurveTab()
                     name = obj->GetName();
                 }
 
-                long long curID = -1;
-                if (obj != nullptr)
-                {
-                    curID = obj->GetID();
-                }
-
                 const bool selected = i == index;
                 if (ImGui::Selectable(name, selected))
                 {
+                    long long curID = -1;
+                    if (obj != nullptr)
+                    {
+                        curID = obj->GetID();
+                    }
+
                     switch (m_workspace->GetCurrentActionType())
                     {
                     case ActionType_SetCurveArmature:
@@ -747,6 +748,81 @@ void PropertiesWindow::PathTab()
                     break;
                 }
                 }
+            }
+
+            int index = 0;
+            std::vector<Object*> items;
+
+            items.emplace_back(nullptr);
+
+            const long long id = model->GetArmatureID();
+
+            const std::list<Object*> objects = m_workspace->GetObjectList();
+            for (auto iter = objects.begin(); iter != objects.end(); ++iter)
+            {
+                const int otherIndex = GetArmatures(&items, id, *iter);
+                if (otherIndex != 0)
+                {
+                    index = otherIndex;
+                }
+            }
+
+            const Object* obj = items[index];
+
+            const char* name = "Null";
+
+            if (obj != nullptr)
+            {
+                name = obj->GetName();
+            }
+
+            if (ImGui::BeginCombo("Armature", name))
+            {
+                const int size = (int)items.size();
+
+                for (int i = 0; i < size; ++i)
+                {
+                    name = "Null";
+
+                    obj = items[i];
+                    if (obj != nullptr)
+                    {
+                        name = obj->GetName();
+                    }
+
+                    if (ImGui::Selectable(name, i == index))
+                    {
+                        long long curID = -1;
+                        if (obj != nullptr)
+                        {
+                            curID = obj->GetID();
+                        }
+
+                        if (m_workspace->GetCurrentActionType() == ActionType_SetPathArmature)
+                        {
+                            SetPathArmatureAction* action = (SetPathArmatureAction*)m_workspace->GetCurrentAction();
+
+                            action->SetID(curID);
+                            action->Execute();
+                        }
+                        else
+                        {
+                            Action* action = new SetPathArmatureAction(m_workspace, objs, objectCount, curID);
+                            if (!m_workspace->PushAction(action))
+                            {
+                                printf("Error setting path armature \n");
+
+                                delete action;
+                            }
+                            else
+                            {
+                                m_workspace->SetCurrentAction(action);
+                            }
+                        }
+                    }
+                }
+
+                ImGui::EndCombo();   
             }
 
             delete[] objs;
