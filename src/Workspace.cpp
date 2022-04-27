@@ -607,6 +607,11 @@ void Workspace::AddAnimation(Animation* a_animation)
 }
 void Workspace::RemoveAnimation(Animation* a_animation)
 {
+    if (m_currentAnimation == a_animation)
+    {
+        m_currentAnimation = nullptr;
+    }
+
     for (auto iter = m_animations.begin(); iter != m_animations.end(); ++iter)
     {
         if (*iter == a_animation)

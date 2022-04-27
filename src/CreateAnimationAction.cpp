@@ -50,6 +50,7 @@ bool CreateAnimationAction::Execute()
     }
 
     m_workspace->AddAnimation(m_animation);
+    m_workspace->SetCurrentAnimation(m_animation);
 
     return true;
 }

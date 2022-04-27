@@ -10,6 +10,8 @@ struct Vertex
     glm::vec2 UV;
     glm::vec4 Bones;
     glm::vec4 Weights;
+    glm::vec4 BodyI;
+    glm::vec4 BodyW;
 };
 
 class Model

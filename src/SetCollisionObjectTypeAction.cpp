@@ -1,7 +1,8 @@
 #include "Actions/SetCollisionObjectTypeAction.h"
 
 #include "Object.h"
-#include "Physics/Rigidbody.h"
+#include "Physics/CollisionObjects/Rigidbody.h"
+#include "Physics/CollisionObjects/Softbody.h"
 
 SetCollisionObjectTypeAction::SetCollisionObjectTypeAction(e_CollisionObjectType a_type, Object* const* a_objs, unsigned int a_objectCount, PhysicsEngine* a_engine)
 {
@@ -85,6 +86,12 @@ bool SetCollisionObjectTypeAction::Execute()
         case CollisionObjectType_Rigidbody:
         {
             cObj = new Rigidbody(obj, m_engine);
+
+            break;
+        }
+        case CollisionObjectType_Softbody:
+        {
+            cObj = new Softbody(obj, m_engine);
 
             break;
         }

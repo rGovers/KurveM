@@ -493,6 +493,8 @@ void PathModel::GetModelData(int a_shapeSteps, int a_pathSteps, unsigned int** a
         const unsigned char clusterIndexA = m_pathLines[i].ClusterIndex[0];
         const unsigned char clusterIndexB = m_pathLines[i].ClusterIndex[1];
 
+        const glm::vec4 bodyI = glm::vec4((float)indexA / m_pathNodeCount, (float)indexB / m_pathNodeCount, 0.0f, 0.0f);
+
         const PathNode& nodeA = m_pathNodes[indexA].Nodes[clusterIndexA];
         const PathNode& nodeB = m_pathNodes[indexB].Nodes[clusterIndexB];
 
@@ -579,13 +581,19 @@ void PathModel::GetModelData(int a_shapeSteps, int a_pathSteps, unsigned int** a
 
             const glm::mat4 mat = glm::translate(iden, pos) * glm::mat4(rotMat) * glm::scale(iden, glm::vec3(scale.x, 1.0f, scale.y));
 
+            const float bL = glm::mix(0.0f, lerp, lerp);
+            const float bR = glm::mix(lerp, 1.0f, lerp);
+            const float bM = glm::mix(bL, bR, lerp);
+
+            const glm::vec4 bodyW = glm::vec4(bM, 1.0f - bM, 0.0f, 0.0f);
+
             for (unsigned int k = 0; k < shapeVertexCount; ++k)
             {
                 const Vertex& sVert = shapeVertices[k];
                 const glm::vec4 pos = mat * sVert.Position; 
                 const glm::vec3 norm = rotMat * sVert.Normal;
 
-                dirtyVertices[index++] = Vertex{ pos, norm, glm::vec2(0.0f), bones, weights };
+                dirtyVertices[index++] = Vertex{ pos, norm, glm::vec2(0.0f), bones, weights, bodyI, bodyW };
             }
         }
     }

@@ -15,7 +15,7 @@ private:
 
     btCollisionConfiguration* m_collisionConfiguration;
     btCollisionDispatcher*    m_collisionDispatcher;
-    btBroadphaseInterface*    m_broadphaseCollision;
+    btBroadphaseInterface*    m_broadphase;
     btConstraintSolver*       m_constraintSolver;
 
     btDynamicsWorld*          m_world;

@@ -715,6 +715,12 @@ void CurveModel::GetModelData(bool a_smartStep, int a_steps, unsigned int** a_in
                         nodes[i] = m_nodes[face.Index[i]].Nodes[face.ClusterIndex[i]].Node;
                     } 
 
+                    const unsigned int indexA = face.Index[FaceIndex_3Point_AB];
+                    const unsigned int indexB = face.Index[FaceIndex_3Point_BC];
+                    const unsigned int indexC = face.Index[FaceIndex_3Point_CA];
+
+                    const glm::vec4 bodyI = glm::vec4((float)indexA / m_nodeCount, (float)indexB / m_nodeCount, (float)indexC / m_nodeCount, 0.0f);
+
                     const glm::vec3 tpL = BezierCurveNode3::GetPoint(nodes[FaceIndex_3Point_AB], nodes[FaceIndex_3Point_BA], 1.0f);
                     const glm::vec3 tpR = BezierCurveNode3::GetPoint(nodes[FaceIndex_3Point_AC], nodes[FaceIndex_3Point_CA], 1.0f);
 
@@ -751,19 +757,19 @@ void CurveModel::GetModelData(bool a_smartStep, int a_steps, unsigned int** a_in
                         const glm::vec2 bLUV = BezierCurveNode3::GetUVLerp(nodes[FaceIndex_3Point_AB], nodes[FaceIndex_3Point_BA], bIStep);
                         const glm::vec2 bRUV = BezierCurveNode3::GetUVLerp(nodes[FaceIndex_3Point_AC], nodes[FaceIndex_3Point_CA], bIStep);
 
-                        glm::vec4 tLBn = glm::vec4(0);
-                        glm::vec4 tRBn = glm::vec4(0);
-                        glm::vec4 mLBn = glm::vec4(0);
-                        glm::vec4 mRBn = glm::vec4(0);
-                        glm::vec4 bLBn = glm::vec4(0);
-                        glm::vec4 bRBn = glm::vec4(0);
+                        glm::vec4 tLBn = glm::vec4(0.0f);
+                        glm::vec4 tRBn = glm::vec4(0.0f);
+                        glm::vec4 mLBn = glm::vec4(0.0f);
+                        glm::vec4 mRBn = glm::vec4(0.0f);
+                        glm::vec4 bLBn = glm::vec4(0.0f);
+                        glm::vec4 bRBn = glm::vec4(0.0f);
 
-                        glm::vec4 tLW = glm::vec4(0);
-                        glm::vec4 tRW = glm::vec4(0);
-                        glm::vec4 mLW = glm::vec4(0);
-                        glm::vec4 mRW = glm::vec4(0);
-                        glm::vec4 bLW = glm::vec4(0);
-                        glm::vec4 bRW = glm::vec4(0);
+                        glm::vec4 tLW = glm::vec4(0.0f);
+                        glm::vec4 tRW = glm::vec4(0.0f);
+                        glm::vec4 mLW = glm::vec4(0.0f);
+                        glm::vec4 mRW = glm::vec4(0.0f);
+                        glm::vec4 bLW = glm::vec4(0.0f);
+                        glm::vec4 bRW = glm::vec4(0.0f);
 
                         GetBoneData(nodes[FaceIndex_3Point_AB], nodes[FaceIndex_3Point_BA], iStep,  &tLW, &tLBn, boneCount, idMap);
                         GetBoneData(nodes[FaceIndex_3Point_AC], nodes[FaceIndex_3Point_CA], iStep,  &tRW, &tRBn, boneCount, idMap);
@@ -771,6 +777,18 @@ void CurveModel::GetModelData(bool a_smartStep, int a_steps, unsigned int** a_in
                         GetBoneData(nodes[FaceIndex_3Point_AC], nodes[FaceIndex_3Point_CA], nIStep, &mRW, &mRBn, boneCount, idMap);
                         GetBoneData(nodes[FaceIndex_3Point_AB], nodes[FaceIndex_3Point_BA], bIStep, &bLW, &bLBn, boneCount, idMap);
                         GetBoneData(nodes[FaceIndex_3Point_AC], nodes[FaceIndex_3Point_CA], bIStep, &bRW, &bRBn, boneCount, idMap);
+
+                        const float bdTL = glm::mix(0.0f, iStep, iStep);
+                        const float bdTR = glm::mix(iStep, 1.0f, iStep);
+                        const float bdTM = glm::mix(bdTL, bdTR, iStep);
+
+                        const float bdML = glm::mix(0.0f, nIStep, nIStep);
+                        const float bdMR = glm::mix(nIStep, 1.0f, nIStep);
+                        const float bdMM = glm::mix(bdML, bdMR, nIStep);
+
+                        const float bdBL = glm::mix(0.0f, bIStep, bIStep);
+                        const float bdBR = glm::mix(bIStep, 1.0f, bIStep);
+                        const float bdBM = glm::mix(bdBL, bdBR, bIStep);
 
                         for (int j = 0; j <= i; ++j)
                         {
@@ -803,13 +821,13 @@ void CurveModel::GetModelData(bool a_smartStep, int a_steps, unsigned int** a_in
                             const glm::vec2 mLFUV = BlendUV(mLUV, mRUV, aSMA);
                             const glm::vec2 mRFUV = BlendUV(mLUV, mRUV, aSMB);
 
-                            glm::vec4 tFB = glm::vec4(0);
-                            glm::vec4 mLFB = glm::vec4(0);
-                            glm::vec4 mRFB = glm::vec4(0);
+                            glm::vec4 tFB = glm::vec4(0.0f);
+                            glm::vec4 mLFB = glm::vec4(0.0f);
+                            glm::vec4 mRFB = glm::vec4(0.0f);
 
-                            glm::vec4 tFW = glm::vec4(0);
-                            glm::vec4 mLFW = glm::vec4(0);
-                            glm::vec4 mRFW = glm::vec4(0);
+                            glm::vec4 tFW = glm::vec4(0.0f);
+                            glm::vec4 mLFW = glm::vec4(0.0f);
+                            glm::vec4 mRFW = glm::vec4(0.0f);
 
                             BlendBoneDataNL(tLBn, tLW, tRBn, tRW, aS, &tFB, &tFW);
                             BlendBoneDataNL(mLBn, mLW, mRBn, mRW, aSMA, &mLFB, &mLFW);
@@ -841,13 +859,33 @@ void CurveModel::GetModelData(bool a_smartStep, int a_steps, unsigned int** a_in
 
                             glm::vec3 normal = glm::cross(v2, v1);
 
-                            dirtyVertices.emplace_back(Vertex{ { tF, 1.0f },  normal, tFUV,  tFB,  tFW });
-                            dirtyVertices.emplace_back(Vertex{ { mLF, 1.0f }, normal, mLFUV, mLFB, mLFW });
-                            dirtyVertices.emplace_back(Vertex{ { mRF, 1.0f }, normal, mRFUV, mRFB, mRFW });
+                            const float bdASL = glm::mix(0.0f, aS, aS);
+                            const float bdASR = glm::mix(aS, 1.0f, aS);
+                            const float bdASM = glm::mix(bdASL, bdASR, aS);
+                            const float bdASMI = 1.0f - bdASM;
+
+                            const float bdASMAL = glm::mix(0.0f, aSMA, aSMA);
+                            const float bdASMAR = glm::mix(aSMA, 1.0f, aSMA);
+                            const float bdASMAM = glm::mix(bdASMAL, bdASMAR, aSMA);
+                            const float bdASMAMI = 1.0f - bdASMAM;
+
+                            const float bdASMBL = glm::mix(0.0f, aSMB, aSMB);
+                            const float bdASMBR = glm::mix(aSMB, 1.0f, aSMB);
+                            const float bdASMBM = glm::mix(bdASMBL, bdASMBR, aSMB);
+                            const float bdASMBMI = 1.0f - bdASMBM;
+
+                            dirtyVertices.emplace_back(Vertex{ { tF, 1.0f },  normal, tFUV,  tFB,  tFW,  bodyI, glm::vec4(bdTM, bdASM, bdASMI, 0.0f) });
+                            dirtyVertices.emplace_back(Vertex{ { mLF, 1.0f }, normal, mLFUV, mLFB, mLFW, bodyI, glm::vec4(bdMM, bdASMAM, bdASMAMI, 0.0f) });
+                            dirtyVertices.emplace_back(Vertex{ { mRF, 1.0f }, normal, mRFUV, mRFB, mRFW, bodyI, glm::vec4(bdMM, bdASMBM, bdASMBMI, 0.0f) });
 
                             if (i < step - 1)
                             {
                                 const float aSL = (j + 1) / (float)(i + 2);
+
+                                const float bdASLL = glm::mix(0.0f, aSL, aSL);
+                                const float bdASLR = glm::mix(aSL, 1.0f, aSL);
+                                const float bdASLM = glm::mix(bdASLL, bdASLR, aSL);
+                                const float bdASLMI = 1.0f - bdASLM;
 
                                 const glm::vec3 bB = BezierCurveNode3::GetPoint(nodes[FaceIndex_3Point_BC], nodes[FaceIndex_3Point_CB], aSL);
 
@@ -879,9 +917,9 @@ void CurveModel::GetModelData(bool a_smartStep, int a_steps, unsigned int** a_in
 
                                 normal = glm::cross(v1, v2);
 
-                                dirtyVertices.emplace_back(Vertex{ { bF, 1.0f },  normal, bFUV,  bFB,  bFW });
-                                dirtyVertices.emplace_back(Vertex{ { mRF, 1.0f }, normal, mRFUV, mRFB, mRFW });
-                                dirtyVertices.emplace_back(Vertex{ { mLF, 1.0f }, normal, mLFUV, mLFB, mLFW });
+                                dirtyVertices.emplace_back(Vertex{ { bF, 1.0f },  normal, bFUV,  bFB,  bFW,  bodyI, glm::vec4(bdBM, bdASLM, bdASLMI, 0.0f) });
+                                dirtyVertices.emplace_back(Vertex{ { mRF, 1.0f }, normal, mRFUV, mRFB, mRFW, bodyI, glm::vec4(bdMM, bdASMBM, bdASMBMI, 0.0f) });
+                                dirtyVertices.emplace_back(Vertex{ { mLF, 1.0f }, normal, mLFUV, mLFB, mLFW, bodyI, glm::vec4(bdMM, bdASMAM, bdASMAMI, 0.0f) });
                             }
                         }
                     }
@@ -896,6 +934,13 @@ void CurveModel::GetModelData(bool a_smartStep, int a_steps, unsigned int** a_in
                     {
                         nodes[i] = m_nodes[face.Index[i]].Nodes[face.ClusterIndex[i]].Node;
                     } 
+
+                    const unsigned int indexA = face.Index[FaceIndex_4Point_AB];
+                    const unsigned int indexB = face.Index[FaceIndex_4Point_BD];
+                    const unsigned int indexC = face.Index[FaceIndex_4Point_DC];
+                    const unsigned int indexD = face.Index[FaceIndex_4Point_CA];
+
+                    const glm::vec4 bodyI = glm::vec4((float)indexA / m_nodeCount, (float)indexB / m_nodeCount, (float)indexC / m_nodeCount, (float)indexD / m_nodeCount);
 
                     int xStep = a_steps;
                     int yStep = a_steps;
@@ -928,20 +973,30 @@ void CurveModel::GetModelData(bool a_smartStep, int a_steps, unsigned int** a_in
                         const glm::vec2 pointCDLeftUV =  BezierCurveNode3::GetUVLerp(nodes[FaceIndex_4Point_CD], nodes[FaceIndex_4Point_DC], iStep);
                         const glm::vec2 pointCDRightUV = BezierCurveNode3::GetUVLerp(nodes[FaceIndex_4Point_CD], nodes[FaceIndex_4Point_DC], nIStep);
 
-                        glm::vec4 pointABLeftBn =  glm::vec4(0);
-                        glm::vec4 pointABRightBn = glm::vec4(0);
-                        glm::vec4 pointCDLeftBn =  glm::vec4(0);
-                        glm::vec4 pointCDRightBn = glm::vec4(0);
+                        glm::vec4 pointABLeftBn =  glm::vec4(0.0f);
+                        glm::vec4 pointABRightBn = glm::vec4(0.0f);
+                        glm::vec4 pointCDLeftBn =  glm::vec4(0.0f);
+                        glm::vec4 pointCDRightBn = glm::vec4(0.0f);
 
-                        glm::vec4 pointABLeftW =  glm::vec4(0);
-                        glm::vec4 pointABRightW = glm::vec4(0);
-                        glm::vec4 pointCDLeftW =  glm::vec4(0);
-                        glm::vec4 pointCDRightW = glm::vec4(0);
+                        glm::vec4 pointABLeftW =  glm::vec4(0.0f);
+                        glm::vec4 pointABRightW = glm::vec4(0.0f);
+                        glm::vec4 pointCDLeftW =  glm::vec4(0.0f);
+                        glm::vec4 pointCDRightW = glm::vec4(0.0f);
 
                         GetBoneData(nodes[FaceIndex_4Point_AB], nodes[FaceIndex_4Point_BA], iStep,  &pointABLeftW,  &pointABLeftBn, boneCount, idMap);
                         GetBoneData(nodes[FaceIndex_4Point_AB], nodes[FaceIndex_4Point_BA], nIStep, &pointABRightW, &pointABRightBn, boneCount, idMap);
                         GetBoneData(nodes[FaceIndex_4Point_CD], nodes[FaceIndex_4Point_DC], iStep,  &pointCDLeftW,  &pointCDLeftBn, boneCount, idMap);
                         GetBoneData(nodes[FaceIndex_4Point_CD], nodes[FaceIndex_4Point_DC], nIStep, &pointCDRightW, &pointCDRightBn, boneCount, idMap);
+
+                        const float bdLL = glm::mix(0.0f, iStep, iStep);
+                        const float bdLR = glm::mix(iStep, 1.0f, iStep);
+                        const float bdLM = glm::mix(bdLL, bdLR, iStep);
+                        const float bdLMI = 1.0f - bdLM;
+
+                        const float bdRL = glm::mix(0.0f, nIStep, nIStep);
+                        const float bdRR = glm::mix(nIStep, 1.0f, nIStep);
+                        const float bdRM = glm::mix(bdRL, bdRR, nIStep);
+                        const float bdRMI = 1.0f - bdRM;
 
                         for (int j = 0; j < yStep; ++j)
                         {
@@ -958,20 +1013,30 @@ void CurveModel::GetModelData(bool a_smartStep, int a_steps, unsigned int** a_in
                             const glm::vec2 pointBDLeftUV =  BezierCurveNode3::GetUVLerp(nodes[FaceIndex_4Point_BD], nodes[FaceIndex_4Point_DB], jStep);
                             const glm::vec2 pointBDRightUV = BezierCurveNode3::GetUVLerp(nodes[FaceIndex_4Point_BD], nodes[FaceIndex_4Point_DB], nJStep);
 
-                            glm::vec4 pointACLeftBn =  glm::vec4(0);
-                            glm::vec4 pointACRightBn = glm::vec4(0);
-                            glm::vec4 pointBDLeftBn =  glm::vec4(0);
-                            glm::vec4 pointBDRightBn = glm::vec4(0);
+                            glm::vec4 pointACLeftBn =  glm::vec4(0.0f);
+                            glm::vec4 pointACRightBn = glm::vec4(0.0f);
+                            glm::vec4 pointBDLeftBn =  glm::vec4(0.0f);
+                            glm::vec4 pointBDRightBn = glm::vec4(0.0f);
 
-                            glm::vec4 pointACLeftW =  glm::vec4(0);
-                            glm::vec4 pointACRightW = glm::vec4(0);
-                            glm::vec4 pointBDLeftW =  glm::vec4(0);
-                            glm::vec4 pointBDRightW = glm::vec4(0);
+                            glm::vec4 pointACLeftW =  glm::vec4(0.0f);
+                            glm::vec4 pointACRightW = glm::vec4(0.0f);
+                            glm::vec4 pointBDLeftW =  glm::vec4(0.0f);
+                            glm::vec4 pointBDRightW = glm::vec4(0.0f);
 
                             GetBoneData(nodes[FaceIndex_4Point_AC], nodes[FaceIndex_4Point_CA], iStep,  &pointACLeftW,  &pointACLeftBn, boneCount, idMap);
                             GetBoneData(nodes[FaceIndex_4Point_AC], nodes[FaceIndex_4Point_CA], nIStep, &pointACRightW, &pointACRightBn, boneCount, idMap);
                             GetBoneData(nodes[FaceIndex_4Point_BD], nodes[FaceIndex_4Point_DB], iStep,  &pointBDLeftW,  &pointBDLeftBn, boneCount, idMap);
                             GetBoneData(nodes[FaceIndex_4Point_BD], nodes[FaceIndex_4Point_DB], nIStep, &pointBDRightW, &pointBDRightBn, boneCount, idMap);
+
+                            const float bdTL = glm::mix(0.0f, jStep, jStep);
+                            const float bdTR = glm::mix(jStep, 1.0f, jStep);
+                            const float bdTM = glm::mix(bdTL, bdTR, jStep);
+                            const float bdTMI = 1.0f - bdTM;
+
+                            const float bdBL = glm::mix(0.0f, nJStep, nJStep);
+                            const float bdBR = glm::mix(nJStep, 1.0f, nJStep);
+                            const float bdBM = glm::mix(bdBL, bdBR, nJStep);
+                            const float bdBMI = 1.0f - bdBM;
 
                             const glm::vec3 LLA = glm::mix(pointABLeft,  pointCDLeft,  jStep);
                             const glm::vec3 LHA = glm::mix(pointABLeft,  pointCDLeft,  nJStep);
@@ -993,25 +1058,25 @@ void CurveModel::GetModelData(bool a_smartStep, int a_steps, unsigned int** a_in
                             const glm::vec2 HLBUV = glm::mix(pointACRightUV, pointBDRightUV, iStep);
                             const glm::vec2 HHBUV = glm::mix(pointACRightUV, pointBDRightUV, nIStep);
 
-                            glm::vec4 LLABn = glm::vec4(0);
-                            glm::vec4 LHABn = glm::vec4(0);
-                            glm::vec4 HLABn = glm::vec4(0);
-                            glm::vec4 HHABn = glm::vec4(0);
+                            glm::vec4 LLABn = glm::vec4(0.0f);
+                            glm::vec4 LHABn = glm::vec4(0.0f);
+                            glm::vec4 HLABn = glm::vec4(0.0f);
+                            glm::vec4 HHABn = glm::vec4(0.0f);
 
-                            glm::vec4 LLBBn = glm::vec4(0);
-                            glm::vec4 LHBBn = glm::vec4(0);
-                            glm::vec4 HLBBn = glm::vec4(0);
-                            glm::vec4 HHBBn = glm::vec4(0);
+                            glm::vec4 LLBBn = glm::vec4(0.0f);
+                            glm::vec4 LHBBn = glm::vec4(0.0f);
+                            glm::vec4 HLBBn = glm::vec4(0.0f);
+                            glm::vec4 HHBBn = glm::vec4(0.0f);
 
-                            glm::vec4 LLAW = glm::vec4(0);
-                            glm::vec4 LHAW = glm::vec4(0);
-                            glm::vec4 HLAW = glm::vec4(0);
-                            glm::vec4 HHAW = glm::vec4(0);
+                            glm::vec4 LLAW = glm::vec4(0.0f);
+                            glm::vec4 LHAW = glm::vec4(0.0f);
+                            glm::vec4 HLAW = glm::vec4(0.0f);
+                            glm::vec4 HHAW = glm::vec4(0.0f);
 
-                            glm::vec4 LLBW = glm::vec4(0);
-                            glm::vec4 LHBW = glm::vec4(0);
-                            glm::vec4 HLBW = glm::vec4(0);
-                            glm::vec4 HHBW = glm::vec4(0);
+                            glm::vec4 LLBW = glm::vec4(0.0f);
+                            glm::vec4 LHBW = glm::vec4(0.0f);
+                            glm::vec4 HLBW = glm::vec4(0.0f);
+                            glm::vec4 HHBW = glm::vec4(0.0f);
 
                             BlendBoneDataNL(pointABLeftBn,  pointABLeftW,  pointCDLeftBn,  pointCDLeftW,  jStep,  &LLABn, &LLAW);
                             BlendBoneDataNL(pointABLeftBn,  pointABLeftW,  pointCDLeftBn,  pointCDLeftW,  nJStep, &LHABn, &LHAW);
@@ -1033,15 +1098,20 @@ void CurveModel::GetModelData(bool a_smartStep, int a_steps, unsigned int** a_in
                             const glm::vec2 uvC = (LHAUV + HLBUV) * 0.5f;
                             const glm::vec2 uvD = (HHAUV + HHBUV) * 0.5f;
 
-                            glm::vec4 boneA = glm::vec4(0);
-                            glm::vec4 boneB = glm::vec4(0);
-                            glm::vec4 boneC = glm::vec4(0);
-                            glm::vec4 boneD = glm::vec4(0);
+                            glm::vec4 boneA = glm::vec4(0.0f);
+                            glm::vec4 boneB = glm::vec4(0.0f);
+                            glm::vec4 boneC = glm::vec4(0.0f);
+                            glm::vec4 boneD = glm::vec4(0.0f);
 
-                            glm::vec4 weightA = glm::vec4(0);
-                            glm::vec4 weightB = glm::vec4(0);
-                            glm::vec4 weightC = glm::vec4(0);
-                            glm::vec4 weightD = glm::vec4(0);
+                            glm::vec4 weightA = glm::vec4(0.0f);
+                            glm::vec4 weightB = glm::vec4(0.0f);
+                            glm::vec4 weightC = glm::vec4(0.0f);
+                            glm::vec4 weightD = glm::vec4(0.0f);
+
+                            const glm::vec4 bodyWA = glm::vec4(bdLM, bdTM, bdLMI, bdTMI);
+                            const glm::vec4 bodyWB = glm::vec4(bdLM, bdBM, bdLMI, bdBMI);
+                            const glm::vec4 bodyWC = glm::vec4(bdRM, bdTM, bdRMI, bdTMI);
+                            const glm::vec4 bodyWD = glm::vec4(bdRM, bdBM, bdRMI, bdBMI);
 
                             BlendBoneData(LLABn, LLAW, LLBBn, LLBW, 0.5f, &boneA, &weightA);
                             BlendBoneData(HLABn, HLAW, LHBBn, LHBW, 0.5f, &boneB, &weightB);
@@ -1080,13 +1150,13 @@ void CurveModel::GetModelData(bool a_smartStep, int a_steps, unsigned int** a_in
 
                             const glm::vec3 normal = glm::cross(v2, v1);
 
-                            dirtyVertices.emplace_back(Vertex{ { posA, 1.0f }, normal, uvA, boneA, weightA });
-                            dirtyVertices.emplace_back(Vertex{ { posB, 1.0f }, normal, uvB, boneB, weightB });
-                            dirtyVertices.emplace_back(Vertex{ { posC, 1.0f }, normal, uvC, boneC, weightC });
+                            dirtyVertices.emplace_back(Vertex{ { posA, 1.0f }, normal, uvA, boneA, weightA, bodyI, bodyWA });
+                            dirtyVertices.emplace_back(Vertex{ { posB, 1.0f }, normal, uvB, boneB, weightB, bodyI, bodyWB });
+                            dirtyVertices.emplace_back(Vertex{ { posC, 1.0f }, normal, uvC, boneC, weightC, bodyI, bodyWC });
 
-                            dirtyVertices.emplace_back(Vertex{ { posB, 1.0f }, normal, uvB, boneB, weightB });
-                            dirtyVertices.emplace_back(Vertex{ { posD, 1.0f }, normal, uvD, boneD, weightD });
-                            dirtyVertices.emplace_back(Vertex{ { posC, 1.0f }, normal, uvC, boneC, weightC });
+                            dirtyVertices.emplace_back(Vertex{ { posB, 1.0f }, normal, uvB, boneB, weightB, bodyI, bodyWB });
+                            dirtyVertices.emplace_back(Vertex{ { posD, 1.0f }, normal, uvD, boneD, weightD, bodyI, bodyWD });
+                            dirtyVertices.emplace_back(Vertex{ { posC, 1.0f }, normal, uvC, boneC, weightC, bodyI, bodyWC });
                         }
                     }
 
@@ -1112,8 +1182,6 @@ void CurveModel::GetModelData(bool a_smartStep, int a_steps, unsigned int** a_in
             {
                 const Vertex vert = dirtyVertices[i];
     
-                bool found = false;
-    
                 for (unsigned int j = 0; j < vertexIndex; ++j)
                 {
                     const Vertex cVert = (*a_vertices)[j];
@@ -1124,20 +1192,16 @@ void CurveModel::GetModelData(bool a_smartStep, int a_steps, unsigned int** a_in
                     // Using an epsilon because floating point precision was causing issues
                     if (glm::dot(diff, diff) < cDSqr && glm::dot(uvDiff, uvDiff) <= 0.0001f)
                     {
-                        found = true;
-                        
                         (*a_vertices)[j].Normal += vert.Normal;
                         (*a_indices)[i] = j;
     
-                        break;
+                        goto SmartNext;
                     }
                 }
     
-                if (!found)
-                {
-                    (*a_vertices)[vertexIndex] = vert;
-                    (*a_indices)[i] = vertexIndex++;
-                }
+                (*a_vertices)[vertexIndex] = vert;
+                (*a_indices)[i] = vertexIndex++;
+SmartNext:; 
             }
         }
         else
@@ -1145,8 +1209,6 @@ void CurveModel::GetModelData(bool a_smartStep, int a_steps, unsigned int** a_in
             for (unsigned int i = 0; i < *a_indexCount; ++i)
             {
                 const Vertex vert = dirtyVertices[i];
-
-                bool found = false;
 
                 for (unsigned int j = 0; j < vertexIndex; ++j)
                 {
@@ -1158,20 +1220,16 @@ void CurveModel::GetModelData(bool a_smartStep, int a_steps, unsigned int** a_in
                     // Using an epsilon because floating point precision was causing issues
                     if (glm::dot(diff, diff) <= 0.0001f && glm::dot(uvDiff, uvDiff) <= 0.0001f)
                     {
-                        found = true;
-
                         (*a_vertices)[j].Normal += vert.Normal;
                         (*a_indices)[i] = j;
 
-                        break;
+                        goto Next;
                     }
                 }
 
-                if (!found)
-                {
-                    (*a_vertices)[vertexIndex] = vert;
-                    (*a_indices)[i] = vertexIndex++;
-                }
+                (*a_vertices)[vertexIndex] = vert;
+                (*a_indices)[i] = vertexIndex++;
+Next:;
             }
         }
         

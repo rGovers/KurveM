@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Physics/CollisionObject.h"
+#include "Physics/CollisionObjects/CollisionObject.h"
 
 class Rigidbody : public CollisionObject
 {

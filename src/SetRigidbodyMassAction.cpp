@@ -1,7 +1,7 @@
 #include "Actions/SetRigidbodyMassAction.h"
 
 #include "Object.h"
-#include "Physics/Rigidbody.h"
+#include "Physics/CollisionObjects/Rigidbody.h"
 
 SetRigidbodyMassAction::SetRigidbodyMassAction(Object* const* a_objects, unsigned int a_objectCount, float a_mass)
 {

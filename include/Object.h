@@ -7,7 +7,7 @@
 #include <list>
 #include <unordered_map>
 
-#include "Physics/CollisionObject.h"
+#include "Physics/CollisionObjects/CollisionObject.h"
 #include "Physics/CollisionShapes/CollisionShape.h"
 #include "tinyxml2.h"
 
@@ -32,6 +32,14 @@ enum e_ObjectType
     ObjectType_ReferenceImage,
     ObjectType_Armature,
     ObjectType_ArmatureNode
+};
+
+enum e_AnimatorDrawMode
+{
+    AnimatorDrawMode_Base,
+    AnimatorDrawMode_Bone,
+    AnimatorDrawMode_Softbody,
+    AnimatorDrawMode_BoneSoftbody
 };
 
 struct ObjectBoneGroup
@@ -70,6 +78,7 @@ private:
 
     ShaderProgram*       m_baseProgram;
     ShaderProgram*       m_animatorProgram;
+    ShaderProgram*       m_animatorSBodyProgram;
     ShaderProgram*       m_weightProgram;
 
     ShaderProgram*       m_referenceProgram;
@@ -81,7 +90,7 @@ private:
     CollisionObject*     m_collisionObject;
 
     void DrawModel(const Model* model, const glm::mat4& a_world, const glm::mat4& a_view, const glm::mat4& a_proj);
-    void DrawModelAnim(const Model* a_model, const Object* a_armature, const glm::mat4& a_world, const glm::mat4& a_view, const glm::mat4& a_proj);
+    void DrawModelAnim(const Model* a_model, const Object* a_armature, unsigned int a_nodeCount, unsigned int a_armatureNodeCount, const glm::mat4& a_world, const glm::mat4& a_view, const glm::mat4& a_proj);
     void DrawModelWeight(const Model* a_model, const Object* a_armature, unsigned int a_bone, unsigned int a_boneCount, const glm::mat4& a_world, const glm::mat4& a_view, const glm::mat4& a_proj);
 
 protected:
@@ -190,6 +199,8 @@ public:
     void SetGlobalTranslation(const glm::vec3& a_pos);
 
     void ResetAnimation();
+
+    e_AnimatorDrawMode GetAnimatorDrawMode() const;
 
     void DrawBase(const Camera* a_camera, const glm::vec2& a_winSize);
     void DrawAnimator(const Camera* a_camera, const glm::vec2& a_winSize);

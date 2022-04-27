@@ -9,8 +9,11 @@
 #include "Datastore.h"
 #include "Model.h"
 #include "PathModel.h"
+#include "Physics/CollisionObjects/Softbody.h"
 #include "ShaderPixel.h"
 #include "ShaderProgram.h"
+#include "Shaders/AnimatorSoftbodyPixel.h"
+#include "Shaders/AnimatorSoftbodyVertex.h"
 #include "Shaders/AnimatorStandardPixel.h"
 #include "Shaders/AnimatorStandardVertex.h"
 #include "Shaders/EditorStandardPixel.h"
@@ -64,6 +67,11 @@ Object::Object(const char* a_name, e_ObjectType a_objectType)
     if (m_animatorProgram == nullptr)
     {
         m_animatorProgram = ShaderProgram::InitProgram("SHADER_ANIMATORSTANDARD", ANIMATORSTANDARDVERTEX, ANIMATORSTANDARDPIXEL);
+    }
+    m_animatorSBodyProgram = Datastore::GetShaderProgram("SHADER_ANIMATORSBODY");
+    if (m_animatorSBodyProgram == nullptr)
+    {
+        m_animatorSBodyProgram = ShaderProgram::InitProgram("SHADER_ANIMATORSBODY", ANIMATORSOFTBODYVERTEX, ANIMATORSOFTBODYPIXEL);
     }
 
     m_weightProgram = Datastore::GetShaderProgram("SHADER_WEIGHTSTANDARD");
@@ -395,7 +403,7 @@ void Object::DrawBase(const Camera* a_camera, const glm::vec2& a_winSize)
     }   
 }
 
-void UpdateMatrices(const glm::mat4& a_parent, const glm::mat4& a_animParent, Object* a_obj, std::vector<glm::mat4>* a_matrices)
+void UpdateMatrices(const glm::mat4& a_parent, const glm::mat4& a_animParent, const Object* a_obj, std::vector<glm::mat4>* a_matrices)
 {
     if (a_obj != nullptr && a_obj->GetObjectType() == ObjectType_ArmatureNode)
     {
@@ -432,25 +440,104 @@ void Object::ResetAnimation()
     }
 }
 
-void Object::DrawModelAnim(const Model* a_model, const Object* a_armature, const glm::mat4& a_world, const glm::mat4& a_view, const glm::mat4& a_proj)
+e_AnimatorDrawMode Object::GetAnimatorDrawMode() const
 {
+    const Object* arm = nullptr;
+    switch (m_objectType)
+    {
+    case ObjectType_CurveModel:
+    {
+        if (m_curveModel != nullptr)
+        {
+            arm = m_curveModel->GetArmature();
+        }
+
+        break;
+    }
+    case ObjectType_PathModel:
+    {
+        if (m_pathModel != nullptr)
+        {
+            arm = m_pathModel->GetArmature();
+        }
+
+        break;
+    }
+    }
+
+    if (GetCollisionObjectType() == CollisionObjectType_Softbody)
+    {
+        if (arm != nullptr)
+        {
+            return AnimatorDrawMode_BoneSoftbody;
+        }
+        
+        return AnimatorDrawMode_Softbody;
+    }
+    else if (arm != nullptr)
+    {
+        return AnimatorDrawMode_Bone;
+    }
+
+    return AnimatorDrawMode_Base;
+}
+
+void Object::DrawModelAnim(const Model* a_model, const Object* a_armature, unsigned int a_nodeCount, unsigned int a_armatureNodeCount, const glm::mat4& a_world, const glm::mat4& a_view, const glm::mat4& a_proj)
+{
+    const e_AnimatorDrawMode drawMode = GetAnimatorDrawMode();
+
     unsigned int programHandle = m_baseProgram->GetHandle();
 
-    if (a_armature != nullptr)
+    switch (drawMode)
+    {
+    case AnimatorDrawMode_Bone:
     {
         programHandle = m_animatorProgram->GetHandle();
+
+        break;
+    }
+    case AnimatorDrawMode_Softbody:
+    {   
+        programHandle = m_animatorSBodyProgram->GetHandle();
+
+        break;
+    }
     }
 
     glUseProgram(programHandle);
 
-    if (a_armature != nullptr)
+    switch (drawMode)
     {
+    case AnimatorDrawMode_Bone:
+    {
+        glUniform1ui(3, a_armatureNodeCount);
+
         const ShaderStorageBuffer* buffer = a_armature->m_armatureBuffer;
-        const unsigned int bufferHandle = buffer->GetHandle();
+        if (buffer != nullptr)
+        {
+            glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, buffer->GetHandle());
+        }
 
-        glUniform1ui(3, m_curveModel->GetArmatureNodeCount());
+        break;
+    }
+    case AnimatorDrawMode_Softbody:
+    {
+        if (m_collisionObject != nullptr)
+        {
+            Softbody* body = (Softbody*)m_collisionObject;
+            body->UpdateDeltaStorageBuffer();
+            
+            glUniform1ui(3, a_nodeCount);
 
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, bufferHandle);
+            const ShaderStorageBuffer* buffer = body->GetDeltaStorageBuffer();
+            if (buffer != nullptr)
+            {
+                glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, buffer->GetHandle());
+            }
+        }
+
+        break;
+    }
     }
 
     const unsigned int vao = a_model->GetVAO();
@@ -465,6 +552,8 @@ void Object::DrawModelAnim(const Model* a_model, const Object* a_armature, const
 
 void Object::DrawAnimator(const Camera* a_camera, const glm::vec2& a_winSize)
 {
+    constexpr glm::mat4 iden = glm::identity<glm::mat4>();
+
     if (IsGlobalVisible())
     {
         const glm::mat4 view = a_camera->GetView();
@@ -481,16 +570,18 @@ void Object::DrawAnimator(const Camera* a_camera, const glm::vec2& a_winSize)
 
             for (auto iter = m_children.begin(); iter != m_children.end(); ++iter)
             {
-                UpdateMatrices(glm::mat4(1), glm::mat4(1), *iter, &matrices);
+                UpdateMatrices(iden, iden, *iter, &matrices);
             }
+
+            const unsigned int bufferSize = (unsigned int)(sizeof(glm::mat4) * matrices.size());
 
             if (m_armatureBuffer == nullptr)
             {
-                m_armatureBuffer = new ShaderStorageBuffer(matrices.data(), matrices.size());
+                m_armatureBuffer = new ShaderStorageBuffer(matrices.data(), bufferSize);
             }
             else
             {
-                m_armatureBuffer->WriteData(matrices.data(), matrices.size());
+                m_armatureBuffer->WriteData(matrices.data(), bufferSize);
             }
 
             break;
@@ -531,7 +622,7 @@ void Object::DrawAnimator(const Camera* a_camera, const glm::vec2& a_winSize)
                 const Model* model = m_curveModel->GetDisplayModel();
                 if (model != nullptr)
                 {
-                    DrawModelAnim(model, m_curveModel->GetArmature(), worldAnim, view, proj);
+                    DrawModelAnim(model, m_curveModel->GetArmature(), m_curveModel->GetNodeCount(), m_curveModel->GetArmatureNodeCount(), worldAnim, view, proj);
                 }                
             }
 
@@ -544,7 +635,7 @@ void Object::DrawAnimator(const Camera* a_camera, const glm::vec2& a_winSize)
                 const Model* model = m_pathModel->GetDisplayModel();
                 if (model != nullptr)
                 {
-                    DrawModelAnim(model, m_pathModel->GetArmature(), worldAnim, view, proj);
+                    DrawModelAnim(model, m_pathModel->GetArmature(), m_pathModel->GetPathNodeCount(), m_pathModel->GetArmatureNodeCount(), worldAnim, view, proj);
                 }
             }
 

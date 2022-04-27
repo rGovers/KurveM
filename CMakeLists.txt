@@ -41,6 +41,14 @@ FileToHeader(
     HEADER_FILE "include/Shaders/AnimatorStandardPixel.h"
     VARIABLE_NAME "AnimatorStandardPixel")
 FileToHeader(
+    SOURCE_FILE "shaders/animatorSBody.vert"
+    HEADER_FILE "include/Shaders/AnimatorSoftbodyVertex.h"
+    VARIABLE_NAME "AnimatorSoftbodyVertex")
+FileToHeader(
+    SOURCE_FILE "shaders/animatorSBody.frag"
+    HEADER_FILE "include/Shaders/AnimatorSoftbodyPixel.h"
+    VARIABLE_NAME "AnimatorSoftbodyPixel")
+FileToHeader(
     SOURCE_FILE "shaders/weightStandard.vert"
     HEADER_FILE "include/Shaders/WeightStandardVertex.h"
     VARIABLE_NAME "WeightStandardVertex")

@@ -1,4 +1,4 @@
-#include "Physics/CollisionObject.h"
+#include "Physics/CollisionObjects/CollisionObject.h"
 
 #include "Object.h"
 #include "Physics/CollisionShapes/CollisionShape.h"

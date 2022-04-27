@@ -12,6 +12,7 @@ enum e_CollisionObjectType
     CollisionObjectType_Null,
     CollisionObjectType_CollisionObject,
     CollisionObjectType_Rigidbody,
+    CollisionObjectType_Softbody,
     CollisionObjectType_End
 };
 

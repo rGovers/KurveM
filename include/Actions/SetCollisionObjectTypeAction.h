@@ -5,7 +5,7 @@
 
 #include "Actions/Action.h"
 
-#include "Physics/CollisionObject.h"
+#include "Physics/CollisionObjects/CollisionObject.h"
 
 class Object;
 

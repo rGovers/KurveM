@@ -42,6 +42,10 @@ Model::Model(const Vertex* a_vertices, const unsigned int* a_indices, unsigned i
     glVertexAttribPointer(3, 4, GL_FLOAT, false, sizeof(Vertex), (void*)offsetof(Vertex, Bones));
     glEnableVertexAttribArray(4);
     glVertexAttribPointer(4, 4, GL_FLOAT, false, sizeof(Vertex), (void*)offsetof(Vertex, Weights));
+    glEnableVertexAttribArray(5);
+    glVertexAttribPointer(5, 4, GL_FLOAT, false, sizeof(Vertex), (void*)offsetof(Vertex, BodyI));
+    glEnableVertexAttribArray(6);
+    glVertexAttribPointer(6, 4, GL_FLOAT, false, sizeof(Vertex), (void*)offsetof(Vertex, BodyW));
 
     m_indices = a_indexCount;
 }
