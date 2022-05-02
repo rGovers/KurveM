@@ -7,6 +7,7 @@ enum e_CollisionShapeType
     CollisionShapeType_Null,
     CollisionShapeType_Box,
     CollisionShapeType_Capsule,
+    CollisionShapeType_Mesh,
     CollisionShapeType_Plane,
     CollisionShapeType_Sphere,
     CollisionShapeType_End

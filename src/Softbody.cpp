@@ -181,6 +181,16 @@ e_CollisionObjectType Softbody::GetCollisionObjectType()
     return CollisionObjectType_Softbody;
 }
 
+void Softbody::SetMass(float a_value)
+{
+    m_mass = a_value;
+    
+    if (m_collisionObject != nullptr)
+    {
+        ((btSoftBody*)m_collisionObject)->setTotalMass(m_mass);
+    }
+}
+
 void Softbody::Reset()
 {
     if (m_collisionObject != nullptr)

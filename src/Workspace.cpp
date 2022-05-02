@@ -301,7 +301,7 @@ void Workspace::Open(const char* a_dir)
 
                 for (const tinyxml2::XMLElement* iter = objectsElement->FirstChildElement(); iter != nullptr; iter = iter->NextSiblingElement())
                 {
-                    m_objectList.emplace_back(ObjectSerializer::ParseData(this, iter, nullptr, &bones, &idMap));
+                    m_objectList.emplace_back(ObjectSerializer::ParseData(this, m_editor, iter, nullptr, &bones, &idMap));
                 }
 
                 for (auto iter = m_objectList.begin(); iter != m_objectList.end(); ++iter)

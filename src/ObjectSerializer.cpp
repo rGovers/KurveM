@@ -2,6 +2,9 @@
 
 #include "CurveModel.h"
 #include "Datastore.h"
+#include "EditorControls/Editor.h"
+#include "IO/CollisionObjectSerializer.h"
+#include "IO/CollisionShapeSerializer.h"
 #include "IO/CurveModelSerializer.h"
 #include "IO/PathModelSerializer.h"
 #include "Object.h"
@@ -235,14 +238,24 @@ void ObjectSerializer::Serialize(tinyxml2::XMLDocument* a_doc, tinyxml2::XMLElem
     {
         CurveModelSerializer::Serialize(a_doc, a_element, curveModel);
     }
-
     const PathModel* pathModel = a_object->m_pathModel;
     if (pathModel != nullptr)
     {
         PathModelSerializer::Serialize(a_doc, a_element, pathModel);
     }
+
+    CollisionObject* collisionObject = a_object->m_collisionObject;
+    if (collisionObject != nullptr)
+    {
+        CollisionObjectSerializer::Serialize(a_doc, a_element, collisionObject);
+    }
+    CollisionShape* collisionShape = a_object->m_collisionShape;
+    if (collisionShape != nullptr)
+    {
+        CollisionShapeSerializer::Serializer(a_doc, a_element, collisionShape);
+    }
 }
-Object* ObjectSerializer::ParseData(Workspace* a_workspace, const tinyxml2::XMLElement* a_element, Object* a_parent, std::list<ObjectBoneGroup>* a_boneGroups, std::unordered_map<long long, long long>* a_idMap)
+Object* ObjectSerializer::ParseData(Workspace* a_workspace, Editor* a_editor, const tinyxml2::XMLElement* a_element, Object* a_parent, std::list<ObjectBoneGroup>* a_boneGroups, std::unordered_map<long long, long long>* a_idMap)
 {
     const tinyxml2::XMLAttribute* idAtt = a_element->FindAttribute("ID");
     const tinyxml2::XMLAttribute* nameAtt = a_element->FindAttribute("Name");
@@ -266,13 +279,13 @@ Object* ObjectSerializer::ParseData(Workspace* a_workspace, const tinyxml2::XMLE
 
         if (strcmp(str, "Object") == 0)
         {
-            ParseData(a_workspace, iter, obj, a_boneGroups, a_idMap);
+            ParseData(a_workspace, a_editor, iter, obj, a_boneGroups, a_idMap);
         }
         else if (strcmp(str, "ArmatureNode") == 0)
         {
             obj->m_objectType = ObjectType_Armature;
 
-            ParseData(a_workspace, iter, obj, a_boneGroups, a_idMap);
+            ParseData(a_workspace, a_editor, iter, obj, a_boneGroups, a_idMap);
         }
         else if (strcmp(str, "Transform") == 0)
         {
@@ -330,6 +343,26 @@ Object* ObjectSerializer::ParseData(Workspace* a_workspace, const tinyxml2::XMLE
                 boneGroup.Bones = bones;
 
                 a_boneGroups->emplace_back(boneGroup);
+            }
+        }
+        else if (strcmp(str, "CollisionObject") == 0)
+        {
+            obj->m_collisionObject = CollisionObjectSerializer::ParseData(iter, obj, a_editor->GetPhysicsEngine());
+
+            CollisionShape* shape = obj->m_collisionShape;
+            if (shape != nullptr)
+            {
+                obj->m_collisionObject->SetCollisionShape(shape);
+            }
+        }
+        else if (strcmp(str, "CollisionShape") == 0)
+        {
+            obj->m_collisionShape = CollisionShapeSerializer::ParseData(iter);
+
+            CollisionObject* cObj = obj->m_collisionObject;
+            if (cObj != nullptr)
+            {
+                cObj->SetCollisionShape(obj->m_collisionShape);
             }
         }
         else

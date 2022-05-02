@@ -38,7 +38,7 @@
 
 const char* RotationMode_String[] = { "Axis Angle", "Quaternion", "Euler Angle" };
 const char* CollisionObject_String[] = { "Null", "Collision Object", "Rigidbody", "Softbody" };
-const char* CollisionShape_String[] = { "Null", "Box", "Capsule", "Plane", "Sphere" };
+const char* CollisionShape_String[] = { "Null", "Box", "Capsule", "Mesh", "Plane", "Sphere" };
 
 #define ANIMATE_TOOLTIP "Contains object animation settings"
 #define OBJECT_TOOLTIP "Contains object settings"
