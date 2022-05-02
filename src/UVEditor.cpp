@@ -125,14 +125,14 @@ void UVEditor::Update(double a_delta, const glm::vec2& a_winPos, const glm::vec2
         {
             const std::list<unsigned int> selectedNodes = m_editor->GetSelectedNodes();
             const unsigned int nodeCount = selectedNodes.size();
-            const Node3Cluster* nodes = model->GetNodes();
+            const CurveNodeCluster* nodes = model->GetNodes();
 
             if (nodeCount > 0)
             {   
                 glm::vec2 pos = glm::vec2(0);
                 for (auto iter = selectedNodes.begin(); iter != selectedNodes.end(); ++iter)
                 {
-                    const Node3Cluster node = nodes[*iter];
+                    const CurveNodeCluster& node = nodes[*iter];
 
                     const glm::vec2 uv = node.Nodes[0].Node.GetUV();
 

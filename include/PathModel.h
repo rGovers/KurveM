@@ -1,12 +1,10 @@
 #pragma once
 
-#include "BezierCurveNode2.h"
-#include "BezierCurveNode3.h"
-#include "tinyxml2.h"
-
-#include <fstream>
 #include <list>
 #include <vector>
+
+#include "BezierCurveNode2.h"
+#include "BezierCurveNode3.h"
 
 struct Vertex;
 
@@ -104,6 +102,8 @@ struct ShapeLine
 class PathModel
 {
 private:
+    friend class PathModelSerializer;
+
     Workspace*        m_workspace;
 
     long long         m_armature;
@@ -245,10 +245,4 @@ public:
 
     void PreTriangulate(unsigned int** a_indices, unsigned int* a_indexCount, Vertex** a_vertices, unsigned int* a_vertexCount) const;
     void PostTriangulate(unsigned int* a_indices, unsigned int a_indexCount, Vertex* a_vertices, unsigned int a_vertexCount);
-
-    void Serialize(tinyxml2::XMLDocument* a_doc, tinyxml2::XMLElement* a_parent) const;
-    void ParseData(const tinyxml2::XMLElement* a_element);
-
-    void WriteOBJ(std::ofstream* a_file, int a_pathSteps, int a_shapeSteps) const;
-    void WriteCollada(tinyxml2::XMLDocument* a_doc, tinyxml2::XMLElement* a_parent, const char* a_id, const char* a_name, int a_pathSteps, int a_shapeSteps) const;
 };

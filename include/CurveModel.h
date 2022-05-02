@@ -1,11 +1,8 @@
 #pragma once
 
 #include "BezierCurveNode3.h"
-#include "tinyxml2.h"
 
-#include <fstream>
 #include <list>
-#include <unordered_map>
 #include <vector>
 
 struct Vertex;
@@ -40,50 +37,42 @@ enum e_FaceIndex
     FaceIndex_4Point_DC = 7
 };
 
-struct NodeGroup
+struct CurveNode
 {
     unsigned int FaceCount;
     BezierCurveNode3 Node;
 
-    NodeGroup() {}
-    NodeGroup(const NodeGroup& a_other)
+    CurveNode() {}
+    CurveNode(const CurveNode& a_other)
     {
         Node = a_other.Node;
         FaceCount = a_other.FaceCount;
     }
-    NodeGroup(const BezierCurveNode3& a_node)
+    CurveNode(const BezierCurveNode3& a_node)
     {
         Node = a_node;
         FaceCount = 0;
     }
 };
 
-struct BoneGroup
+struct CurveNodeCluster
 {
-    unsigned int Index;
-    unsigned int ClusterIndex;
-    long long ID;
-    float Weight;
-};
+    std::vector<CurveNode> Nodes;
 
-struct Node3Cluster
-{
-    std::vector<NodeGroup> Nodes;
-
-    Node3Cluster() {}
-    Node3Cluster(const Node3Cluster& a_other) 
+    CurveNodeCluster() {}
+    CurveNodeCluster(const CurveNodeCluster& a_other) 
     {
         Nodes = a_other.Nodes;
     }
-    Node3Cluster(const BezierCurveNode3& a_node)
+    CurveNodeCluster(const BezierCurveNode3& a_node)
     {
-        NodeGroup group; 
+        CurveNode group; 
         group.Node = a_node;
         group.FaceCount = 0;
 
         Nodes.emplace_back(group);
     }
-    Node3Cluster(const NodeGroup& a_node)
+    CurveNodeCluster(const CurveNode& a_node)
     {
         Nodes.emplace_back(a_node);
     }
@@ -100,6 +89,8 @@ struct CurveFace
 class CurveModel
 {
 private:
+    friend class CurveModelSerializer;
+
     Workspace*    m_workspace;
 
     long long     m_armature;
@@ -109,7 +100,7 @@ private:
     bool          m_stepAdjust;
 
     unsigned int  m_nodeCount;
-    Node3Cluster* m_nodes;
+    CurveNodeCluster* m_nodes;
     unsigned int  m_faceCount;
     CurveFace*    m_faces;
     
@@ -152,11 +143,11 @@ public:
     {
         return m_nodeCount;
     }
-    inline Node3Cluster GetNode(unsigned int a_index) const
+    inline CurveNodeCluster GetNode(unsigned int a_index) const
     {
         return m_nodes[a_index];
     }
-    inline Node3Cluster* GetNodes() const
+    inline CurveNodeCluster* GetNodes() const
     {
         return m_nodes;
     }
@@ -189,9 +180,9 @@ public:
     void EmplaceFace(const CurveFace& a_face);
     void EmplaceFaces(const CurveFace* a_faces, unsigned int a_count);
 
-    void EmplaceNode(unsigned int a_index, const Node3Cluster& a_node);
-    void EmplaceNode(const Node3Cluster& a_node);
-    void EmplaceNodes(const Node3Cluster* a_nodes, unsigned int a_count);
+    void EmplaceNode(unsigned int a_index, const CurveNodeCluster& a_node);
+    void EmplaceNode(const CurveNodeCluster& a_node);
+    void EmplaceNodes(const CurveNodeCluster* a_nodes, unsigned int a_count);
 
     void DestroyFace(unsigned int a_index);
     void DestroyFaces(unsigned int a_start, unsigned int a_end);
@@ -199,19 +190,12 @@ public:
     void DestroyNode(unsigned int a_index);
     void DestroyNodes(unsigned int a_start, unsigned int a_end);
 
-    void SetModelData(const Node3Cluster* a_nodes, unsigned int a_nodeCount, const CurveFace* a_faces, unsigned int a_faceCount);
-    void PassModelData(Node3Cluster* a_nodes, unsigned int a_nodeCount, CurveFace* a_faces, unsigned int a_faceCount);
+    void SetModelData(const CurveNodeCluster* a_nodes, unsigned int a_nodeCount, const CurveFace* a_faces, unsigned int a_faceCount);
+    void PassModelData(CurveNodeCluster* a_nodes, unsigned int a_nodeCount, CurveFace* a_faces, unsigned int a_faceCount);
     void Triangulate();
 
     void GetModelData(bool a_smartStep, int a_steps, unsigned int** a_indices, unsigned int* a_indexCount, Vertex** a_vertices, unsigned int* a_vertexCount) const;
 
     void PreTriangulate(unsigned int** a_indices, unsigned int* a_indexCount, Vertex** a_vertices, unsigned int* a_vertexCount) const;
     void PostTriangulate(const unsigned int* a_indices, unsigned int a_indexCount, const Vertex* a_vertices, unsigned int a_vertexCount);
-
-    void Serialize(tinyxml2::XMLDocument* a_doc, tinyxml2::XMLElement* a_parent) const;
-    void ParseData(const tinyxml2::XMLElement* a_element, std::list<BoneGroup>* a_outBones);
-    void PostParseData(const std::list<BoneGroup>& a_bones, const std::unordered_map<long long, long long>& a_idMap);
-
-    void WriteOBJ(std::ofstream* a_file, bool a_stepAdjust, int a_steps) const;
-    void WriteCollada(tinyxml2::XMLDocument* a_doc, tinyxml2::XMLElement* a_parent, tinyxml2::XMLElement* a_parentController, const char* a_parentID, const char* a_name, bool a_stepAdjust, int a_steps, char** a_outRoot) const;
 };

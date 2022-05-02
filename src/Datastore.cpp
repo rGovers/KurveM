@@ -30,6 +30,8 @@ void Datastore::Init()
     if (Instance == nullptr)
     {
         Instance = new Datastore();
+
+        printf("Initialized Datastore \n");
     }
 }
 void Datastore::Destroy()
@@ -38,6 +40,8 @@ void Datastore::Destroy()
     {
         delete Instance;
         Instance = nullptr;
+        
+        printf("Cleared Datastore \n");
     }
 }
 
@@ -47,6 +51,10 @@ bool Datastore::AddShaderProgram(const char* a_key, ShaderProgram* a_program)
 
     if (iter == Instance->m_shaders.end())
     {
+        printf("Loaded Shader: ");
+        printf(a_key);
+        printf("\n");
+
         Instance->m_shaders.emplace(a_key, a_program);   
 
         return true;
@@ -81,6 +89,10 @@ Texture* Datastore::GetTexture(const char* a_path)
     {
         if (strcmp(c, ".png") == 0 || strcmp(c, ".bmp") == 0 || strcmp(c, ".jpg") == 0)
         {
+            printf("Loaded Texture: ");
+            printf(a_path);
+            printf("\n");
+
             int width;
             int height;
 

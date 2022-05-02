@@ -1,4 +1,4 @@
-#include "XMLIO.h"
+#include "IO/XMLIO.h"
 
 void XMLIO::WriteVec2(tinyxml2::XMLDocument* a_doc, tinyxml2::XMLElement* a_parent, const char* a_name, const glm::vec2& a_value, const glm::vec2& a_default)
 {

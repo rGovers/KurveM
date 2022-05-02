@@ -16,6 +16,7 @@
 #include "EditorControls/ShapeEditor.h"
 #include "EditorControls/UVEditor.h"
 #include "Gizmos.h"
+#include "IO/ObjectSerializer.h"
 #include "ImGuiExt.h"
 #include "imgui_internal.h"
 #include "LongTasks/LongTask.h"
@@ -266,9 +267,15 @@ void Workspace::New()
     }
 
     m_block = false;
+
+    printf("Initialized Workspace \n");
 }
 void Workspace::Open(const char* a_dir)
 {
+    printf("Attempting to Open: ");
+    printf(a_dir);
+    printf("\n");
+
     tinyxml2::XMLDocument doc;
     if (doc.LoadFile(a_dir) == tinyxml2::XMLError::XML_SUCCESS)
     {
@@ -294,14 +301,17 @@ void Workspace::Open(const char* a_dir)
 
                 for (const tinyxml2::XMLElement* iter = objectsElement->FirstChildElement(); iter != nullptr; iter = iter->NextSiblingElement())
                 {
-                    m_objectList.emplace_back(Object::ParseData(this, iter, nullptr, &bones, &idMap));
+                    m_objectList.emplace_back(ObjectSerializer::ParseData(this, iter, nullptr, &bones, &idMap));
                 }
 
                 for (auto iter = m_objectList.begin(); iter != m_objectList.end(); ++iter)
                 {
-                    Object* obj = *iter;
-                    obj->PostParseData(bones, idMap);
+                    ObjectSerializer::PostParseData(*iter, bones, idMap);
                 }
+
+                printf("Opened: ");
+                printf(a_dir);
+                printf("\n");
             }   
             else
             {
@@ -341,7 +351,7 @@ void SaveObject(tinyxml2::XMLDocument* a_doc, tinyxml2::XMLElement* a_parentElem
         }
         a_parentElement->InsertEndChild(objectElement);
 
-        a_object->Serialize(a_doc, objectElement);
+        ObjectSerializer::Serialize(a_doc, objectElement, a_object);
 
         const std::list<Object*> children = a_object->GetChildren();
 
@@ -408,7 +418,7 @@ void SaveOBJObject(std::ofstream* a_file, const Object* a_obj, bool a_smartStep,
     {
         a_file->write("\n", 1);
 
-        a_obj->WriteOBJ(a_file, a_smartStep, a_steps, a_pathSteps, a_shapeSteps);
+        ObjectSerializer::WriteObj(a_file, a_obj, a_smartStep, a_steps, a_pathSteps, a_shapeSteps);
 
         const std::list<Object*> children = a_obj->GetChildren();
 
@@ -429,7 +439,7 @@ void Workspace::ExportOBJ(const char* a_dir, bool a_selectedObjects, bool a_smar
         {
             for (auto iter = m_selectedObjects.begin(); iter != m_selectedObjects.end(); ++iter)
             {
-                (*iter)->WriteOBJ(&file, a_smartStep, a_steps, a_pathSteps, a_shapeSteps);
+                ObjectSerializer::WriteObj(&file, *iter, a_smartStep, a_steps, a_pathSteps, a_shapeSteps);
             }
         }
         else
@@ -448,7 +458,7 @@ void SaveColladaObject(tinyxml2::XMLDocument* a_doc, tinyxml2::XMLElement* a_geo
 {
     if (a_obj != nullptr)
     {
-        tinyxml2::XMLElement* pElement = a_obj->WriteCollada(a_doc, a_geometryElement, a_controllerElement, a_parent, a_stepAdjust, a_steps, a_pathSteps, a_shapeSteps);
+        tinyxml2::XMLElement* pElement = ObjectSerializer::WriteCollada(a_doc, a_geometryElement, a_controllerElement, a_parent, a_obj, a_stepAdjust, a_steps, a_pathSteps, a_shapeSteps);
 
         const std::list<Object*> children = a_obj->GetChildren();
 
@@ -541,7 +551,7 @@ void Workspace::ExportCollada(const char* a_dir, bool a_selectedObjects, bool a_
     {
         for (auto iter = m_selectedObjects.begin(); iter != m_selectedObjects.end(); ++iter)
         {
-            (*iter)->WriteCollada(&doc, libraryGeometriesElement, libraryContollersElement, sceneElement, a_smartStep, a_steps, a_pathSteps, a_shapeSteps);
+            ObjectSerializer::WriteCollada(&doc, libraryGeometriesElement, libraryContollersElement, sceneElement, *iter, a_smartStep, a_steps, a_pathSteps, a_shapeSteps);
         }
     }
     else

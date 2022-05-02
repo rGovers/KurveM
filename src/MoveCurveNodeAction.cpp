@@ -22,7 +22,7 @@ MoveCurveNodeAction::MoveCurveNodeAction(Workspace* a_workspace, const unsigned 
 
     m_axis = a_axis;
 
-    const Node3Cluster* nodes = m_curveModel->GetNodes();
+    const CurveNodeCluster* nodes = m_curveModel->GetNodes();
     for (unsigned int i = 0; i < m_nodeCount; ++i)
     {
         m_nodeIndices[i] = a_nodeIndices[i];
@@ -56,7 +56,7 @@ bool MoveCurveNodeAction::Execute()
 
         const float scale = glm::dot(scaledAxis, endAxis); 
 
-        Node3Cluster* nodes = m_curveModel->GetNodes();
+        CurveNodeCluster* nodes = m_curveModel->GetNodes();
         for (unsigned int i = 0; i < m_nodeCount; ++i)
         {
             const glm::vec3 diff = m_oldPos[i] - m_startPos;
@@ -74,7 +74,7 @@ bool MoveCurveNodeAction::Execute()
 }
 bool MoveCurveNodeAction::Revert()
 {
-    Node3Cluster* nodes = m_curveModel->GetNodes();
+    CurveNodeCluster* nodes = m_curveModel->GetNodes();
 
     for (unsigned int i = 0; i < m_nodeCount; ++i)
     {

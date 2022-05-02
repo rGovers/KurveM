@@ -195,7 +195,7 @@ void WeightPaintingEditor::LeftDown(double a_delta, Camera* a_camera, const glm:
 
                     AddCurveNodeWeightAction* weightAction = (AddCurveNodeWeightAction*)action;
 
-                    const Node3Cluster* nodes = model->GetNodes();
+                    const CurveNodeCluster* nodes = model->GetNodes();
                     const unsigned int nodeCount = model->GetNodeCount();
 
                     bool change = false;

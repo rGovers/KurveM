@@ -4,30 +4,33 @@
 #include <glm/glm.hpp>
 
 #include "Actions/Action.h"
-#include "CurveModel.h"
 
+class CurveModel;
 class Editor;
 class Workspace;
+
+struct CurveFace;
+struct CurveNodeCluster;
 
 class DeleteCurveNodeAction : public Action
 {
 private:
-    Workspace*    m_workspace;
-    Editor*       m_editor;
+    Workspace*        m_workspace;
+    Editor*           m_editor;
   
-    CurveModel*   m_curveModel;
+    CurveModel*       m_curveModel;
 
-    unsigned int  m_nodeCount;
-    Node3Cluster* m_nodes;
-    unsigned int  m_faceCount;
-    CurveFace*    m_faces;
+    unsigned int      m_nodeCount;
+    CurveNodeCluster* m_nodes;
+    unsigned int      m_faceCount;
+    CurveFace*        m_faces;
 
-    bool          m_own;
+    bool              m_own;
 
-    unsigned int  m_oldNodeCount;
-    Node3Cluster* m_oldNodes;
-    unsigned int  m_oldFaceCount;
-    CurveFace*    m_oldFaces;
+    unsigned int      m_oldNodeCount;
+    CurveNodeCluster* m_oldNodes;
+    unsigned int      m_oldFaceCount;
+    CurveFace*        m_oldFaces;
 protected:
 
 public:

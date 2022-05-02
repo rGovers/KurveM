@@ -1,5 +1,7 @@
 #include "Windows/AnimatorWindow.h"
 
+#include <string>
+
 #include "Actions/AddAnimationNodeAction.h"
 #include "Actions/RemoveAnimationNodeAction.h"
 #include "Animation.h"

@@ -3,13 +3,10 @@
 #define GLM_FORCE_SWIZZLE 
 #include <glm/glm.hpp>
 
-#include <fstream>
 #include <list>
-#include <unordered_map>
 
 #include "Physics/CollisionObjects/CollisionObject.h"
 #include "Physics/CollisionShapes/CollisionShape.h"
-#include "tinyxml2.h"
 
 class Animation; 
 class Camera;
@@ -53,6 +50,8 @@ struct ObjectBoneGroup
 class Object
 {
 private:
+    friend class ObjectSerializer;
+
     static long long ObjectIDNum;
 
     bool                 m_visible;
@@ -205,11 +204,4 @@ public:
     void DrawBase(const Camera* a_camera, const glm::vec2& a_winSize);
     void DrawAnimator(const Camera* a_camera, const glm::vec2& a_winSize);
     void DrawWeight(const Camera* a_camera, const glm::vec2& a_winSize, unsigned int a_bone, unsigned int a_boneCount);
-
-    void WriteOBJ(std::ofstream* a_file, bool a_smartStep, int a_steps, int a_pathSteps, int a_shapeSteps) const;
-    tinyxml2::XMLElement* WriteCollada(tinyxml2::XMLDocument* a_doc, tinyxml2::XMLElement* a_geometryElement, tinyxml2::XMLElement* a_controllerElement, tinyxml2::XMLElement* a_parentElement, bool a_stepAdjust, int a_steps, int a_pathSteps, int a_shapeSteps) const;
-    void Serialize(tinyxml2::XMLDocument* a_doc, tinyxml2::XMLElement* a_element) const;
-
-    static Object* ParseData(Workspace* a_workspace, const tinyxml2::XMLElement* a_element, Object* a_parent, std::list<ObjectBoneGroup>* a_boneGroups, std::unordered_map<long long, long long>* a_idMap);
-    void PostParseData(const std::list<ObjectBoneGroup>& a_bones, const std::unordered_map<long long, long long>& a_idMap);
 };

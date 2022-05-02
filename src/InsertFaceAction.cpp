@@ -4,7 +4,7 @@
 #include "LongTasks/TriangulateCurveLongTask.h"
 #include "Workspace.h"
 
-void InsertFaceAction::Wind3Points(const Node3Cluster* a_nodes, unsigned int* a_a, unsigned int* a_b, unsigned int* a_c) const
+void InsertFaceAction::Wind3Points(const CurveNodeCluster* a_nodes, unsigned int* a_a, unsigned int* a_b, unsigned int* a_c) const
 {
     const glm::vec3 posA = a_nodes[*a_a].Nodes[0].Node.GetPosition();
     const glm::vec3 posB = a_nodes[*a_b].Nodes[0].Node.GetPosition();
@@ -60,7 +60,7 @@ void InsertFaceAction::Wind3Points(const Node3Cluster* a_nodes, unsigned int* a_
     }
 }
 
-void InsertFaceAction::Wind4Points(const Node3Cluster* a_nodes, unsigned int* a_a, unsigned int* a_b, unsigned int* a_c, unsigned int* a_d) const
+void InsertFaceAction::Wind4Points(const CurveNodeCluster* a_nodes, unsigned int* a_a, unsigned int* a_b, unsigned int* a_c, unsigned int* a_d) const
 {
     const glm::vec3 posA = a_nodes[*a_a].Nodes[0].Node.GetPosition();
     const glm::vec3 posB = a_nodes[*a_b].Nodes[0].Node.GetPosition();
@@ -169,7 +169,7 @@ bool InsertFaceAction::GetIndex(const CurveFace& a_face, e_FaceIndex a_faceIndex
 
     return false;
 }
-unsigned int InsertFaceAction::PushNode(Node3Cluster* a_cluster, unsigned int a_startIndex, unsigned int a_endIndex, const CurveFace* a_faces, unsigned int a_faceCount) const
+unsigned int InsertFaceAction::PushNode(CurveNodeCluster* a_cluster, unsigned int a_startIndex, unsigned int a_endIndex, const CurveFace* a_faces, unsigned int a_faceCount) const
 {
     constexpr float infinity = std::numeric_limits<float>::infinity();
 
@@ -225,7 +225,7 @@ unsigned int InsertFaceAction::PushNode(Node3Cluster* a_cluster, unsigned int a_
 
     for (unsigned int i = 0; i < size; ++i)
     {
-        NodeGroup& node = a_cluster->Nodes[i];
+        CurveNode& node = a_cluster->Nodes[i];
         if (node.Node.GetHandlePosition().x == infinity)
         {
             node.Node.SetHandlePosition(a_cluster->Nodes[i].Node.GetPosition());
@@ -245,11 +245,11 @@ unsigned int InsertFaceAction::PushNode(Node3Cluster* a_cluster, unsigned int a_
     return size;
 }
 
-void InsertFaceAction::PopNode(Node3Cluster* a_cluster, unsigned int a_index) const
+void InsertFaceAction::PopNode(CurveNodeCluster* a_cluster, unsigned int a_index) const
 {
     constexpr float infinity = std::numeric_limits<float>::infinity();
 
-    NodeGroup& nGroup = a_cluster->Nodes[a_index];
+    CurveNode& nGroup = a_cluster->Nodes[a_index];
 
     if (--nGroup.FaceCount <= 0)
     {
@@ -289,7 +289,7 @@ bool InsertFaceAction::Redo()
 }
 bool InsertFaceAction::Execute() 
 {
-    Node3Cluster* nodes = m_curveModel->GetNodes();
+    CurveNodeCluster* nodes = m_curveModel->GetNodes();
     const CurveFace* faces = m_curveModel->GetFaces();
     const unsigned int faceCount = m_curveModel->GetFaceCount();
 
@@ -376,7 +376,7 @@ bool InsertFaceAction::Revert()
 {
     if (m_faceIndex != -1)
     {
-        Node3Cluster* nodes = m_curveModel->GetNodes();
+        CurveNodeCluster* nodes = m_curveModel->GetNodes();
         const CurveFace face = m_curveModel->GetFace(m_faceIndex);
 
         switch (face.FaceMode)

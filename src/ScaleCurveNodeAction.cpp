@@ -22,7 +22,7 @@ ScaleCurveNodeAction::ScaleCurveNodeAction(Workspace* a_workspace, const unsigne
     m_nodeIndices = new unsigned int[m_nodeCount];
     m_oldPos = new glm::vec3[m_nodeCount];
 
-    const Node3Cluster* nodes = m_curveModel->GetNodes(); 
+    const CurveNodeCluster* nodes = m_curveModel->GetNodes(); 
 
     for (unsigned int i = 0; i < m_nodeCount; ++i)
     {
@@ -66,7 +66,7 @@ bool ScaleCurveNodeAction::Execute()
 
         const float scale = glm::dot(scaledAxis, endAxis); 
 
-        Node3Cluster* nodes = m_curveModel->GetNodes();
+        CurveNodeCluster* nodes = m_curveModel->GetNodes();
 
         const glm::vec3 sVec = glm::vec3(1) + (m_axis * (scale / 10));
 
@@ -89,7 +89,7 @@ bool ScaleCurveNodeAction::Execute()
 }
 bool ScaleCurveNodeAction::Revert()
 {
-    Node3Cluster* nodes = m_curveModel->GetNodes();
+    CurveNodeCluster* nodes = m_curveModel->GetNodes();
 
     for (unsigned int i = 0; i < m_nodeCount; ++i)
     {

@@ -20,7 +20,7 @@ MoveCurveNodeHandleAction::MoveCurveNodeHandleAction(Workspace* a_workspace, uns
     m_xAxis = a_xAxis;
     m_yAxis = a_yAxis;
 
-    const Node3Cluster* nodes = m_curveModel->GetNodes();
+    const CurveNodeCluster* nodes = m_curveModel->GetNodes();
     m_startPos = nodes[m_clusterIndex].Nodes[m_nodeIndex].Node.GetHandlePosition();
 }
 MoveCurveNodeHandleAction::~MoveCurveNodeHandleAction()
@@ -41,7 +41,7 @@ bool MoveCurveNodeHandleAction::Execute()
 {
     const glm::vec2 diff = m_cursorPos - m_startCursorPos;
 
-    Node3Cluster* nodes = m_curveModel->GetNodes();
+    CurveNodeCluster* nodes = m_curveModel->GetNodes();
 
     nodes[m_clusterIndex].Nodes[m_nodeIndex].Node.SetHandlePosition(m_startPos + (m_yAxis * diff.y) + (m_xAxis * diff.x));
 
@@ -51,7 +51,7 @@ bool MoveCurveNodeHandleAction::Execute()
 }
 bool MoveCurveNodeHandleAction::Revert()
 {
-    Node3Cluster* nodes = m_curveModel->GetNodes();
+    CurveNodeCluster* nodes = m_curveModel->GetNodes();
 
     nodes[m_clusterIndex].Nodes[m_nodeIndex].Node.SetHandlePosition(m_startPos);
 

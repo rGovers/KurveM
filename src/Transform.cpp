@@ -2,7 +2,7 @@
 
 #include <glm/gtx/quaternion.hpp>
 
-#include "XMLIO.h"
+#include "IO/XMLIO.h"
 
 Transform::Transform()
 {
@@ -43,20 +43,24 @@ Transform& Transform::operator =(const Transform& a_other)
 
 void Transform::Serialize(tinyxml2::XMLDocument* a_doc, tinyxml2::XMLElement* a_parent) const
 {
+    constexpr glm::vec3 zero = glm::vec3(0.0f);
+    constexpr glm::vec3 one = glm::vec3(1.0f);
+    constexpr glm::quat iden = glm::identity<glm::quat>();
+
     tinyxml2::XMLElement* transformElement = a_doc->NewElement("Transform");
     a_parent->InsertEndChild(transformElement);
 
-    if (m_translation != glm::vec3(0))
+    if (m_translation != zero)
     {
         XMLIO::WriteVec3(a_doc, transformElement, "Translation", m_translation);
     }
-    if (m_rotation != glm::identity<glm::quat>())
+    if (m_rotation != iden)
     {
         XMLIO::WriteQuat(a_doc, transformElement, "Quaternion", m_rotation);
     }
-    if (m_scale != glm::vec3(1))
+    if (m_scale != one)
     {
-        XMLIO::WriteVec3(a_doc, transformElement, "Scale", m_scale, glm::vec3(1));
+        XMLIO::WriteVec3(a_doc, transformElement, "Scale", m_scale, one);
     }
 }
 void Transform::ParseData(const tinyxml2::XMLElement* a_element)

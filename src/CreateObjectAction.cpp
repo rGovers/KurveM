@@ -7,6 +7,7 @@
 #include "LongTasks/TriangulateCurveLongTask.h"
 #include "LongTasks/TriangulatePathLongTask.h"
 #include "Object.h"
+#include "PathModel.h"
 #include "PrimitiveGenerator.h"
 #include "Workspace.h"
 
@@ -123,9 +124,9 @@ bool CreateObjectAction::Redo()
 bool CreateObjectAction::Execute()
 {
     unsigned int nodeCount = 0;
-    Node3Cluster* nodePtr;
-    unsigned int faceCount = 0;
-    CurveFace* facePtr;
+    CurveNodeCluster* curveNodePtr;
+    unsigned int curveFaceCount = 0;
+    CurveFace* curveFacePtr;
 
     PathNodeCluster* pathNodePtr;
     unsigned int pathLineCount = 0;
@@ -142,7 +143,7 @@ bool CreateObjectAction::Execute()
     {
         case CreateObjectType_TriangleCurve:
         {
-            PrimitiveGenerator::CreateCurveTriangle(&nodePtr, &nodeCount, &facePtr, &faceCount);
+            PrimitiveGenerator::CreateCurveTriangle(&curveNodePtr, &nodeCount, &curveFacePtr, &curveFaceCount);
 
             objectType = ObjectType_CurveModel;
 
@@ -150,7 +151,7 @@ bool CreateObjectAction::Execute()
         }
         case CreateObjectType_PlaneCurve:
         {
-            PrimitiveGenerator::CreateCurvePlane(&nodePtr, &nodeCount, &facePtr, &faceCount);
+            PrimitiveGenerator::CreateCurvePlane(&curveNodePtr, &nodeCount, &curveFacePtr, &curveFaceCount);
 
             objectType = ObjectType_CurveModel;
 
@@ -158,7 +159,7 @@ bool CreateObjectAction::Execute()
         }
         case CreateObjectType_SphereCurve:
         {
-            PrimitiveGenerator::CreateCurveSphere(&nodePtr, &nodeCount, &facePtr, &faceCount);
+            PrimitiveGenerator::CreateCurveSphere(&curveNodePtr, &nodeCount, &curveFacePtr, &curveFaceCount);
 
             objectType = ObjectType_CurveModel;
 
@@ -166,7 +167,7 @@ bool CreateObjectAction::Execute()
         }
         case CreateObjectType_CubeCurve:
         {
-            PrimitiveGenerator::CreateCurveCube(&nodePtr, &nodeCount, &facePtr, &faceCount);
+            PrimitiveGenerator::CreateCurveCube(&curveNodePtr, &nodeCount, &curveFacePtr, &curveFaceCount);
 
             objectType = ObjectType_CurveModel;
 
@@ -239,11 +240,11 @@ bool CreateObjectAction::Execute()
     {
     case ObjectType_CurveModel:
     {
-        if (nodeCount != 0 && faceCount != 0)
+        if (nodeCount != 0 && curveFaceCount != 0)
         {
             CurveModel* model = new CurveModel(m_workspace);
 
-            model->PassModelData(nodePtr, nodeCount, facePtr, faceCount);
+            model->PassModelData(curveNodePtr, nodeCount, curveFacePtr, curveFaceCount);
 
             m_workspace->PushLongTask(new TriangulateCurveLongTask(model));
 

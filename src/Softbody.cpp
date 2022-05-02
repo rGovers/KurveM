@@ -56,7 +56,7 @@ btSoftBody* Softbody::GenerateBody()
         if (model != nullptr)
         {
             const unsigned int nodeCount = model->GetNodeCount();
-            const Node3Cluster* nodes = model->GetNodes();
+            const CurveNodeCluster* nodes = model->GetNodes();
 
             btVector3* nP = new btVector3[nodeCount];
             btScalar* nM = new btScalar[nodeCount];
@@ -215,7 +215,7 @@ void Softbody::UpdateDeltaStorageBuffer()
             const CurveModel* model = m_object->GetCurveModel();
             if (model != nullptr)
             {
-                const Node3Cluster* nodes = model->GetNodes();
+                const CurveNodeCluster* nodes = model->GetNodes();
 
                 for (int i = 0; i < size; ++i)
                 {

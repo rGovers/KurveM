@@ -23,7 +23,7 @@ RotateCurveNodeAction::RotateCurveNodeAction(Workspace* a_workspace, const unsig
     m_oldPos = new glm::vec3[m_nodeCount];
     m_nodeIndices = new unsigned int[m_nodeCount];
 
-    const Node3Cluster* nodes = m_curveModel->GetNodes();
+    const CurveNodeCluster* nodes = m_curveModel->GetNodes();
 
     m_centre = glm::vec3(0);
 
@@ -73,7 +73,7 @@ bool RotateCurveNodeAction::Execute()
 
         const glm::quat q = glm::angleAxis(scale, m_axis);
 
-        Node3Cluster* nodes = m_curveModel->GetNodes();
+        CurveNodeCluster* nodes = m_curveModel->GetNodes();
 
         for (unsigned int i = 0; i < m_nodeCount; ++i)
         {
@@ -96,7 +96,7 @@ bool RotateCurveNodeAction::Execute()
 }
 bool RotateCurveNodeAction::Revert()
 {
-    Node3Cluster* nodes = m_curveModel->GetNodes();
+    CurveNodeCluster* nodes = m_curveModel->GetNodes();
 
     for (unsigned int i = 0; i < m_nodeCount; ++i)
     {

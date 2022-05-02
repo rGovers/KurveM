@@ -3,11 +3,12 @@
 #include <vector>
 #include <unordered_map>
 
+#include "CurveModel.h"
 #include "EditorControls/Editor.h"
 #include "LongTasks/TriangulateCurveLongTask.h"
 #include "Workspace.h"
 
-unsigned int GetClusterIndex(const BezierCurveNode3& a_node, Node3Cluster* a_newNode)
+unsigned int GetClusterIndex(const BezierCurveNode3& a_node, CurveNodeCluster* a_newNode)
 {
     if (a_newNode->Nodes[0].Node.GetHandlePosition().x == std::numeric_limits<float>::infinity())
     {
@@ -50,12 +51,12 @@ DeleteCurveNodeAction::DeleteCurveNodeAction(Workspace* a_workspace, Editor* a_e
 
     std::unordered_map<unsigned int, unsigned int> lookup;
 
-    m_nodes = new Node3Cluster[m_oldNodeCount];
+    m_nodes = new CurveNodeCluster[m_oldNodeCount];
 
     m_nodeCount = 0;
     for (unsigned int i = 0; i < m_oldNodeCount; ++i)
     {
-        NodeGroup nGroup;
+        CurveNode nGroup;
         for (int j = 0; j < a_nodeCount; ++j)
         {
             if (a_nodeIndices[j] == i)

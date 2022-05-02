@@ -22,12 +22,12 @@ e_ActionType AddCurveNodeWeightAction::GetActionType()
 
 void AddCurveNodeWeightAction::AddNodeDelta(unsigned int a_index, long long a_bone, float a_delta)
 {
-    Node3Cluster* nodes = m_model->GetNodes();
+    CurveNodeCluster* nodes = m_model->GetNodes();
 
     if (nodes[a_index].Nodes.size() > 0)
     {
         float shiftDelta = a_delta;
-        const NodeGroup node = nodes[a_index].Nodes[0];
+        const CurveNode& node = nodes[a_index].Nodes[0];
         const float weight = node.Node.GetBoneWeight(a_bone);
         const float sum = weight + shiftDelta;
 
@@ -71,7 +71,7 @@ void AddCurveNodeWeightAction::AddNodeDelta(unsigned int a_index, long long a_bo
 
 bool AddCurveNodeWeightAction::Redo()
 {
-    Node3Cluster* nodes = m_model->GetNodes();
+    CurveNodeCluster* nodes = m_model->GetNodes();
 
     for (auto iter = m_nodes.begin(); iter != m_nodes.end(); ++iter)
     {
@@ -94,7 +94,7 @@ bool AddCurveNodeWeightAction::Execute()
 }
 bool AddCurveNodeWeightAction::Revert()
 {
-    Node3Cluster* nodes = m_model->GetNodes();
+    CurveNodeCluster* nodes = m_model->GetNodes();
 
     for (auto iter = m_nodes.begin(); iter != m_nodes.end(); ++iter)
     {

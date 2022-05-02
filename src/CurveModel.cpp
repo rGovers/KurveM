@@ -1,14 +1,11 @@
 #include "CurveModel.h"
 
-#include "MeshExporter.h"
+#include <unordered_map>
+
 #include "Model.h"
 #include "Object.h"
 #include "Transform.h"
 #include "Workspace.h"
-#include "XMLIO.h"
-
-#include <string>
-#include <unordered_map>
 
 CurveModel::CurveModel(Workspace* a_workspace)
 {
@@ -271,11 +268,11 @@ void CurveModel::EmplaceFaces(const CurveFace* a_faces, unsigned int a_count)
     m_faceCount = size;
 }
 
-void CurveModel::EmplaceNode(unsigned int a_index, const Node3Cluster& a_node)
+void CurveModel::EmplaceNode(unsigned int a_index, const CurveNodeCluster& a_node)
 {
     const unsigned int size = m_nodeCount + 1;
 
-    Node3Cluster* newNodes = new Node3Cluster[size];
+    CurveNodeCluster* newNodes = new CurveNodeCluster[size];
 
     if (m_nodes != nullptr)
     {
@@ -302,15 +299,15 @@ void CurveModel::EmplaceNode(unsigned int a_index, const Node3Cluster& a_node)
     m_nodes = newNodes;
     m_nodeCount = size;
 }
-void CurveModel::EmplaceNode(const Node3Cluster& a_node)
+void CurveModel::EmplaceNode(const CurveNodeCluster& a_node)
 {
     EmplaceNodes(&a_node, 1);
 }
-void CurveModel::EmplaceNodes(const Node3Cluster* a_nodes, unsigned int a_count)
+void CurveModel::EmplaceNodes(const CurveNodeCluster* a_nodes, unsigned int a_count)
 {
     const unsigned int size = m_nodeCount + a_count;
 
-    Node3Cluster* newNodes = new Node3Cluster[size];
+    CurveNodeCluster* newNodes = new CurveNodeCluster[size];
 
     if (m_nodes != nullptr)
     {
@@ -377,7 +374,7 @@ void CurveModel::DestroyNodes(unsigned int a_start, unsigned int a_end)
     const unsigned int size = m_nodeCount - count;
     const unsigned int endCount = m_nodeCount - a_end;
 
-    Node3Cluster* newNodes = new Node3Cluster[size];
+    CurveNodeCluster* newNodes = new CurveNodeCluster[size];
 
     if (m_nodes != nullptr)
     {
@@ -399,7 +396,7 @@ void CurveModel::DestroyNodes(unsigned int a_start, unsigned int a_end)
     m_nodeCount = size;
 }
 
-void CurveModel::SetModelData(const Node3Cluster* a_nodes, unsigned int a_nodeCount, const CurveFace* a_faces, unsigned int a_faceCount)
+void CurveModel::SetModelData(const CurveNodeCluster* a_nodes, unsigned int a_nodeCount, const CurveFace* a_faces, unsigned int a_faceCount)
 {
     if (m_nodes != nullptr)
     {
@@ -415,7 +412,7 @@ void CurveModel::SetModelData(const Node3Cluster* a_nodes, unsigned int a_nodeCo
     m_nodeCount = a_nodeCount;
     m_faceCount = a_faceCount;
 
-    m_nodes = new Node3Cluster[m_nodeCount];
+    m_nodes = new CurveNodeCluster[m_nodeCount];
     for (unsigned int i = 0; i < m_nodeCount; ++i)
     {
         m_nodes[i] = a_nodes[i];
@@ -427,7 +424,7 @@ void CurveModel::SetModelData(const Node3Cluster* a_nodes, unsigned int a_nodeCo
         m_faces[i] = a_faces[i];
     }
 }
-void CurveModel::PassModelData(Node3Cluster* a_nodes, unsigned int a_nodeCount, CurveFace* a_faces, unsigned int a_faceCount)
+void CurveModel::PassModelData(CurveNodeCluster* a_nodes, unsigned int a_nodeCount, CurveFace* a_faces, unsigned int a_faceCount)
 {
     m_nodes = a_nodes;
     m_faces = a_faces;
@@ -1258,649 +1255,4 @@ void CurveModel::PostTriangulate(const unsigned int* a_indices, unsigned int a_i
     {
         m_displayModel = new Model(a_vertices, a_indices, a_vertexCount, a_indexCount);
     }
-}
-
-void CurveModel::Serialize(tinyxml2::XMLDocument* a_doc, tinyxml2::XMLElement* a_parent) const
-{
-    tinyxml2::XMLElement* curveModelElement = a_doc->NewElement("CurveModel");
-    a_parent->InsertEndChild(curveModelElement);
-
-    curveModelElement->SetAttribute("StepAdjust", m_stepAdjust);
-    curveModelElement->SetAttribute("Steps", m_steps);
-    curveModelElement->SetAttribute("Armature", std::to_string(m_armature).c_str());
-
-    tinyxml2::XMLElement* facesElement = a_doc->NewElement("Faces");
-    curveModelElement->InsertEndChild(facesElement);
-
-    for (unsigned int i = 0; i < m_faceCount; ++i)
-    {
-        const CurveFace face = m_faces[i];
-
-        tinyxml2::XMLElement* fElement = a_doc->NewElement("Face");
-        facesElement->InsertEndChild(fElement);
-
-        fElement->SetAttribute("FaceMode", (int)face.FaceMode);
-
-        switch (face.FaceMode)
-        {
-        case FaceMode_3Point:
-        {
-            for (int i = 0; i < 6; ++i)
-            {
-                tinyxml2::XMLElement* indexElement = a_doc->NewElement("Index");
-                fElement->InsertEndChild(indexElement);
-                indexElement->SetText(face.Index[i]);
-
-                tinyxml2::XMLElement* clusterIndexElement = a_doc->NewElement("ClusterIndex");
-                fElement->InsertEndChild(clusterIndexElement);
-                clusterIndexElement->SetText(face.ClusterIndex[i]);
-            }
-
-            break;
-        }
-        case FaceMode_4Point:
-        {
-            for (int i = 0; i < 8; ++i)
-            {
-                tinyxml2::XMLElement* indexElement = a_doc->NewElement("Index");
-                fElement->InsertEndChild(indexElement);
-                indexElement->SetText(face.Index[i]);
-
-                tinyxml2::XMLElement* clusterIndexElement = a_doc->NewElement("ClusterIndex");
-                fElement->InsertEndChild(clusterIndexElement);
-                clusterIndexElement->SetText(face.ClusterIndex[i]);
-            }
-
-            break;
-        }
-        }
-    }
-
-    tinyxml2::XMLElement* nodesElement = a_doc->NewElement("Nodes");
-    curveModelElement->InsertEndChild(nodesElement);
-
-    for (unsigned int i = 0; i < m_nodeCount; ++i)
-    {
-        const Node3Cluster node = m_nodes[i];
-
-        tinyxml2::XMLElement* nElement = a_doc->NewElement("Node");
-        nodesElement->InsertEndChild(nElement);
-
-        const std::vector<NodeGroup> nodes = node.Nodes;
-        const int size = nodes.size();
-
-        if (size > 0)
-        {
-            XMLIO::WriteVec3(a_doc, nElement, "Position", nodes[0].Node.GetPosition());
-
-            for (int j = 0; j < size; ++j)
-            {
-                const NodeGroup g = nodes[j];
-
-                tinyxml2::XMLElement* cNodeElement = a_doc->NewElement("ClusterNode");
-                nElement->InsertEndChild(cNodeElement);
-
-                XMLIO::WriteVec3(a_doc, cNodeElement, "HandlePosition", g.Node.GetHandlePosition());
-                XMLIO::WriteVec2(a_doc, cNodeElement, "UV", g.Node.GetUV());
-
-                const std::vector<BoneCluster> bones = g.Node.GetBones();
-
-                if (bones.size() > 0)
-                {
-                    tinyxml2::XMLElement* bonesElement = a_doc->NewElement("Bones");
-                    cNodeElement->InsertEndChild(bonesElement);
-
-                    for (auto iter = bones.begin(); iter != bones.end(); ++iter)
-                    {
-                        tinyxml2::XMLElement* boneRootElement = a_doc->NewElement("Bone");
-                        bonesElement->InsertEndChild(boneRootElement);
-
-                        tinyxml2::XMLElement* boneIndexId = a_doc->NewElement("ID");
-                        boneRootElement->InsertEndChild(boneIndexId);
-
-                        boneIndexId->SetText(std::to_string(iter->ID).c_str());
-
-                        if (iter->Weight > 0)
-                        {
-                            tinyxml2::XMLElement* weight = a_doc->NewElement("Weight");
-                            boneRootElement->InsertEndChild(weight);
-
-                            weight->SetText(iter->Weight);
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-void CurveModel::ParseData(const tinyxml2::XMLElement* a_element, std::list<BoneGroup>* a_outBones)
-{
-    m_stepAdjust = a_element->BoolAttribute("StepAdjust");
-    m_steps = a_element->IntAttribute("Steps");
-    m_armature = std::stoll(a_element->Attribute("Armature"));
-
-    for (const tinyxml2::XMLElement* iter = a_element->FirstChildElement(); iter != nullptr; iter = iter->NextSiblingElement())
-    {
-        const char* str = iter->Value();
-
-        if (strcmp(str, "Faces") == 0)
-        {
-            std::vector<CurveFace> faces;
-
-            for (const tinyxml2::XMLElement* fIter = iter->FirstChildElement(); fIter != nullptr; fIter = fIter->NextSiblingElement())
-            {
-                const char* fStr = fIter->Value();
-
-                if (strcmp(fStr, "Face") == 0)
-                {
-                    CurveFace face;
-
-                    face.FaceMode = (e_FaceMode)fIter->IntAttribute("FaceMode");
-
-                    int index = 0;
-                    int cIndex = 0;
-                    for (const tinyxml2::XMLElement* iIter = fIter->FirstChildElement(); iIter != nullptr; iIter = iIter->NextSiblingElement())
-                    {
-                        const char* iStr = iIter->Value();
-
-                        if (strcmp(iStr, "Index") == 0)
-                        {
-                            face.Index[index++] = iIter->UnsignedText();
-                        }
-                        else if (strcmp(iStr, "ClusterIndex") == 0)
-                        {
-                            face.ClusterIndex[cIndex++] = iIter->UnsignedText();
-                        }
-                        else 
-                        {
-                            printf("CurveModel::ParseData: InvalidElement: ");
-                            printf(iStr);
-                            printf("\n");
-                        }
-                    }
-
-                    faces.emplace_back(face);
-                }
-                else 
-                {
-                    printf("CurveModel::ParseData: Invalid Element: ");
-                    printf(fStr);
-                    printf("\n");
-                }
-            }
-
-            m_faceCount = faces.size();
-
-            if (m_faces != nullptr)
-            {
-                delete[] m_faces;
-                m_faces = nullptr;
-            }
-
-            m_faces = new CurveFace[m_faceCount];
-
-            for (unsigned int i = 0; i < m_faceCount; ++i)
-            {
-                m_faces[i] = faces[i];
-            }
-        }
-        else if (strcmp(str, "Nodes") == 0)
-        {
-            std::vector<Node3Cluster> nodes;
-
-            for (const tinyxml2::XMLElement* nIter = iter->FirstChildElement(); nIter != nullptr; nIter = nIter->NextSiblingElement())
-            {
-                const char* nStr = nIter->Value();
-
-                if (strcmp(nStr, "Node") == 0)
-                {
-                    Node3Cluster node;
-
-                    glm::vec3 pos = glm::vec3(0);
-
-                    for (const tinyxml2::XMLElement* iIter = nIter->FirstChildElement(); iIter != nullptr; iIter = iIter->NextSiblingElement())
-                    {
-                        const char* iStr = iIter->Value();
-
-                        if (strcmp(iStr, "Position") == 0)
-                        {
-                            XMLIO::ReadVec3(iIter, &pos);
-                        }
-                        else if (strcmp(iStr, "ClusterNode") == 0)
-                        {
-                            NodeGroup n;
-
-                            n.Node.SetPosition(glm::vec3(std::numeric_limits<float>::infinity()));
-
-                            for (const tinyxml2::XMLElement* cIter = iIter->FirstChildElement(); cIter != nullptr; cIter = cIter->NextSiblingElement())
-                            {
-                                const char* cStr = cIter->Value();
-
-                                if (strcmp(cStr, "HandlePosition") == 0)
-                                {
-                                    n.Node.SetHandlePosition(XMLIO::GetVec3(cIter));
-                                }
-                                else if (strcmp(cStr, "UV") == 0)
-                                {
-                                    n.Node.SetUV(XMLIO::GetVec2(cIter));
-                                }
-                                else if (strcmp(cStr, "Bones") == 0)
-                                {
-                                    for (const tinyxml2::XMLElement* bIter = cIter->FirstChildElement(); bIter != nullptr; bIter = bIter->NextSiblingElement())
-                                    {
-                                        const char* bStr = bIter->Value();
-                                        if (strcmp(bStr, "Bone") == 0)
-                                        {
-                                            BoneGroup bone;
-                                            bone.Index = nodes.size();
-                                            bone.ClusterIndex = node.Nodes.size();
-                                            bone.ID = 0;
-                                            bone.Weight = 0;
-
-                                            for (const tinyxml2::XMLElement* iBIter = bIter->FirstChildElement(); iBIter != nullptr; iBIter = iBIter->NextSiblingElement())
-                                            {
-                                                const char* iBStr = iBIter->Value();
-                                                if (strcmp(iBStr, "ID") == 0)
-                                                {
-                                                    bone.ID = std::stoll(iBIter->GetText());
-                                                }
-                                                else if (strcmp(iBStr, "Weight") == 0)
-                                                {
-                                                    bone.Weight = iBIter->FloatText();
-                                                }
-                                                else
-                                                {
-                                                    printf("CurveModel::ParseData: InvalidElement: ");
-                                                    printf(iBStr);
-                                                    printf("\n");
-                                                }
-                                            }
-
-                                            a_outBones->emplace_back(bone);
-                                        }
-                                        else
-                                        {
-                                            printf("CurveModel::ParseData: InvalidElement: ");
-                                            printf(bStr);
-                                            printf("\n");
-                                        }
-                                    }
-                                }
-                                else
-                                {
-                                    printf("CurveModel::ParseData: InvalidElement: ");
-                                    printf(cStr);
-                                    printf("\n");
-                                }
-                            }
-
-                            node.Nodes.emplace_back(n);
-                        }
-                        else
-                        {
-                            printf("CurveModel::ParseData: InvalidElement: ");
-                            printf(iStr);
-                            printf("\n");
-                        }
-                    }
-
-                    for (auto iter = node.Nodes.begin(); iter != node.Nodes.end(); ++iter)
-                    {
-                        if (iter->Node.GetPosition().x == std::numeric_limits<float>::infinity())
-                        {
-                            iter->Node.SetPosition(pos);
-                        }
-                    }
-
-                    nodes.emplace_back(node);
-                }
-                else
-                {
-                    printf("CurveModel::ParseData: Invalid Element: ");
-                    printf(nStr);
-                    printf("\n");
-                }
-            }
-
-            m_nodeCount = nodes.size();
-
-            if (m_nodes != nullptr)
-            {
-                delete[] m_nodes;
-                m_nodes = nullptr;
-            }
-
-            m_nodes = new Node3Cluster[m_nodeCount];
-
-            for (unsigned int i = 0; i < m_nodeCount; ++i)
-            {
-                m_nodes[i] = nodes[i];
-            }
-        }
-        else
-        {
-            printf("CurveModel::ParseData: Invalid Element: ");
-            printf(str);
-            printf("\n");
-        }
-    }
-
-    for (unsigned int i = 0; i < m_faceCount; ++i)
-    {
-        const CurveFace face = m_faces[i];
-
-        switch (face.FaceMode)
-        {
-        case FaceMode_3Point:
-        {
-            for (int i = 0; i < 6; ++i)
-            {
-                ++m_nodes[face.Index[i]].Nodes[face.ClusterIndex[i]].FaceCount;
-            }
-
-            break;
-        }
-        case FaceMode_4Point:
-        {
-            for (int i = 0; i < 8; ++i)
-            {
-                ++m_nodes[face.Index[i]].Nodes[face.ClusterIndex[i]].FaceCount;
-            }
-
-            break;
-        }
-        }
-    }
-}
-void CurveModel::PostParseData(const std::list<BoneGroup>& a_bones, const std::unordered_map<long long, long long>& a_idMap)
-{
-    auto armID = a_idMap.find(m_armature);
-
-    if (armID != a_idMap.end())
-    {
-        m_armature = armID->second;
-    }
-    else
-    {
-        m_armature = -1;
-    }
-
-    for (auto iter = a_bones.begin(); iter != a_bones.end(); ++iter)
-    {
-        const unsigned int size = m_nodes[iter->Index].Nodes.size();
-
-        auto idIndex = a_idMap.find(iter->ID);
-        if (idIndex != a_idMap.end())
-        {
-            m_nodes[iter->Index].Nodes[iter->ClusterIndex].Node.SetBoneWeight(idIndex->second, iter->Weight);
-        }
-    }
-}
-
-void CurveModel::WriteOBJ(std::ofstream* a_file, bool a_stepAdjust, int a_steps) const
-{
-    Vertex* vertices;
-    unsigned int* indices;
-
-    unsigned int indexCount;
-    unsigned int vertexCount;
-
-    GetModelData(a_stepAdjust, a_steps, &indices, &indexCount, &vertices, &vertexCount);
-
-    MeshExporter::ExportOBJMesh(a_file, vertices, vertexCount, indices, indexCount);
-
-    delete[] vertices;
-    delete[] indices;
-}
-void CurveModel::WriteCollada(tinyxml2::XMLDocument* a_doc, tinyxml2::XMLElement* a_parent, tinyxml2::XMLElement* a_parentController, const char* a_parentID, const char* a_name, bool a_stepAdjust, int a_steps, char** a_outRoot) const
-{
-    tinyxml2::XMLElement* meshElement = a_doc->NewElement("mesh");
-    a_parent->InsertEndChild(meshElement);
-
-    Vertex* vertices;
-    unsigned int* indices; 
-
-    unsigned int indexCount;
-    unsigned int vertexCount;
-
-    GetModelData(a_stepAdjust, a_steps, &indices, &indexCount, &vertices, &vertexCount);
-
-    glm::vec4* posVerts;
-    glm::vec3* normVerts;
-    glm::vec2* uvVerts;
-    glm::vec4* bones;
-    glm::vec4* weights;
-
-    unsigned int posCount;
-    unsigned int normCount;
-    unsigned int uvCount;
-
-    std::unordered_map<unsigned int, unsigned int> posMap;
-    std::unordered_map<unsigned int, unsigned int> normMap;
-    std::unordered_map<unsigned int, unsigned int> uvMap;
-
-    MeshExporter::SplitVertices(vertices, vertexCount, &posVerts, &posCount, &posMap, &normVerts, &normCount, &normMap, &uvVerts, &uvCount, &uvMap, &bones, &weights);
-
-    delete[] vertices;
-
-    MeshExporter::ExportColladaMesh(a_doc, meshElement, posVerts, posCount, normVerts, normCount, uvVerts, uvCount, bones, weights, posMap, normMap, uvMap, indices, indexCount, a_name);
-
-    delete[] posVerts;
-    delete[] normVerts;
-    delete[] uvVerts;
-
-    delete[] indices;
-    
-    if (a_parentController != nullptr)
-    {
-        const std::list<Object*> armNodes = GetArmatureNodes();
-
-        const unsigned int jointCount = armNodes.size();
-
-        glm::mat4* invBind = new glm::mat4[jointCount]; 
-
-        tinyxml2::XMLElement* skinElement = a_doc->NewElement("skin");
-        a_parentController->InsertEndChild(skinElement);
-        skinElement->SetAttribute("source", ("#" + std::string(a_parentID)).c_str());
-
-        const std::string jointsName = std::string(a_name) + "-joints";
-
-        tinyxml2::XMLElement* jointSourceElement = a_doc->NewElement("source");
-        skinElement->InsertEndChild(jointSourceElement);
-        jointSourceElement->SetAttribute("id", jointsName.c_str());
-
-        const std::string jointArrayName = jointsName + "-array";
-
-        tinyxml2::XMLElement* jointSourceArrayElement = a_doc->NewElement("Name_array");
-        jointSourceElement->InsertEndChild(jointSourceArrayElement);
-        jointSourceArrayElement->SetAttribute("id", jointArrayName.c_str());
-        jointSourceArrayElement->SetAttribute("count", jointCount);
-
-        tinyxml2::XMLElement* jointTechniqueElement = a_doc->NewElement("technique_common");
-        jointSourceElement->InsertEndChild(jointTechniqueElement);
-
-        tinyxml2::XMLElement* jointAccessorElement = a_doc->NewElement("accessor");
-        jointTechniqueElement->InsertEndChild(jointAccessorElement);
-        jointAccessorElement->SetAttribute("source", ("#" + jointArrayName).c_str());
-        jointAccessorElement->SetAttribute("count", jointCount);
-        jointAccessorElement->SetAttribute("stride", 1);
-
-        tinyxml2::XMLElement* jointParamElement = a_doc->NewElement("param");
-        jointAccessorElement->InsertEndChild(jointParamElement);
-        jointParamElement->SetAttribute("name", "JOINT");
-        jointParamElement->SetAttribute("type", "name");
-
-        std::string jData;
-
-        *a_outRoot = (*armNodes.begin())->GetIDName();
-
-        unsigned int index = 0;
-        for (auto iter = armNodes.begin(); iter != armNodes.end(); ++iter)
-        {
-            const Object* obj = *iter;
-
-            char* name = obj->GetIDName();
-
-            jData += name;
-            jData += "\n";
-
-            // I think? It has been a while need to double check
-            invBind[index] = glm::inverse(obj->GetGlobalMatrix());
-
-            ++index;
-
-            delete[] name;
-        }
-
-        jointSourceArrayElement->SetText(jData.c_str());
-
-        const std::string weightName = std::string(a_name) + "-weights";
-
-        tinyxml2::XMLElement* weightSourceElement = a_doc->NewElement("source");
-        skinElement->InsertEndChild(weightSourceElement);
-        weightSourceElement->SetAttribute("id", weightName.c_str());
-
-        const std::string weightArrayName = weightName + "-array";
-
-        tinyxml2::XMLElement* weightSourceArray = a_doc->NewElement("float_array");
-        weightSourceElement->InsertEndChild(weightSourceArray);
-        weightSourceArray->SetAttribute("id", weightArrayName.c_str());
-        weightSourceArray->SetAttribute("count", posCount * 4);
-
-        tinyxml2::XMLElement* weightTechniqueElement = a_doc->NewElement("technique_common");
-        weightSourceElement->InsertEndChild(weightTechniqueElement);
-
-        tinyxml2::XMLElement* weightAccessorElement = a_doc->NewElement("accessor");
-        weightTechniqueElement->InsertEndChild(weightAccessorElement);
-        weightAccessorElement->SetAttribute("source", ("#" + weightArrayName).c_str());
-        weightAccessorElement->SetAttribute("count", posCount * 4);
-        weightAccessorElement->SetAttribute("stride", 1);
-
-        tinyxml2::XMLElement* weightParamElement = a_doc->NewElement("param");
-        weightAccessorElement->InsertEndChild(weightParamElement);
-        weightParamElement->SetAttribute("name", "WEIGHT");
-        weightParamElement->SetAttribute("type", "float");
-
-        std::string wData;
-
-        for (unsigned int i = 0; i < posCount; ++i)
-        {
-            for (int j = 0; j < 4; ++j)
-            {
-                wData += std::to_string(weights[i][j]);
-                wData += " ";
-            }
-            wData += "\n";
-        }
-
-        weightSourceArray->SetText(wData.c_str());
-
-        const std::string invBindName = std::string(a_name) + "-invbind";
-
-        tinyxml2::XMLElement* invBindSourceElement = a_doc->NewElement("source");
-        skinElement->InsertEndChild(invBindSourceElement);
-        invBindSourceElement->SetAttribute("id", invBindName.c_str());
-
-        const std::string invBindArrayName = invBindName + "-array";
-
-        tinyxml2::XMLElement* invBindSourceArrayElement = a_doc->NewElement("float_array");
-        invBindSourceElement->InsertEndChild(invBindSourceArrayElement);
-        invBindSourceArrayElement->SetAttribute("id", invBindArrayName.c_str());
-        invBindSourceArrayElement->SetAttribute("count", jointCount * 16);
-
-        tinyxml2::XMLElement* invBindTechniqueElement = a_doc->NewElement("technique_common");
-        invBindSourceElement->InsertEndChild(invBindTechniqueElement);
-
-        tinyxml2::XMLElement* invBindAccessorElement = a_doc->NewElement("accessor");
-        invBindTechniqueElement->InsertEndChild(invBindAccessorElement);
-        invBindAccessorElement->SetAttribute("source", ("#" + invBindArrayName).c_str());
-        invBindAccessorElement->SetAttribute("count", jointCount);
-        invBindAccessorElement->SetAttribute("stride", 16);
-
-        tinyxml2::XMLElement* invBindParamElement = a_doc->NewElement("param");
-        invBindAccessorElement->InsertEndChild(invBindParamElement);
-        invBindParamElement->SetAttribute("name", "TRANSFORM");
-        invBindParamElement->SetAttribute("type", "float4x4");
-
-        std::string iBData;
-
-        for (unsigned int i = 0; i < jointCount; ++i)
-        {
-            const glm::mat4 mat = invBind[i];
-
-            for (int j = 0; j < 4; ++j)
-            {
-                for (int k = 0; k < 4; ++k)
-                {
-                    iBData += std::to_string(mat[j][k]);
-                    iBData += " ";
-                }
-            }
-            iBData += "\n";
-        }
-
-        invBindSourceArrayElement->SetText(iBData.c_str());
-
-        tinyxml2::XMLElement* jointsElement = a_doc->NewElement("joints");
-        skinElement->InsertEndChild(jointsElement);
-
-        tinyxml2::XMLElement* jointJointInputElement = a_doc->NewElement("input");
-        jointsElement->InsertEndChild(jointJointInputElement);
-        jointJointInputElement->SetAttribute("semantic", "JOINT");
-        jointJointInputElement->SetAttribute("source", ("#" + jointsName).c_str());
-
-        tinyxml2::XMLElement* jointInvBindInputElement = a_doc->NewElement("input");
-        jointsElement->InsertEndChild(jointInvBindInputElement);
-        jointInvBindInputElement->SetAttribute("semantic", "INV_BIND_MATRIX");
-        jointInvBindInputElement->SetAttribute("source", ("#" + invBindName).c_str());
-
-        tinyxml2::XMLElement* vertexWeightElement = a_doc->NewElement("vertex_weights");
-        skinElement->InsertEndChild(vertexWeightElement);
-        vertexWeightElement->SetAttribute("count", posCount);
-
-        tinyxml2::XMLElement* vertexWeightJointInputElement = a_doc->NewElement("input");
-        vertexWeightElement->InsertEndChild(vertexWeightJointInputElement);
-        vertexWeightJointInputElement->SetAttribute("semantic", "JOINT");
-        vertexWeightJointInputElement->SetAttribute("source", ("#" + jointsName).c_str());
-        vertexWeightJointInputElement->SetAttribute("offset", 0);
-
-        tinyxml2::XMLElement* vertexWeightWeightInputElement = a_doc->NewElement("input");
-        vertexWeightElement->InsertEndChild(vertexWeightWeightInputElement);
-        vertexWeightWeightInputElement->SetAttribute("semantic", "WEIGHT");
-        vertexWeightWeightInputElement->SetAttribute("source", ("#" + weightName).c_str());
-        vertexWeightWeightInputElement->SetAttribute("offset", 1);
-
-        tinyxml2::XMLElement* vCountElement = a_doc->NewElement("vcount");
-        vertexWeightElement->InsertEndChild(vCountElement);
-
-        tinyxml2::XMLElement* vElement = a_doc->NewElement("v");
-        vertexWeightElement->InsertEndChild(vElement);
-
-        std::string vData;
-        std::string vCData;
-
-        for (unsigned int i = 0; i < posCount; ++i)
-        {
-            vCData += std::to_string(4);
-            vCData += "\n";
-
-            for (int j = 0; j < 4; ++j)
-            {
-                vData += std::to_string((unsigned int)(bones[i][j] * jointCount));
-                vData += " ";
-                vData += std::to_string(i * 4 + j);
-                vData += " ";
-            }
-            
-            vData += "\n";
-        }
-
-        vCountElement->SetText(vCData.c_str());
-        vElement->SetText(vData.c_str());
-
-        delete[] invBind;
-    }
-
-    delete[] bones;
-    delete[] weights;
 }

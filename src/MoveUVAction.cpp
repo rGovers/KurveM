@@ -20,7 +20,7 @@ MoveUVAction::MoveUVAction(Workspace* a_workspace, unsigned int* a_nodeIndices, 
     m_nodeIndices = new unsigned int[m_nodeCount];
     m_oldPos = new glm::vec2[m_nodeCount];
 
-    const Node3Cluster* nodes = m_curveModel->GetNodes();
+    const CurveNodeCluster* nodes = m_curveModel->GetNodes();
     for (unsigned int i = 0; i < m_nodeCount; ++i)
     {
         m_nodeIndices[i] = a_nodeIndices[i];
@@ -46,7 +46,7 @@ bool MoveUVAction::Execute()
 {
     const glm::vec2 diff = (m_endPos - m_startPos) * m_axis;
 
-    Node3Cluster* nodes = m_curveModel->GetNodes();
+    CurveNodeCluster* nodes = m_curveModel->GetNodes();
     for (unsigned int i = 0; i < m_nodeCount; ++i)
     {
         for (auto iter = nodes[m_nodeIndices[i]].Nodes.begin(); iter != nodes[m_nodeIndices[i]].Nodes.end(); ++iter)
@@ -61,7 +61,7 @@ bool MoveUVAction::Execute()
 }
 bool MoveUVAction::Revert()
 {
-    Node3Cluster* nodes = m_curveModel->GetNodes();
+    CurveNodeCluster* nodes = m_curveModel->GetNodes();
     for (unsigned int i = 0; i < m_nodeCount; ++i)
     {
         for (auto iter = nodes[m_nodeIndices[i]].Nodes.begin(); iter != nodes[m_nodeIndices[i]].Nodes.end(); ++iter)

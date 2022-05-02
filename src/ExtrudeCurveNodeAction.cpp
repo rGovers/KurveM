@@ -63,11 +63,11 @@ bool ExtrudeCurveNodeAction::Execute()
 
         m_startNodeIndex = m_curveModel->GetNodeCount();
         
-        Node3Cluster* nodes = new Node3Cluster[m_nodeCount];
+        CurveNodeCluster* nodes = new CurveNodeCluster[m_nodeCount];
 
         for (unsigned int i = 0; i < m_nodeCount; ++i)
         {
-            nodes[i] = Node3Cluster(m_curveModel->GetNode(m_nodeIndices[i]).Nodes[0].Node);
+            nodes[i] = CurveNodeCluster(m_curveModel->GetNode(m_nodeIndices[i]).Nodes[0].Node);
 
             m_editor->AddNodeToSelection(i + m_startNodeIndex);
         }
@@ -77,13 +77,13 @@ bool ExtrudeCurveNodeAction::Execute()
         delete[] nodes;
     }
 
-    Node3Cluster* nodes = m_curveModel->GetNodes();
+    CurveNodeCluster* nodes = m_curveModel->GetNodes();
 
     for (unsigned int i = 0; i < m_nodeCount; ++i)
     {
         const unsigned int size = nodes[i + m_startNodeIndex].Nodes.size();
 
-        const Node3Cluster startNode = nodes[m_nodeIndices[i]];
+        const CurveNodeCluster startNode = nodes[m_nodeIndices[i]];
 
         for (unsigned int j = 0; j < size; ++j)
         {

@@ -82,7 +82,7 @@ bool MoveCurveNodeToolAction::LeftClicked(Camera* a_camera, const glm::vec2& a_c
         {
             const glm::mat4 transformMat = object->GetGlobalMatrix();
 
-            const Node3Cluster* nodes = model->GetNodes();
+            const CurveNodeCluster* nodes = model->GetNodes();
 
             glm::vec3 pos = glm::vec3(0);
 
@@ -151,7 +151,7 @@ void MoveCurveNodeToolAction::Draw(Camera* a_camera)
         const CurveModel* model = object->GetCurveModel();
         if (model != nullptr)
         {
-            const Node3Cluster* nodes = model->GetNodes();
+            const CurveNodeCluster* nodes = model->GetNodes();
 
             glm::vec3 pos = glm::vec3(0);
 

@@ -1,14 +1,16 @@
 #include "PrimitiveGenerator.h"
 
+#include "CurveModel.h"
 #include "Model.h"
+#include "PathModel.h"
 
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtx/quaternion.hpp>
 
-void GetData(const std::vector<Node3Cluster>& a_nodes, const std::vector<CurveFace>& a_faces, Node3Cluster** a_nodePtr, unsigned int* a_nodeCount, CurveFace** a_facePtr, unsigned int* a_faceCount)
+void GetData(const std::vector<CurveNodeCluster>& a_nodes, const std::vector<CurveFace>& a_faces, CurveNodeCluster** a_nodePtr, unsigned int* a_nodeCount, CurveFace** a_facePtr, unsigned int* a_faceCount)
 {
     *a_nodeCount = a_nodes.size();
-    *a_nodePtr = new Node3Cluster[*a_nodeCount];
+    *a_nodePtr = new CurveNodeCluster[*a_nodeCount];
 
     for (unsigned int i = 0; i < *a_nodeCount; ++i)
     {
@@ -374,20 +376,20 @@ void PrimitiveGenerator::CreateTorus(Vertex** a_vertices, unsigned int* a_vertex
     GetData(vertices, indices, a_vertices, a_vertexCount, a_indices, a_indexCount);
 }
 
-void PrimitiveGenerator::CreateCurveTriangle(Node3Cluster** a_nodePtr, unsigned int* a_nodeCount, CurveFace** a_facePtr, unsigned int* a_faceCount)
+void PrimitiveGenerator::CreateCurveTriangle(CurveNodeCluster** a_nodePtr, unsigned int* a_nodeCount, CurveFace** a_facePtr, unsigned int* a_faceCount)
 {
-    std::vector<Node3Cluster> nodes;
+    std::vector<CurveNodeCluster> nodes;
     std::vector<CurveFace> faces;
 
-    Node3Cluster t;
+    CurveNodeCluster t;
     t.Nodes.emplace_back(BezierCurveNode3(glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f), glm::vec2(0.5f, 0)));
     t.Nodes.emplace_back(BezierCurveNode3(glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f), glm::vec2(0.5f, 0)));
 
-    Node3Cluster bL;
+    CurveNodeCluster bL;
     bL.Nodes.emplace_back(BezierCurveNode3(glm::vec3(-0.5f, 0.0f, 0.0f), glm::vec3(-0.5f, 0.0f, 0.0f), glm::vec2(0, 1)));
     bL.Nodes.emplace_back(BezierCurveNode3(glm::vec3(-0.5f, 0.0f, 0.0f), glm::vec3(-0.5f, 0.0f, 0.0f), glm::vec2(0, 1)));
 
-    Node3Cluster bR;
+    CurveNodeCluster bR;
     bR.Nodes.emplace_back(BezierCurveNode3(glm::vec3(0.5f, 0.0f, 0.0f), glm::vec3(0.5f, 0.0f, 0.0f), glm::vec2(1, 1)));
     bR.Nodes.emplace_back(BezierCurveNode3(glm::vec3(0.5f, 0.0f, 0.0f), glm::vec3(0.5f, 0.0f, 0.0f), glm::vec2(1, 1)));
 
@@ -417,24 +419,24 @@ void PrimitiveGenerator::CreateCurveTriangle(Node3Cluster** a_nodePtr, unsigned 
 
     GetData(nodes, faces, a_nodePtr, a_nodeCount, a_facePtr, a_faceCount);
 }
-void PrimitiveGenerator::CreateCurvePlane(Node3Cluster** a_nodePtr, unsigned int* a_nodeCount, CurveFace** a_facePtr, unsigned int* a_faceCount)
+void PrimitiveGenerator::CreateCurvePlane(CurveNodeCluster** a_nodePtr, unsigned int* a_nodeCount, CurveFace** a_facePtr, unsigned int* a_faceCount)
 {
-    std::vector<Node3Cluster> nodes;
+    std::vector<CurveNodeCluster> nodes;
     std::vector<CurveFace> faces;
 
-    Node3Cluster tL;
+    CurveNodeCluster tL;
     tL.Nodes.emplace_back(BezierCurveNode3(glm::vec3(-1.0f, 0.0f, 1.0f), glm::vec3(-1.0f, 0.0f, 1.0f), glm::vec2(0, 1)));
     tL.Nodes.emplace_back(BezierCurveNode3(glm::vec3(-1.0f, 0.0f, 1.0f), glm::vec3(-1.0f, 0.0f, 1.0f), glm::vec2(0, 1)));
 
-    Node3Cluster tR;
+    CurveNodeCluster tR;
     tR.Nodes.emplace_back(BezierCurveNode3(glm::vec3(1.0f, 0.0f, 1.0f), glm::vec3(1.0f, 0.0f, 1.0f), glm::vec2(1, 1)));
     tR.Nodes.emplace_back(BezierCurveNode3(glm::vec3(1.0f, 0.0f, 1.0f), glm::vec3(1.0f, 0.0f, 1.0f), glm::vec2(1, 1)));
 
-    Node3Cluster bL;
+    CurveNodeCluster bL;
     bL.Nodes.emplace_back(BezierCurveNode3(glm::vec3(-1.0f, 0.0f, -1.0f), glm::vec3(-1.0f, 0.0f, -1.0f), glm::vec2(0, 0)));
     bL.Nodes.emplace_back(BezierCurveNode3(glm::vec3(-1.0f, 0.0f, -1.0f), glm::vec3(-1.0f, 0.0f, -1.0f), glm::vec2(0, 0)));
 
-    Node3Cluster bR;
+    CurveNodeCluster bR;
     bR.Nodes.emplace_back(BezierCurveNode3(glm::vec3(1.0f, 0.0f, -1.0f), glm::vec3(1.0f, 0.0f, -1.0f), glm::vec2(1, 0)));
     bR.Nodes.emplace_back(BezierCurveNode3(glm::vec3(1.0f, 0.0f, -1.0f), glm::vec3(1.0f, 0.0f, -1.0f), glm::vec2(1, 0)));
 
@@ -469,48 +471,48 @@ void PrimitiveGenerator::CreateCurvePlane(Node3Cluster** a_nodePtr, unsigned int
 
     GetData(nodes, faces, a_nodePtr, a_nodeCount, a_facePtr, a_faceCount);
 }
-void PrimitiveGenerator::CreateCurveSphere(Node3Cluster** a_nodePtr, unsigned int* a_nodeCount, CurveFace** a_facePtr, unsigned int* a_faceCount)
+void PrimitiveGenerator::CreateCurveSphere(CurveNodeCluster** a_nodePtr, unsigned int* a_nodeCount, CurveFace** a_facePtr, unsigned int* a_faceCount)
 {
-    std::vector<Node3Cluster> nodes;
+    std::vector<CurveNodeCluster> nodes;
     std::vector<CurveFace> faces;
 
     // 0
-    Node3Cluster cTp;
+    CurveNodeCluster cTp;
     cTp.Nodes.emplace_back(BezierCurveNode3(glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.5f,  1.0f, 0.0f),  glm::vec2(0.5f, 0.0f)));
     cTp.Nodes.emplace_back(BezierCurveNode3(glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(-0.5f, 1.0f, 0.0f),  glm::vec2(0.5f, 0.0f)));
     cTp.Nodes.emplace_back(BezierCurveNode3(glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f,  1.0f, 0.5f),  glm::vec2(0.5f, 0.0f)));
     cTp.Nodes.emplace_back(BezierCurveNode3(glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f,  1.0f, -0.5f), glm::vec2(0.5f, 0.0f)));
 
     // 1
-    Node3Cluster cFr;
+    CurveNodeCluster cFr;
     cFr.Nodes.emplace_back(BezierCurveNode3(glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f,  0.5f,  1.0f), glm::vec2(0, 0.5f)));
     cFr.Nodes.emplace_back(BezierCurveNode3(glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f,  -0.5f, 1.0f), glm::vec2(0, 0.5f)));
     cFr.Nodes.emplace_back(BezierCurveNode3(glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.5f,  0.0f,  1.0f), glm::vec2(1, 0.5f)));
     cFr.Nodes.emplace_back(BezierCurveNode3(glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(-0.5f, 0.0f,  1.0f), glm::vec2(0, 0.5f)));
             
     // 2
-    Node3Cluster cBk;
+    CurveNodeCluster cBk;
     cBk.Nodes.emplace_back(BezierCurveNode3(glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f,  0.5f,  -1.0f), glm::vec2(0.5f, 0.5f)));
     cBk.Nodes.emplace_back(BezierCurveNode3(glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f,  -0.5f, -1.0f), glm::vec2(0.5f, 0.5f)));
     cBk.Nodes.emplace_back(BezierCurveNode3(glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.5f,  0.0f,  -1.0f), glm::vec2(0.5f, 0.5f)));
     cBk.Nodes.emplace_back(BezierCurveNode3(glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(-0.5f, 0.0f,  -1.0f), glm::vec2(0.5f, 0.5f)));
 
     // 3
-    Node3Cluster cRg;
+    CurveNodeCluster cRg;
     cRg.Nodes.emplace_back(BezierCurveNode3(glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.5f,  0.0f),  glm::vec2(0.75f, 0.5f)));
     cRg.Nodes.emplace_back(BezierCurveNode3(glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(1.0f, -0.5f, 0.0f),  glm::vec2(0.75f, 0.5f)));
     cRg.Nodes.emplace_back(BezierCurveNode3(glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.0f,  0.5f),  glm::vec2(0.75f, 0.5f)));
     cRg.Nodes.emplace_back(BezierCurveNode3(glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.0f,  -0.5f), glm::vec2(0.75f, 0.5f)));
 
     // 4
-    Node3Cluster cLf;
+    CurveNodeCluster cLf;
     cLf.Nodes.emplace_back(BezierCurveNode3(glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec3(-1.0f, 0.5f,  0.0f),  glm::vec2(0.25f, 0.5f)));
     cLf.Nodes.emplace_back(BezierCurveNode3(glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec3(-1.0f, -0.5f, 0.0f),  glm::vec2(0.25f, 0.5f)));
     cLf.Nodes.emplace_back(BezierCurveNode3(glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec3(-1.0f, 0.0f,  0.5f),  glm::vec2(0.25f, 0.5f)));
     cLf.Nodes.emplace_back(BezierCurveNode3(glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec3(-1.0f, 0.0f,  -0.5f), glm::vec2(0.25f, 0.5f)));
 
     // 5
-    Node3Cluster cBt;
+    CurveNodeCluster cBt;
     cBt.Nodes.emplace_back(BezierCurveNode3(glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(0.0f,  -1.0f, 0.5f),  glm::vec2(0.5f, 1.0f)));
     cBt.Nodes.emplace_back(BezierCurveNode3(glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(0.0f,  -1.0f, -0.5f), glm::vec2(0.5f, 1.0f)));
     cBt.Nodes.emplace_back(BezierCurveNode3(glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(0.5f,  -1.0f, 0.0f),  glm::vec2(0.5f, 1.0f)));
@@ -751,27 +753,27 @@ void PrimitiveGenerator::CreateCurveSphere(Node3Cluster** a_nodePtr, unsigned in
 
     GetData(nodes, faces, a_nodePtr, a_nodeCount, a_facePtr, a_faceCount);
 }
-void PrimitiveGenerator::CreateCurveCube(Node3Cluster** a_nodePtr, unsigned int* a_nodeCount, CurveFace** a_facePtr, unsigned int* a_faceCount)
+void PrimitiveGenerator::CreateCurveCube(CurveNodeCluster** a_nodePtr, unsigned int* a_nodeCount, CurveFace** a_facePtr, unsigned int* a_faceCount)
 {   
-    std::vector<Node3Cluster> nodes;
+    std::vector<CurveNodeCluster> nodes;
     std::vector<CurveFace> faces;
 
     // 0
-    Node3Cluster cTpFrRg = Node3Cluster(BezierCurveNode3(glm::vec3(1.0f,  1.0f,  1.0f),  glm::vec3(1.0f,  1.0f,  1.0f)));
+    CurveNodeCluster cTpFrRg = CurveNodeCluster(BezierCurveNode3(glm::vec3(1.0f,  1.0f,  1.0f),  glm::vec3(1.0f,  1.0f,  1.0f)));
     // 1
-    Node3Cluster cTpFrLf = Node3Cluster(BezierCurveNode3(glm::vec3(-1.0f, 1.0f,  1.0f),  glm::vec3(-1.0f, 1.0f,  1.0f)));
+    CurveNodeCluster cTpFrLf = CurveNodeCluster(BezierCurveNode3(glm::vec3(-1.0f, 1.0f,  1.0f),  glm::vec3(-1.0f, 1.0f,  1.0f)));
     // 2
-    Node3Cluster cTpBkRg = Node3Cluster(BezierCurveNode3(glm::vec3(1.0f,  1.0f,  -1.0f), glm::vec3(1.0f,  1.0f,  -1.0f)));
+    CurveNodeCluster cTpBkRg = CurveNodeCluster(BezierCurveNode3(glm::vec3(1.0f,  1.0f,  -1.0f), glm::vec3(1.0f,  1.0f,  -1.0f)));
     // 3
-    Node3Cluster cTpBkLf = Node3Cluster(BezierCurveNode3(glm::vec3(-1.0f, 1.0f,  -1.0f), glm::vec3(-1.0f, 1.0f,  -1.0f)));
+    CurveNodeCluster cTpBkLf = CurveNodeCluster(BezierCurveNode3(glm::vec3(-1.0f, 1.0f,  -1.0f), glm::vec3(-1.0f, 1.0f,  -1.0f)));
     // 4
-    Node3Cluster cBtFrRg = Node3Cluster(BezierCurveNode3(glm::vec3(1.0f,  -1.0f, 1.0f),  glm::vec3(1.0f,  -1.0f, 1.0f)));
+    CurveNodeCluster cBtFrRg = CurveNodeCluster(BezierCurveNode3(glm::vec3(1.0f,  -1.0f, 1.0f),  glm::vec3(1.0f,  -1.0f, 1.0f)));
     // 5
-    Node3Cluster cBtFrLf = Node3Cluster(BezierCurveNode3(glm::vec3(-1.0f, -1.0f, 1.0f),  glm::vec3(-1.0f, -1.0f, 1.0f)));
+    CurveNodeCluster cBtFrLf = CurveNodeCluster(BezierCurveNode3(glm::vec3(-1.0f, -1.0f, 1.0f),  glm::vec3(-1.0f, -1.0f, 1.0f)));
     // 6
-    Node3Cluster cBtBkRg = Node3Cluster(BezierCurveNode3(glm::vec3(1.0f,  -1.0f, -1.0f), glm::vec3(1.0f,  -1.0f, -1.0f)));
+    CurveNodeCluster cBtBkRg = CurveNodeCluster(BezierCurveNode3(glm::vec3(1.0f,  -1.0f, -1.0f), glm::vec3(1.0f,  -1.0f, -1.0f)));
     // 7
-    Node3Cluster cBtBkLf = Node3Cluster(BezierCurveNode3(glm::vec3(-1.0f, -1.0f, -1.0f), glm::vec3(-1.0f, -1.0f, -1.0f)));
+    CurveNodeCluster cBtBkLf = CurveNodeCluster(BezierCurveNode3(glm::vec3(-1.0f, -1.0f, -1.0f), glm::vec3(-1.0f, -1.0f, -1.0f)));
 
     nodes.emplace_back(cTpFrRg);
     nodes.emplace_back(cTpFrLf);

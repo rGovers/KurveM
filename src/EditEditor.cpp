@@ -89,7 +89,7 @@ e_EditorMode EditEditor::GetEditorMode()
     return EditorMode_Edit;
 }
 
-bool EditEditor::IsInteractingCurveNodeHandle(const Node3Cluster& a_node, unsigned int a_nodeIndex, CurveModel* a_model, const glm::mat4& a_viewProj, const glm::vec2& a_cursorPos, const glm::mat4& a_transform, const glm::vec3& a_up, const glm::vec3& a_right)
+bool EditEditor::IsInteractingCurveNodeHandle(const CurveNodeCluster& a_node, unsigned int a_nodeIndex, CurveModel* a_model, const glm::mat4& a_viewProj, const glm::vec2& a_cursorPos, const glm::mat4& a_transform, const glm::vec3& a_up, const glm::vec3& a_right)
 {
     for (auto nodeIter = a_node.Nodes.begin(); nodeIter != a_node.Nodes.end(); ++nodeIter)
     {
@@ -351,7 +351,7 @@ NextArmatureDrawNodeLoop:;
             const CurveFace* faces = curveModel->GetFaces();
             const unsigned int faceCount = curveModel->GetFaceCount();
 
-            const Node3Cluster* nodes = curveModel->GetNodes();
+            const CurveNodeCluster* nodes = curveModel->GetNodes();
             const unsigned int nodeCount = curveModel->GetNodeCount();
 
             for (unsigned int i = 0; i < faceCount; ++i)
@@ -402,7 +402,7 @@ NextArmatureDrawNodeLoop:;
                 {
                     if (*iter == i)
                     {
-                        const std::vector<NodeGroup>& nodeCluster = nodes[i].Nodes;
+                        const std::vector<CurveNode>& nodeCluster = nodes[i].Nodes;
                         for (auto iter = nodeCluster.begin(); iter != nodeCluster.end(); ++iter)
                         {
                             const glm::vec4 pos = modelMatrix * glm::vec4(iter->Node.GetPosition(), 1);
@@ -552,7 +552,7 @@ void EditEditor::LeftClicked(Camera* a_camera, const glm::vec2& a_cursorPos, con
             {
                 if (m_curveAction[toolMode] == nullptr || !m_curveAction[toolMode]->LeftClicked(a_camera, a_cursorPos, a_winSize))
                 {
-                    const Node3Cluster* nodes = model->GetNodes();
+                    const CurveNodeCluster* nodes = model->GetNodes();
                     const glm::mat4 transformMat = obj->GetGlobalMatrix();
                     glm::vec3 pos = glm::vec3(0);
 
@@ -724,7 +724,7 @@ void EditEditor::LeftReleased(Camera* a_camera, const glm::vec2& a_start, const 
             {
                 const CurveModel* model = obj->GetCurveModel();
                 const unsigned int nodeCount = model->GetNodeCount();
-                const Node3Cluster* nodes = model->GetNodes();
+                const CurveNodeCluster* nodes = model->GetNodes();
 
                 const e_ActionType actionType = m_editor->GetCurrentActionType();
 
@@ -744,7 +744,7 @@ void EditEditor::LeftReleased(Camera* a_camera, const glm::vec2& a_start, const 
                         {
                             for (unsigned int i = 0; i < nodeCount; ++i)
                             {
-                                const Node3Cluster node = nodes[i];
+                                const CurveNodeCluster& node = nodes[i];
                                 if (SelectionControl::NodeInSelection(viewProj, min, max, transformMat, node.Nodes[0].Node))
                                 {
                                     m_editor->AddNodeToSelection(i);
@@ -755,7 +755,7 @@ void EditEditor::LeftReleased(Camera* a_camera, const glm::vec2& a_start, const 
                         {
                             for (unsigned int i = 0; i < nodeCount; ++i)
                             {
-                                const Node3Cluster node = nodes[i];
+                                const CurveNodeCluster& node = nodes[i];
                                 if (SelectionControl::NodeInSelection(viewProj, min, max, transformMat, node.Nodes[0].Node))
                                 {
                                     const std::list<unsigned int> selectedNodes = m_editor->GetSelectedNodes();
@@ -781,7 +781,7 @@ NextCurveNode:;
 
                             for (unsigned int i = 0; i < nodeCount; ++i)
                             {
-                                const Node3Cluster node = nodes[i];
+                                const CurveNodeCluster& node = nodes[i];
                                 if (SelectionControl::NodeInSelection(viewProj, min, max, transformMat, node.Nodes[0].Node))
                                 {
                                     m_editor->AddNodeToSelection(i);
