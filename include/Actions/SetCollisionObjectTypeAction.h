@@ -19,8 +19,7 @@ private:
 
     e_CollisionObjectType m_type;
 
-    bool                  m_own;
-    bool*                 m_state;
+    unsigned char*        m_state;
     CollisionObject**     m_oldCObjs;
 
 protected:

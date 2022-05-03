@@ -101,5 +101,5 @@ void AnimateEditor::Update(Camera* a_camera, const glm::vec2& a_cursorPos, const
         UpdateObject(*iter);
     }
 
-    m_editor->GetPhysicsEngine()->Draw();
+    m_editor->GetPhysicsEngine()->Draw(a_camera);
 }

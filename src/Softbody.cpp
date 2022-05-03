@@ -19,7 +19,20 @@ Softbody::Softbody(Object* a_object, PhysicsEngine* a_engine) : CollisionObject(
     m_transformState = new TransformMotionState(m_object);
     m_deltaData = nullptr;
 
+    m_lineMat = nullptr;
+    m_faceMat = nullptr;
+
     m_mass = 1.0f;
+
+    m_dampening = 0.0f;
+
+    m_stiffness = 1.0f;
+    m_angularStiffness = 1.0f;
+    m_volumeStiffness = 1.0f;
+
+    m_faceStiffness = 1.0f;
+    m_faceAngularStiffness = 1.0f;
+    m_faceVolumeStiffness = 1.0f;
 }
 Softbody::~Softbody()
 {
@@ -29,6 +42,9 @@ Softbody::~Softbody()
 
         delete m_collisionObject;
         m_collisionObject = nullptr;
+
+        m_lineMat = nullptr;
+        m_faceMat = nullptr;
     }
 
     if (m_transformState != nullptr)
@@ -47,6 +63,9 @@ Softbody::~Softbody()
 btSoftBody* Softbody::GenerateBody()
 {
     btSoftBody* body = nullptr;
+
+    m_faceMat = nullptr;
+    m_lineMat = nullptr;
 
     switch (m_object->GetObjectType())
     {
@@ -69,6 +88,9 @@ btSoftBody* Softbody::GenerateBody()
 
             body = new btSoftBody(&((btSoftRigidDynamicsWorld*)m_engine->GetDynamicsWorld())->getWorldInfo(), (int)nodeCount, nP, nM);
 
+            m_lineMat = body->appendMaterial();
+            m_faceMat = body->appendMaterial();
+
             delete[] nP;
             delete[] nM;
 
@@ -86,11 +108,11 @@ btSoftBody* Softbody::GenerateBody()
                     const int indexB = (int)face.Index[FaceIndex_3Point_BC];
                     const int indexC = (int)face.Index[FaceIndex_3Point_CA];
 
-                    body->appendLink(indexA, indexB);
-                    body->appendLink(indexB, indexC);
-                    body->appendLink(indexC, indexA);
+                    body->appendLink(indexA, indexB, m_lineMat);
+                    body->appendLink(indexB, indexC, m_lineMat);
+                    body->appendLink(indexC, indexA, m_lineMat);
 
-                    body->appendFace(indexA, indexB, indexC);
+                    body->appendFace(indexA, indexB, indexC, m_faceMat);
 
                     break;
                 }
@@ -101,13 +123,13 @@ btSoftBody* Softbody::GenerateBody()
                     const int indexC = (int)face.Index[FaceIndex_4Point_DC];
                     const int indexD = (int)face.Index[FaceIndex_4Point_CA];
 
-                    body->appendLink(indexA, indexB);
-                    body->appendLink(indexB, indexC);
-                    body->appendLink(indexC, indexD);
-                    body->appendLink(indexD, indexA);
+                    body->appendLink(indexA, indexB, m_lineMat);
+                    body->appendLink(indexB, indexC, m_lineMat);
+                    body->appendLink(indexC, indexD, m_lineMat);
+                    body->appendLink(indexD, indexA, m_lineMat);
 
-                    body->appendFace(indexA, indexB, indexC);
-                    body->appendFace(indexB, indexD, indexC);
+                    body->appendFace(indexA, indexB, indexC, m_faceMat);
+                    body->appendFace(indexB, indexD, indexC, m_faceMat);
 
                     break;
                 }
@@ -134,6 +156,8 @@ btSoftBody* Softbody::GenerateBody()
 
             body = new btSoftBody(&((btSoftRigidDynamicsWorld*)m_engine->GetDynamicsWorld())->getWorldInfo(), (int)nodeCount, nP, nM);
 
+            m_lineMat = body->appendMaterial();
+
             delete[] nP;
             delete[] nM;
 
@@ -143,13 +167,29 @@ btSoftBody* Softbody::GenerateBody()
             for (unsigned int i = 0; i < lineCount; ++i)
             {
                 const PathLine& line = lines[i];
-                body->appendLink((int)line.Index[0], (int)line.Index[1]);
+                body->appendLink((int)line.Index[0], (int)line.Index[1], m_lineMat);
             }
         }
 
         break;
     }
     }
+
+    if (m_lineMat != nullptr)
+    {
+        m_lineMat->m_kAST = m_angularStiffness;
+        m_lineMat->m_kLST = m_stiffness;
+        m_lineMat->m_kVST = m_volumeStiffness;
+    }
+    
+    if (m_faceMat != nullptr)
+    {
+        m_faceMat->m_kAST = m_faceAngularStiffness;
+        m_faceMat->m_kLST = m_faceStiffness;
+        m_faceMat->m_kVST = m_faceVolumeStiffness;
+    }
+    
+    body->m_cfg.kDP = m_dampening;
 
     body->setTotalMass(m_mass);
 
@@ -159,6 +199,9 @@ btSoftBody* Softbody::GenerateBody()
 void Softbody::SetActiveState(bool a_state)
 {
     m_isActive = a_state;
+
+    m_lineMat = nullptr;
+    m_faceMat = nullptr;
 
     if (m_isActive && m_collisionObject == nullptr)
     {
@@ -191,6 +234,72 @@ void Softbody::SetMass(float a_value)
     }
 }
 
+void Softbody::SetDampening(float a_value)
+{
+    m_dampening = a_value;
+
+    if (m_collisionObject != nullptr)
+    {
+        ((btSoftBody*)m_collisionObject)->m_cfg.kDP = m_dampening;
+    }
+}
+
+void Softbody::SetLineStiffness(float a_value)
+{
+    m_stiffness = a_value;
+
+    if (m_lineMat != nullptr)
+    {
+        m_lineMat->m_kLST = m_stiffness;
+    }
+}
+void Softbody::SetLineAngularStiffness(float a_value)
+{
+    m_angularStiffness = a_value;
+
+    if (m_lineMat != nullptr)
+    {
+        m_lineMat->m_kAST = m_angularStiffness;
+    }
+}
+void Softbody::SetLineVolumeStiffness(float a_value)
+{
+    m_volumeStiffness = a_value;
+    
+    if (m_lineMat != nullptr)
+    {
+        m_lineMat->m_kVST = m_volumeStiffness;
+    }
+}
+
+void Softbody::SetFaceStiffness(float a_value)
+{
+    m_faceStiffness = a_value;
+
+    if (m_faceMat != nullptr)
+    {
+        m_faceMat->m_kLST = m_faceStiffness;
+    }
+}
+void Softbody::SetFaceAngularStiffness(float a_value)
+{
+    m_faceAngularStiffness = a_value;
+
+    if (m_faceMat != nullptr)
+    {
+        m_faceMat->m_kAST = m_faceAngularStiffness;
+    }
+}
+void Softbody::SetFaceVolumeStiffness(float a_value)
+{
+    m_faceVolumeStiffness = a_value;
+
+    if (m_faceMat != nullptr)
+    {
+        m_faceMat->m_kVST = m_faceVolumeStiffness;
+    }
+}
+
 void Softbody::Reset()
 {
     if (m_collisionObject != nullptr)
@@ -200,6 +309,9 @@ void Softbody::Reset()
         delete m_collisionObject;
         m_collisionObject = nullptr;
     }
+
+    m_lineMat = nullptr;
+    m_faceMat = nullptr;
 
     if (m_isActive)
     {

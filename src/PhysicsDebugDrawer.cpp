@@ -1,8 +1,5 @@
 #include "Physics/PhysicsDebugDrawer.h"
 
-#define GLM_FORCE_SWIZZLE 
-#include <glm/glm.hpp>
-
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtx/quaternion.hpp>
 
@@ -23,7 +20,7 @@ void PhysicsDebugDrawer::drawLine(const btVector3& a_from, const btVector3& a_to
     const glm::vec3 to = glm::vec3(a_to.x(), a_to.y(), a_to.z());
     const glm::vec4 color = glm::vec4(a_color.x(), a_color.y(), a_color.z(), 1.0f);
 
-    Gizmos::DrawLine(from, to, 0.01f, color);
+    Gizmos::DrawLine(from, to, m_cFor, 0.01f, color);
 }
 void PhysicsDebugDrawer::drawContactPoint(const btVector3& a_pointOnB, const btVector3& a_normalOnB, btScalar a_distance, int a_lifeTime, const btVector3& a_color)
 {
@@ -34,7 +31,7 @@ void PhysicsDebugDrawer::drawContactPoint(const btVector3& a_pointOnB, const btV
 
     const glm::vec4 color = glm::vec4(a_color.x(), a_color.y(), a_color.z(), 1.0f);
 
-    Gizmos::DrawLine(pos, endPos, 0.025f, color);
+    Gizmos::DrawLine(pos, endPos, m_cFor, 0.025f, color);
 }
 
 void PhysicsDebugDrawer::drawTransform(const btTransform& a_transform, btScalar a_orthoLen)

@@ -568,6 +568,8 @@ void Workspace::ExportCollada(const char* a_dir, bool a_selectedObjects, bool a_
 
 bool Workspace::Undo()
 {
+    m_curAction = nullptr;
+
     auto iter = m_actionQueueIndex;
 
     if (iter != m_actionQueue.begin())
@@ -586,6 +588,8 @@ bool Workspace::Undo()
 }
 bool Workspace::Redo()
 {
+    m_curAction = nullptr;
+
     auto iter = m_actionQueueIndex;
 
     if (iter != m_actionQueue.end())
@@ -765,6 +769,34 @@ bool Workspace::PushAction(Action* a_action)
     }
 
     return true;
+}
+void Workspace::PushActionSet(Action* a_action, const char* a_errorMsg)
+{
+    if (PushAction(a_action))
+    {
+        m_curAction = a_action;
+    }
+    else
+    {
+        delete a_action;
+    
+        printf(a_errorMsg);
+        printf("\n");
+    }
+}
+void Workspace::PushActionSet(Action* a_action, void* a_data, const char* a_errorMsg)
+{
+    if (m_curAction != nullptr && m_curAction->GetActionType() == a_action->GetActionType())
+    {
+        delete a_action;
+
+        m_curAction->SetData(a_data);
+        m_curAction->Execute();
+    }
+    else
+    {
+        PushActionSet(a_action, a_errorMsg);
+    }
 }
 
 e_ActionType Workspace::GetCurrentActionType() const

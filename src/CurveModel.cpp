@@ -778,14 +778,17 @@ void CurveModel::GetModelData(bool a_smartStep, int a_steps, unsigned int** a_in
                         const float bdTL = glm::mix(0.0f, iStep, iStep);
                         const float bdTR = glm::mix(iStep, 1.0f, iStep);
                         const float bdTM = glm::mix(bdTL, bdTR, iStep);
+                        const float bdTMI = 1.0f - bdTM;
 
                         const float bdML = glm::mix(0.0f, nIStep, nIStep);
                         const float bdMR = glm::mix(nIStep, 1.0f, nIStep);
                         const float bdMM = glm::mix(bdML, bdMR, nIStep);
+                        const float bdMMI = 1.0f - bdMM;
 
                         const float bdBL = glm::mix(0.0f, bIStep, bIStep);
                         const float bdBR = glm::mix(bIStep, 1.0f, bIStep);
                         const float bdBM = glm::mix(bdBL, bdBR, bIStep);
+                        const float bdBMI = 1.0f - bdBM;
 
                         for (int j = 0; j <= i; ++j)
                         {
@@ -871,9 +874,13 @@ void CurveModel::GetModelData(bool a_smartStep, int a_steps, unsigned int** a_in
                             const float bdASMBM = glm::mix(bdASMBL, bdASMBR, aSMB);
                             const float bdASMBMI = 1.0f - bdASMBM;
 
-                            dirtyVertices.emplace_back(Vertex{ { tF, 1.0f },  normal, tFUV,  tFB,  tFW,  bodyI, glm::vec4(bdTM, bdASM, bdASMI, 0.0f) });
-                            dirtyVertices.emplace_back(Vertex{ { mLF, 1.0f }, normal, mLFUV, mLFB, mLFW, bodyI, glm::vec4(bdMM, bdASMAM, bdASMAMI, 0.0f) });
-                            dirtyVertices.emplace_back(Vertex{ { mRF, 1.0f }, normal, mRFUV, mRFB, mRFW, bodyI, glm::vec4(bdMM, bdASMBM, bdASMBMI, 0.0f) });
+                            const glm::vec4 tFSW = glm::vec4(bdTM * 0.66f, (bdTMI + bdASM) * 0.33f, (bdTMI + bdASMI) * 0.33f, 0.0f);
+                            const glm::vec4 mLFSW = glm::vec4(bdMM * 0.66f, (bdMMI + bdASMAM) * 0.33f, (bdMMI + bdASMAMI) * 0.33f, 0.0f);
+                            const glm::vec4 mRFSW = glm::vec4(bdMM * 0.66f, (bdMMI + bdASMBM) * 0.33f, (bdMMI + bdASMBMI) * 0.33f, 0.0f);
+
+                            dirtyVertices.emplace_back(Vertex{ { tF, 1.0f },  normal, tFUV,  tFB,  tFW,  bodyI, tFSW });
+                            dirtyVertices.emplace_back(Vertex{ { mLF, 1.0f }, normal, mLFUV, mLFB, mLFW, bodyI, mLFSW });
+                            dirtyVertices.emplace_back(Vertex{ { mRF, 1.0f }, normal, mRFUV, mRFB, mRFW, bodyI, mRFSW });
 
                             if (i < step - 1)
                             {
@@ -914,9 +921,11 @@ void CurveModel::GetModelData(bool a_smartStep, int a_steps, unsigned int** a_in
 
                                 normal = glm::cross(v1, v2);
 
-                                dirtyVertices.emplace_back(Vertex{ { bF, 1.0f },  normal, bFUV,  bFB,  bFW,  bodyI, glm::vec4(bdBM, bdASLM, bdASLMI, 0.0f) });
-                                dirtyVertices.emplace_back(Vertex{ { mRF, 1.0f }, normal, mRFUV, mRFB, mRFW, bodyI, glm::vec4(bdMM, bdASMBM, bdASMBMI, 0.0f) });
-                                dirtyVertices.emplace_back(Vertex{ { mLF, 1.0f }, normal, mLFUV, mLFB, mLFW, bodyI, glm::vec4(bdMM, bdASMAM, bdASMAMI, 0.0f) });
+                                const glm::vec4 bFSW = glm::vec4(bdBM * 0.66f, (bdBMI + bdASLM) * 0.33f, (bdBMI + bdASLMI) * 0.33f, 0.0f);
+
+                                dirtyVertices.emplace_back(Vertex{ { bF, 1.0f },  normal, bFUV,  bFB,  bFW,  bodyI, bFSW });
+                                dirtyVertices.emplace_back(Vertex{ { mRF, 1.0f }, normal, mRFUV, mRFB, mRFW, bodyI, mRFSW });
+                                dirtyVertices.emplace_back(Vertex{ { mLF, 1.0f }, normal, mLFUV, mLFB, mLFW, bodyI, mLFSW });
                             }
                         }
                     }
@@ -1105,10 +1114,10 @@ void CurveModel::GetModelData(bool a_smartStep, int a_steps, unsigned int** a_in
                             glm::vec4 weightC = glm::vec4(0.0f);
                             glm::vec4 weightD = glm::vec4(0.0f);
 
-                            const glm::vec4 bodyWA = glm::vec4(bdLM, bdTM, bdLMI, bdTMI);
-                            const glm::vec4 bodyWB = glm::vec4(bdLM, bdBM, bdLMI, bdBMI);
-                            const glm::vec4 bodyWC = glm::vec4(bdRM, bdTM, bdRMI, bdTMI);
-                            const glm::vec4 bodyWD = glm::vec4(bdRM, bdBM, bdRMI, bdBMI);
+                            const glm::vec4 bodyWA = glm::vec4((bdLM + bdTM) * 0.25f, (bdLMI + bdTM) * 0.25f, (bdLMI + bdTMI) * 0.25f, (bdLM + bdTMI) * 0.25f);
+                            const glm::vec4 bodyWB = glm::vec4((bdRM + bdTM) * 0.25f, (bdRMI + bdTM) * 0.25f, (bdRMI + bdTMI) * 0.25f, (bdRM + bdTMI) * 0.25f);
+                            const glm::vec4 bodyWC = glm::vec4((bdRM + bdBM) * 0.25f, (bdRMI + bdBM) * 0.25f, (bdRMI + bdBMI) * 0.25f, (bdRM + bdBMI) * 0.25f);
+                            const glm::vec4 bodyWD = glm::vec4((bdLM + bdBM) * 0.25f, (bdLMI + bdBM) * 0.25f, (bdLMI + bdBMI) * 0.25f, (bdLM + bdBMI) * 0.25f);;
 
                             BlendBoneData(LLABn, LLAW, LLBBn, LLBW, 0.5f, &boneA, &weightA);
                             BlendBoneData(HLABn, HLAW, LHBBn, LHBW, 0.5f, &boneB, &weightB);

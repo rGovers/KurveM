@@ -36,6 +36,11 @@ e_ActionType SetRigidbodyMassAction::GetActionType()
     return ActionType_SetRigidbodyMass;
 }
 
+void SetRigidbodyMassAction::SetData(void* a_data)
+{
+    m_newMass = *(float*)a_data;
+}
+
 bool SetRigidbodyMassAction::Redo()
 {
     return Execute();

@@ -54,6 +54,11 @@ void AnimatorWindow::Update(double a_delta)
                 ImGui::SameLine();
                 if (ImGuiExt::ImageSwitchButton("Play", "Textures/ANIMATOR_STOP.png", "Textures/ANIMATOR_PLAY.png", &m_playing, glm::vec2(16.0f), true))
                 {
+                    if (!m_playing)
+                    {
+                        m_workspace->ResetAnimationObjects();
+                    }
+                    
                     m_editor->SetAnimationTime(time);
                 }
                 ImGui::SameLine();

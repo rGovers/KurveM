@@ -203,6 +203,9 @@ public:
     void PushModal(Modal* a_modal);
 
     bool PushAction(Action* a_action);
+    void PushActionSet(Action* a_action, const char* a_errorMsg);
+    void PushActionSet(Action* a_action, void* a_data, const char* a_errorMsg);
+
     inline void ClearCurrentAction() 
     {
         m_curAction = nullptr;

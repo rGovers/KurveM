@@ -11,29 +11,37 @@ SetCollisionObjectTypeAction::SetCollisionObjectTypeAction(e_CollisionObjectType
     m_objectCount = a_objectCount;
     m_objs = new Object*[m_objectCount];
     m_oldCObjs = new CollisionObject*[m_objectCount];
-    m_state = new bool[m_objectCount];
+    m_state = new unsigned char[m_objectCount];
 
     m_type = a_type;
 
-    m_own = false;
-    
     for (unsigned int i = 0; i < m_objectCount; ++i)
     {
         Object* obj = a_objs[i]; 
         m_objs[i] = obj;
+        
+        m_state[i] = 0;
+
         CollisionObject* cObj = obj->GetCollisionObject();
         m_oldCObjs[i] = cObj; 
         if (cObj != nullptr)
         {
-            m_state[i] = cObj->IsActive();
+            if (cObj->IsActive())
+            {
+                m_state[i] |= 0b1 << 0;
+            }
+        }
+        else
+        {
+            m_state[i] |= 0b1 << 0;
         }
     }
 }
 SetCollisionObjectTypeAction::~SetCollisionObjectTypeAction()
 {
-    if (m_own)
+    for (unsigned int i = 0; i < m_objectCount; ++i)
     {
-        for (unsigned int i = 0; i < m_objectCount; ++i)
+        if (m_state[i] & (0b1 << 1))
         {
             if (m_oldCObjs[i] != nullptr)
             {
@@ -68,44 +76,58 @@ bool SetCollisionObjectTypeAction::Execute()
 
         Object* obj = m_objs[i];
 
-        if (m_own)
+        if (m_state[i] & (0b1 << 1))
         {
             delete obj->GetCollisionObject();
         }
-
-        CollisionObject* cObj = nullptr;
-
-        switch (m_type)
+        
+        if (m_oldCObjs[i] != nullptr && m_type == m_oldCObjs[i]->GetCollisionObjectType())
         {
-        case CollisionObjectType_CollisionObject:
-        {
-            cObj = new CollisionObject(obj, m_engine);
+            CollisionObject* cObj = m_oldCObjs[i];
 
-            break;
-        }
-        case CollisionObjectType_Rigidbody:
-        {
-            cObj = new Rigidbody(obj, m_engine);
-
-            break;
-        }
-        case CollisionObjectType_Softbody:
-        {
-            cObj = new Softbody(obj, m_engine);
-
-            break;
-        }
-        }
-
-        if (cObj != nullptr)
-        {
+            cObj->SetActiveState(m_state[i] & (0b1 << 0));
             cObj->SetCollisionShape(obj->GetCollisionShape());
+            obj->SetCollisionObject(cObj);
+
+            m_state[i] &= ~(0b1 << 1);
         }
+        else
+        {   
+            CollisionObject* cObj = nullptr;
 
-        obj->SetCollisionObject(cObj);
+            switch (m_type)
+            {
+            case CollisionObjectType_CollisionObject:
+            {
+                cObj = new CollisionObject(obj, m_engine);
+
+                break;
+            }
+            case CollisionObjectType_Rigidbody:
+            {
+                cObj = new Rigidbody(obj, m_engine);
+
+                break;
+            }
+            case CollisionObjectType_Softbody:
+            {
+                cObj = new Softbody(obj, m_engine);
+
+                break;
+            }
+            }
+
+            if (cObj != nullptr)
+            {
+                cObj->SetCollisionShape(obj->GetCollisionShape());
+                cObj->SetActiveState(m_state[i] & (0b1 << 0));
+            }
+
+            obj->SetCollisionObject(cObj);
+
+            m_state[i] |= 0b1 << 1;
+        }
     }
-
-    m_own = true;
 
     return true;
 }
@@ -115,7 +137,7 @@ bool SetCollisionObjectTypeAction::Revert()
     {
         Object* obj = m_objs[i];
         
-        if (m_own)
+        if (m_state[i] & (0b1 << 1))
         {
             delete obj->GetCollisionObject();
         }
@@ -124,12 +146,12 @@ bool SetCollisionObjectTypeAction::Revert()
 
         if (cObj != nullptr)
         {
-            cObj->SetActiveState(m_state[i]);
+            cObj->SetActiveState(m_state[i] & (0b1 << 0));
         }
         obj->SetCollisionObject(cObj);
-    }
 
-    m_own = false;
+        m_state[i] &= (0b1 << 1);
+    }
 
     return true;
 }

@@ -54,7 +54,15 @@ enum e_ActionType
     ActionType_SetPathShapeSteps,
     ActionType_SetPlaneCollisionShapeDirection,
     ActionType_SetPlaneCollisionShapeDistance,
+    ActionType_SetSoftbodyDampening,
+    ActionType_SetSoftbodyFaceAngularStiffness,
+    ActionType_SetSoftbodyFaceStiffness,
+    ActionType_SetSoftbodyFaceVolumeStiffness,
+    ActionType_SetSoftbodyLineAngularStiffness,
+    ActionType_SetSoftbodyLineStiffness,
+    ActionType_SetSoftbodyLineVolumeStiffness,
     ActionType_SetRigidbodyMass,
+    ActionType_SetSoftbodyMass,
     ActionType_TranslateObject,
     ActionType_TranslateObjectRelative,
     ActionType_End
@@ -70,6 +78,8 @@ public:
     virtual ~Action() { }
 
     virtual e_ActionType GetActionType() { return ActionType_Null; } 
+
+    virtual void SetData(void* a_data) { } 
 
     virtual bool Redo() = 0;
     virtual bool Execute() { return true; }

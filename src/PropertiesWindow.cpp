@@ -19,6 +19,14 @@
 #include "Actions/SetPlaneCollisionShapeDirectionAction.h"
 #include "Actions/SetPlaneCollisionShapeDistanceAction.h"
 #include "Actions/SetRigidbodyMassAction.h"
+#include "Actions/SetSoftbodyDampeningAction.h"
+#include "Actions/SetSoftbodyFaceAngularStiffnessAction.h"
+#include "Actions/SetSoftbodyFaceStiffnessAction.h"
+#include "Actions/SetSoftbodyFaceVolumeStiffnessAction.h"
+#include "Actions/SetSoftbodyLineAngularStiffnessAction.h"
+#include "Actions/SetSoftbodyLineStiffnessAction.h"
+#include "Actions/SetSoftbodyLineVolumeStiffnessAction.h"
+#include "Actions/SetSoftbodyMassAction.h"
 #include "Actions/SetSphereCollisionShapeRadiusAction.h"
 #include "Actions/TranslateObjectAction.h"
 #include "CurveModel.h"
@@ -29,6 +37,7 @@
 #include "Object.h"
 #include "PathModel.h"
 #include "Physics/CollisionObjects/Rigidbody.h"
+#include "Physics/CollisionObjects/Softbody.h"
 #include "Physics/CollisionShapes/BoxCollisionShape.h"
 #include "Physics/CollisionShapes/CapsuleCollisionShape.h"
 #include "Physics/CollisionShapes/PlaneCollisionShape.h"
@@ -830,6 +839,31 @@ void PropertiesWindow::PathTab()
         }
     }
 }
+
+void PropertiesWindow::LineStiffness(const char* a_displayName, Object* const* a_objs, unsigned int a_objectCount, const Softbody* a_body) const
+{
+    float stiffness = a_body->GetLineStiffness();
+    if (ImGui::SliderFloat(a_displayName, &stiffness, 0.0f, 1.0f))
+    {
+        m_workspace->PushActionSet(new SetSoftbodyLineStiffnessAction(a_objs, a_objectCount, stiffness), &stiffness, "Error setting softbody line stiffness");
+    }
+}
+void PropertiesWindow::LineAngularStiffness(const char* a_displayName, Object* const* a_objs, unsigned int a_objectCount, const Softbody* a_body) const
+{
+    float stiffness = a_body->GetLineAngularStiffness();
+    if (ImGui::SliderFloat(a_displayName, &stiffness, 0.0f, 1.0f))
+    {
+        m_workspace->PushActionSet(new SetSoftbodyLineAngularStiffnessAction(a_objs, a_objectCount, stiffness), &stiffness, "Error setting softbody line angular stiffness");
+    }
+}
+void PropertiesWindow::LineVolumeStiffness(const char* a_displayName, Object* const* a_objs, unsigned int a_objectCount, const Softbody* a_body) const
+{
+    float stiffness = a_body->GetLineVolumeStiffness();
+    if (ImGui::SliderFloat(a_displayName, &stiffness, 0.0f, 1.0f))
+    {
+        m_workspace->PushActionSet(new SetSoftbodyLineVolumeStiffnessAction(a_objs, a_objectCount, stiffness), &stiffness, "Error setting softbody line volume stiffness");
+    }
+}
 void PropertiesWindow::PhysicsTab()
 {
     constexpr float infinity = std::numeric_limits<float>::infinity();
@@ -856,17 +890,7 @@ void PropertiesWindow::PhysicsTab()
                     }
                     else
                     {   
-                        Action* action = new SetCollisionObjectTypeAction((e_CollisionObjectType)i, objs, objectCount, m_editor->GetPhysicsEngine());
-                        if (!m_workspace->PushAction(action))
-                        {
-                            printf("Error setting collsion object type \n");
-
-                            delete action;
-                        }
-                        else
-                        {
-                            m_workspace->SetCurrentAction(action);
-                        }
+                        m_workspace->PushActionSet(new SetCollisionObjectTypeAction((e_CollisionObjectType)i, objs, objectCount, m_editor->GetPhysicsEngine()), "Error setting collsion object type");
                     }
                 }
             }
@@ -891,17 +915,7 @@ void PropertiesWindow::PhysicsTab()
                 }
                 else
                 {
-                    Action* action = new SetCollisionObjectActiveAction(objs, objectCount, active);
-                    if (!m_workspace->PushAction(action))
-                    {
-                        printf("Error setting collsion object state \n");
-
-                        delete action;
-                    }
-                    else
-                    {
-                        m_workspace->SetCurrentAction(action);
-                    }
+                    m_workspace->PushActionSet(new SetCollisionObjectActiveAction(objs, objectCount, active), "Error setting collision object state");
                 }
             }
 
@@ -923,25 +937,74 @@ void PropertiesWindow::PhysicsTab()
                     }
                     else
                     {
-                        Action* action = new SetRigidbodyMassAction(objs, objectCount, mass);
-                        if (!m_workspace->PushAction(action))
-                        {
-                            printf("Error setting rigidbody mass \n");
-
-                            delete action;
-                        }
-                        else
-                        {
-                            m_workspace->SetCurrentAction(action);
-                        }
+                        m_workspace->PushActionSet(new SetRigidbodyMassAction(objs, objectCount, mass), "Error setting rigidbody mass");
                     }
                 }
+            }
+            case CollisionObjectType_CollisionObject:
+            {
+                ImGui::Separator();
 
                 break;
             }
-            }
+            case CollisionObjectType_Softbody:
+            {
+                const Softbody* body = (Softbody*)cObj;
+                
+                float mass = body->GetMass();
+                if (ImGui::DragFloat("Mass", &mass, 0.1f, 0.0f, infinity))
+                {
+                    m_workspace->PushActionSet(new SetSoftbodyMassAction(objs, objectCount, mass), &mass, "Error setting softbody mass");
+                }
 
-            ImGui::Separator();
+                ImGui::Separator();
+
+                float dampening = body->GetDampening();
+                if (ImGui::SliderFloat("Dampening", &dampening, 0.0f, 1.0f))
+                {
+                    m_workspace->PushActionSet(new SetSoftbodyDampeningAction(objs, objectCount, dampening), &dampening, "Error setting softbody dampening");
+                }
+
+                switch (obj->GetObjectType())
+                {
+                case ObjectType_PathModel:
+                {
+                    LineStiffness("Stiffness", objs, objectCount, body);
+                    LineAngularStiffness("Angular Stiffness", objs, objectCount, body);
+                    LineVolumeStiffness("Volume Stiffness", objs, objectCount, body);
+
+                    break;
+                }
+                case ObjectType_CurveModel:
+                {
+                    LineStiffness("Line Stiffness", objs, objectCount, body);
+                    LineAngularStiffness("Line Angular Stiffness", objs, objectCount, body);
+                    LineVolumeStiffness("Line Volume Stiffness", objs, objectCount, body);
+
+                    float stiffness = body->GetFaceStiffness();
+                    if (ImGui::SliderFloat("Face Stiffness", &stiffness, 0.0f, 1.0f))
+                    {
+                        m_workspace->PushActionSet(new SetSoftbodyFaceStiffnessAction(objs, objectCount, stiffness), &stiffness, "Error setting softbody face stiffness");
+                    }
+
+                    float angularStiffness = body->GetFaceAngularStiffness();
+                    if (ImGui::SliderFloat("Face Angular Stiffness", &angularStiffness, 0.0f, 1.0f))
+                    {
+                        m_workspace->PushActionSet(new SetSoftbodyFaceAngularStiffnessAction(objs, objectCount, angularStiffness), &angularStiffness, "Error setting softbody face angular stiffness");
+                    }
+
+                    float volumeStiffness = body->GetFaceVolumeStiffness();
+                    if (ImGui::SliderFloat("Face Volume Stiffness", &volumeStiffness, 0.0f, 1.0f))
+                    {
+                        m_workspace->PushActionSet(new SetSoftbodyFaceVolumeStiffnessAction(objs, objectCount, volumeStiffness), &volumeStiffness, "Error setting softbody face volume stiffness");
+                    }
+
+                    break;
+                }
+                }
+                break;
+            }
+            }
 
             cOType = obj->GetCollisionObjectType();
 
@@ -966,17 +1029,7 @@ void PropertiesWindow::PhysicsTab()
                             }
                             else
                             {
-                                Action* action = new SetCollisionShapeTypeAction((e_CollisionShapeType)i, objs, objectCount);
-                                if (!m_workspace->PushAction(action))
-                                {
-                                    printf("Error setting collision shape type \n");
-
-                                    delete action;
-                                }
-                                else
-                                {
-                                    m_workspace->SetCurrentAction(action);
-                                }
+                                m_workspace->PushActionSet(new SetCollisionShapeTypeAction((e_CollisionShapeType)i, objs, objectCount), "Error setting collision shape type");
                             }
                         }
                     }
@@ -1004,17 +1057,7 @@ void PropertiesWindow::PhysicsTab()
                         }
                         else
                         {
-                            Action* action = new SetBoxCollisionShapeHalfExtentsAction(objs, objectCount, extents * 0.5f);
-                            if (!m_workspace->PushAction(action))
-                            {
-                                printf("Error setting box extents \n");
-
-                                delete action;
-                            }
-                            else
-                            {
-                                m_workspace->SetCurrentAction(action);
-                            }
+                            m_workspace->PushActionSet(new SetBoxCollisionShapeHalfExtentsAction(objs, objectCount, extents * 0.5f), "Error setting box extents");
                         }
                     }
 
@@ -1036,17 +1079,7 @@ void PropertiesWindow::PhysicsTab()
                         }
                         else
                         {
-                            Action* action = new SetCapsuleCollisionShapeHeightAction(objs, objectCount, height);
-                            if (!m_workspace->PushAction(action))
-                            {
-                                printf("Error setting capsule height \n");
-
-                                delete action;
-                            }
-                            else
-                            {
-                                m_workspace->SetCurrentAction(action);
-                            }
+                            m_workspace->PushActionSet(new SetCapsuleCollisionShapeHeightAction(objs, objectCount, height), "Error setting capsule height");
                         }
                     }
 
@@ -1062,17 +1095,7 @@ void PropertiesWindow::PhysicsTab()
                         }
                         else
                         {
-                            Action* action = new SetCapsuleCollisionShapeRadiusAction(objs, objectCount, radius);
-                            if (!m_workspace->PushAction(action))
-                            {
-                                printf("Error setting capsule radius \n");
-
-                                delete action;
-                            }
-                            else
-                            {
-                                m_workspace->SetCurrentAction(action);
-                            }
+                            m_workspace->PushActionSet(new SetCapsuleCollisionShapeRadiusAction(objs, objectCount, radius), "Error setting capsule radius");
                         }
                     }
 
@@ -1094,17 +1117,7 @@ void PropertiesWindow::PhysicsTab()
                         }
                         else
                         {
-                            Action* action = new SetPlaneCollisionShapeDirectionAction(objs, objectCount, dir);
-                            if (!m_workspace->PushAction(action))
-                            {
-                                printf("Error setting plane direction \n");
-
-                                delete action;
-                            }
-                            else
-                            {
-                                m_workspace->SetCurrentAction(action);
-                            }
+                            m_workspace->PushActionSet(new SetPlaneCollisionShapeDirectionAction(objs, objectCount, dir), "Error setting plane direction");
                         }
                     }
 
@@ -1120,17 +1133,7 @@ void PropertiesWindow::PhysicsTab()
                         }
                         else
                         {
-                            Action* action = new SetPlaneCollisionShapeDistanceAction(objs, objectCount, distance);
-                            if (!m_workspace->PushAction(action))
-                            {
-                                printf("Error setting plane distance \n");
-
-                                delete action;
-                            }
-                            else
-                            {
-                                m_workspace->SetCurrentAction(action);
-                            }
+                            m_workspace->PushActionSet(new SetPlaneCollisionShapeDistanceAction(objs, objectCount, distance), "Error setting plane distance");
                         }
                     }
 
@@ -1152,17 +1155,7 @@ void PropertiesWindow::PhysicsTab()
                         }
                         else
                         {
-                            Action* action = new SetSphereCollisionShapeRadiusAction(objs, objectCount, radius);
-                            if (!m_workspace->PushAction(action))
-                            {
-                                printf("Error setting sphere radius \n");
-
-                                delete action;
-                            }
-                            else
-                            {
-                                m_workspace->SetCurrentAction(action);
-                            }
+                            m_workspace->PushActionSet(new SetSphereCollisionShapeRadiusAction(objs, objectCount, radius), "Error setting sphere radius");
                         }
                     }
 

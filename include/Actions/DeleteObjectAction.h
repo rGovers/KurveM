@@ -14,6 +14,7 @@ private:
     Object*    m_object;
 
     bool       m_held;
+    bool       m_state;
 
 protected:
 

@@ -4,7 +4,7 @@
 
 class Object;
 
-class SetRigidbodyMassAction : public Action
+class SetSoftbodyMassAction : public Action
 {
 private:
     unsigned int m_objectCount;
@@ -17,8 +17,8 @@ private:
 protected:
 
 public:
-    SetRigidbodyMassAction(Object* const* a_objects, unsigned int a_objectCount, float a_mass);
-    virtual ~SetRigidbodyMassAction();
+    SetSoftbodyMassAction(Object* const* a_objects, unsigned int a_objectCount, float a_mass);
+    virtual ~SetSoftbodyMassAction();
 
     virtual e_ActionType GetActionType();
 
@@ -26,7 +26,6 @@ public:
     {
         m_newMass = a_value;
     }
-    virtual void SetData(void* a_value);
 
     virtual bool Redo();
     virtual bool Execute();

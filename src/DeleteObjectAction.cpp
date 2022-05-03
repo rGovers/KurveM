@@ -1,6 +1,7 @@
 #include "Actions/DeleteObjectAction.h"
 
 #include "Object.h"
+#include "Physics/CollisionObjects/CollisionObject.h"
 #include "Workspace.h"
 
 DeleteObjectAction::DeleteObjectAction(Workspace* a_workspace, Object* a_object)
@@ -9,6 +10,12 @@ DeleteObjectAction::DeleteObjectAction(Workspace* a_workspace, Object* a_object)
 
     m_object = a_object;
     m_parentObject = m_object->GetParent();
+
+    const CollisionObject* cObj = m_object->GetCollisionObject();
+    if (cObj != nullptr)
+    {
+        m_state = cObj->IsActive();
+    }
 }
 DeleteObjectAction::~DeleteObjectAction()
 {
@@ -29,6 +36,12 @@ bool DeleteObjectAction::Redo()
 }
 bool DeleteObjectAction::Execute()
 {
+    CollisionObject* cObj = m_object->GetCollisionObject();
+    if (cObj != nullptr)
+    {
+        cObj->SetActiveState(false);
+    }
+
     if (m_parentObject != nullptr)
     {
         m_object->SetParent(nullptr);
@@ -46,6 +59,12 @@ bool DeleteObjectAction::Execute()
 }
 bool DeleteObjectAction::Revert()
 {
+    CollisionObject* cObj = m_object->GetCollisionObject();
+    if (cObj != nullptr)
+    {
+        cObj->SetActiveState(m_state);
+    }
+
     if (m_parentObject != nullptr)
     {
         m_object->SetParent(m_parentObject);

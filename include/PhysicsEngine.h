@@ -6,6 +6,7 @@
 #include <BulletDynamics/ConstraintSolver/btConstraintSolver.h>
 #include <BulletDynamics/Dynamics/btDynamicsWorld.h>
 
+class Camera;
 class PhysicsDebugDrawer;
 
 class PhysicsEngine
@@ -32,5 +33,5 @@ public:
     }
 
     void Update(double a_delta);
-    void Draw();
+    void Draw(const Camera* a_camera);
 };
