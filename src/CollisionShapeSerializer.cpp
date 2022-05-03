@@ -3,6 +3,7 @@
 #include "IO/XMLIO.h"
 #include "Physics/CollisionShapes/BoxCollisionShape.h"
 #include "Physics/CollisionShapes/CapsuleCollisionShape.h"
+#include "Physics/CollisionShapes/MeshCollisionShape.h"
 #include "Physics/CollisionShapes/PlaneCollisionShape.h"
 #include "Physics/CollisionShapes/SphereCollisionShape.h"
 
@@ -40,6 +41,22 @@ void CollisionShapeSerializer::Serializer(tinyxml2::XMLDocument* a_doc, tinyxml2
 
         break;
     }
+    case CollisionShapeType_Mesh:
+    {
+        MeshCollisionShape* shape = (MeshCollisionShape*)a_shape;
+
+        tinyxml2::XMLElement* stepElement = a_doc->NewElement("Steps");
+        rootElement->InsertEndChild(stepElement);
+
+        stepElement->SetText(shape->GetSteps());
+
+        tinyxml2::XMLElement* secStepElement = a_doc->NewElement("SecSteps");
+        rootElement->InsertEndChild(secStepElement);
+
+        secStepElement->SetText(shape->GetSecSteps());
+
+        break;
+    }
     case CollisionShapeType_Plane:
     {
         PlaneCollisionShape* shape = (PlaneCollisionShape*)a_shape;
@@ -66,7 +83,7 @@ void CollisionShapeSerializer::Serializer(tinyxml2::XMLDocument* a_doc, tinyxml2
     }
     }
 }
-CollisionShape* CollisionShapeSerializer::ParseData(const tinyxml2::XMLElement* a_element)
+CollisionShape* CollisionShapeSerializer::ParseData(const tinyxml2::XMLElement* a_element, Object* a_object)
 {
     constexpr glm::vec3 one = glm::vec3(1.0f);
 
@@ -115,6 +132,33 @@ CollisionShape* CollisionShapeSerializer::ParseData(const tinyxml2::XMLElement* 
             else if (strcmp(str, "Radius") == 0)
             {
                 capsule->SetRadius(iter->FloatText());
+            }
+            else
+            {
+                printf("CollisionShape::ParseData: Invalid Element: ");
+                printf(str);
+                printf("\n");
+            }
+        }
+
+        break;
+    }
+    case CollisionShapeType_Mesh:
+    {
+        MeshCollisionShape* mesh = new MeshCollisionShape(a_object);
+        shape = mesh;
+
+        for (const tinyxml2::XMLElement* iter = a_element->FirstChildElement(); iter != nullptr; iter = iter->NextSiblingElement())
+        {
+            const char* str = iter->Value();
+
+            if (strcmp(str, "Steps") == 0)
+            {
+                mesh->SetSteps(iter->IntText());
+            }
+            else if (strcmp(str, "SecSteps") == 0)
+            {
+                mesh->SetSecSteps(iter->IntText());
             }
             else
             {

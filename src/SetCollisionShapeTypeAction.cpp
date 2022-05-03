@@ -3,6 +3,7 @@
 #include "Object.h"
 #include "Physics/CollisionShapes/BoxCollisionShape.h"
 #include "Physics/CollisionShapes/CapsuleCollisionShape.h"
+#include "Physics/CollisionShapes/MeshCollisionShape.h"
 #include "Physics/CollisionShapes/PlaneCollisionShape.h"
 #include "Physics/CollisionShapes/SphereCollisionShape.h"
 
@@ -72,7 +73,13 @@ bool SetCollisionShapeTypeAction::Execute()
         }
         case CollisionShapeType_Capsule:
         {
-            shape = new CapsuleCollisionShape(0.25f, 1.0f);
+            shape = new CapsuleCollisionShape(0.5f, 1.0f);
+
+            break;
+        }
+        case CollisionShapeType_Mesh:
+        {
+            shape = new MeshCollisionShape(obj);
 
             break;
         }

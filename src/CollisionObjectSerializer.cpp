@@ -21,7 +21,6 @@ void CollisionObjectSerializer::Serialize(tinyxml2::XMLDocument* a_doc, tinyxml2
 
         tinyxml2::XMLElement* massElement = a_doc->NewElement("Mass");
         rootElement->InsertEndChild(massElement);
-
         massElement->SetText(rBody->GetMass());
 
         break;
@@ -32,8 +31,35 @@ void CollisionObjectSerializer::Serialize(tinyxml2::XMLDocument* a_doc, tinyxml2
 
         tinyxml2::XMLElement* massElement = a_doc->NewElement("Mass");
         rootElement->InsertEndChild(massElement);
-
         massElement->SetText(sBody->GetMass());
+
+        tinyxml2::XMLElement* dampeningElement = a_doc->NewElement("Dampening");
+        rootElement->InsertEndChild(dampeningElement);
+        dampeningElement->SetText(sBody->GetDampening());
+
+        tinyxml2::XMLElement* lineStiffnessElement = a_doc->NewElement("LineStiffness");
+        rootElement->InsertEndChild(lineStiffnessElement);
+        lineStiffnessElement->SetText(sBody->GetLineStiffness());
+
+        tinyxml2::XMLElement* lineAngularStiffnessElement = a_doc->NewElement("LineAngularStiffness");
+        rootElement->InsertEndChild(lineAngularStiffnessElement);
+        lineAngularStiffnessElement->SetText(sBody->GetLineAngularStiffness());
+
+        tinyxml2::XMLElement* lineVolumeStiffnessElement = a_doc->NewElement("LineVolumeStiffness");
+        rootElement->InsertEndChild(lineVolumeStiffnessElement);
+        lineVolumeStiffnessElement->SetText(sBody->GetLineVolumeStiffness());
+
+        tinyxml2::XMLElement* faceStiffnessElement = a_doc->NewElement("FaceStiffness");
+        rootElement->InsertEndChild(faceStiffnessElement);
+        faceStiffnessElement->SetText(sBody->GetFaceStiffness());
+
+        tinyxml2::XMLElement* faceAngularStiffnessElement = a_doc->NewElement("FaceAngularStiffness");
+        rootElement->InsertEndChild(faceAngularStiffnessElement);
+        faceAngularStiffnessElement->SetText(sBody->GetFaceAngularStiffness());
+
+        tinyxml2::XMLElement* faceVolumeStiffnessElement = a_doc->NewElement("FaceVolumeStiffness");
+        rootElement->InsertEndChild(faceVolumeStiffnessElement);
+        faceVolumeStiffnessElement->SetText(sBody->GetFaceVolumeStiffness());
 
         break;
     }
@@ -87,6 +113,34 @@ CollisionObject* CollisionObjectSerializer::ParseData(const tinyxml2::XMLElement
             if (strcmp(str, "Mass") == 0)
             {
                 body->SetMass(iter->FloatText());
+            }
+            else if (strcmp(str, "Dampening") == 0)
+            {
+                body->SetDampening(iter->FloatText());
+            }
+            else if (strcmp(str, "LineStiffness") == 0)
+            {
+                body->SetLineStiffness(iter->FloatText());
+            }
+            else if (strcmp(str, "LineAngularStiffness") == 0)
+            {
+                body->SetLineAngularStiffness(iter->FloatText());
+            }
+            else if (strcmp(str, "LineVolumeStiffness") == 0)
+            {
+                body->SetLineVolumeStiffness(iter->FloatText());
+            }
+            else if (strcmp(str, "FaceStiffness") == 0)
+            {
+                body->SetFaceStiffness(iter->FloatText());
+            }
+            else if(strcmp(str, "FaceAngularStiffness") == 0)
+            {
+                body->SetFaceAngularStiffness(iter->FloatText());
+            }
+            else if(strcmp(str, "FaceVolumeStiffness") == 0)
+            {
+                body->SetFaceVolumeStiffness(iter->FloatText());
             }
             else
             {

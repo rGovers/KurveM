@@ -74,6 +74,9 @@ private:
     Object*              m_rootObject;
 
     ShaderStorageBuffer* m_armatureBuffer;
+    
+    unsigned int         m_armatureMatrixCount;
+    glm::mat4*           m_armatureMatrices;
 
     ShaderProgram*       m_baseProgram;
     ShaderProgram*       m_animatorProgram;
@@ -144,6 +147,15 @@ public:
     inline std::list<Object*> GetChildren() const
     {
         return m_children;
+    }
+
+    inline unsigned int GetArmatureMatrixCount() const
+    {
+        return m_armatureMatrixCount;
+    }
+    inline glm::mat4* GetArmatureMatrices() const
+    {
+        return m_armatureMatrices;
     }
 
     inline e_ObjectType GetObjectType() const

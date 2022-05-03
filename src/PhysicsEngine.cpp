@@ -1,6 +1,7 @@
 #include "PhysicsEngine.h"
 
 #include <BulletCollision/BroadphaseCollision/btDbvtBroadphase.h>
+#include <BulletCollision/Gimpact/btGImpactCollisionAlgorithm.h>
 #include <BulletSoftBody/btSoftBodyRigidBodyCollisionConfiguration.h>
 #include <BulletDynamics/ConstraintSolver/btSequentialImpulseConstraintSolver.h>
 #include <BulletSoftBody/btSoftRigidDynamicsWorld.h>
@@ -17,6 +18,7 @@ PhysicsEngine::PhysicsEngine()
 
     m_collisionConfiguration = new btSoftBodyRigidBodyCollisionConfiguration();
     m_collisionDispatcher = new btCollisionDispatcher(m_collisionConfiguration);
+    btGImpactCollisionAlgorithm::registerAlgorithm(m_collisionDispatcher);
 
     m_broadphase = new btDbvtBroadphase();
 

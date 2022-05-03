@@ -357,7 +357,7 @@ Object* ObjectSerializer::ParseData(Workspace* a_workspace, Editor* a_editor, co
         }
         else if (strcmp(str, "CollisionShape") == 0)
         {
-            obj->m_collisionShape = CollisionShapeSerializer::ParseData(iter);
+            obj->m_collisionShape = CollisionShapeSerializer::ParseData(iter, obj);
 
             CollisionObject* cObj = obj->m_collisionObject;
             if (cObj != nullptr)

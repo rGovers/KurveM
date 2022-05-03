@@ -10,6 +10,7 @@
 #include "Model.h"
 #include "PathModel.h"
 #include "Physics/CollisionObjects/Softbody.h"
+#include "Physics/CollisionShapes/MeshCollisionShape.h"
 #include "ShaderPixel.h"
 #include "ShaderProgram.h"
 #include "Shaders/AnimatorSoftbodyPixel.h"
@@ -39,6 +40,9 @@ Object::Object(const char* a_name, e_ObjectType a_objectType)
     m_animationTransform = new Transform();
 
     m_armatureBuffer = nullptr;
+
+    m_armatureMatrixCount = 0;
+    m_armatureMatrices = nullptr;
 
     m_parent = nullptr;
 
@@ -134,6 +138,11 @@ Object::~Object()
     {
         delete m_armatureBuffer;
         m_armatureBuffer = nullptr;
+    }
+    if (m_armatureMatrices != nullptr)
+    {
+        delete[] m_armatureMatrices;
+        m_armatureMatrices = nullptr;
     }
 
     delete m_transform;
@@ -434,6 +443,13 @@ void Object::ResetAnimation()
 {
     *m_animationTransform = *m_transform;
 
+    if (GetCollisionShapeType() == CollisionShapeType_Mesh)
+    {
+        MeshCollisionShape* shape = (MeshCollisionShape*)m_collisionShape;
+
+        shape->UpdateMesh();
+    }
+
     if (m_collisionObject != nullptr)
     {
         m_collisionObject->Reset();
@@ -573,15 +589,28 @@ void Object::DrawAnimator(const Camera* a_camera, const glm::vec2& a_winSize)
                 UpdateMatrices(iden, iden, *iter, &matrices);
             }
 
-            const unsigned int bufferSize = (unsigned int)(sizeof(glm::mat4) * matrices.size());
+            if (m_armatureMatrices != nullptr)
+            {
+                delete[] m_armatureMatrices;
+                m_armatureMatrices = nullptr;
+            }
+            
+            m_armatureMatrixCount = (unsigned int)matrices.size();
+            m_armatureMatrices = new glm::mat4[m_armatureMatrixCount];
+            for (unsigned int i = 0; i < m_armatureMatrixCount; ++i)
+            {
+                m_armatureMatrices[i] = matrices[i];
+            }
+
+            const unsigned int bufferSize = (unsigned int)(sizeof(glm::mat4) * m_armatureMatrixCount);
 
             if (m_armatureBuffer == nullptr)
             {
-                m_armatureBuffer = new ShaderStorageBuffer(matrices.data(), bufferSize);
+                m_armatureBuffer = new ShaderStorageBuffer(m_armatureMatrices, bufferSize);
             }
             else
             {
-                m_armatureBuffer->WriteData(matrices.data(), bufferSize);
+                m_armatureBuffer->WriteData(m_armatureMatrices, bufferSize);
             }
 
             break;

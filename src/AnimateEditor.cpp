@@ -5,6 +5,7 @@
 #include "ColorTheme.h"
 #include "Gizmos.h"
 #include "Object.h"
+#include "Physics/CollisionShapes/MeshCollisionShape.h"
 #include "PhysicsEngine.h"
 #include "Transform.h"
 #include "Workspace.h"
@@ -81,9 +82,15 @@ void AnimateEditor::UpdateObject(Object* a_object)
                 animTransform->Quaternion() = animation->GetRotation(a_object, time);
                 animTransform->Scale() = animation->GetScale(a_object, time);
             }
-            
-            const std::list<Object*> children = a_object->GetChildren();
 
+            if (a_object->GetCollisionShapeType() == CollisionShapeType_Mesh)
+            {
+                MeshCollisionShape* shape = (MeshCollisionShape*)a_object->GetCollisionShape();
+                
+                shape->Tick();
+            }
+
+            const std::list<Object*> children = a_object->GetChildren();
             for (auto iter = children.begin(); iter != children.end(); ++iter)
             {
                 UpdateObject(*iter);
