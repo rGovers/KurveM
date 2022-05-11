@@ -183,8 +183,7 @@ bool Animation::ContainsObject(const Object* a_object) const
 
 glm::vec3 Animation::GetTranslation(const Object* a_object, float a_time) const
 {
-    Transform* transform = a_object->GetTransform();
-
+    const Transform* transform = a_object->GetTransform();
     if (transform != nullptr)
     {
         for (auto iter = m_nodes.begin(); iter != m_nodes.end(); ++iter)
@@ -235,8 +234,7 @@ glm::vec3 Animation::GetTranslation(const Object* a_object, float a_time) const
 }
 glm::quat Animation::GetRotation(const Object* a_object, float a_time) const
 {
-    Transform* transform = a_object->GetTransform();
-
+    const Transform* transform = a_object->GetTransform();
     if (transform != nullptr)
     {
         for (auto iter = m_nodes.begin(); iter != m_nodes.end(); ++iter)
@@ -264,7 +262,7 @@ glm::quat Animation::GetRotation(const Object* a_object, float a_time) const
 
                         if (prev != iter->Nodes.end())
                         {
-                            prevRotation = prev->Translation;
+                            prevRotation = prev->Rotation;
                             prevTime = prev->Time;
                         }
 
@@ -287,8 +285,7 @@ glm::quat Animation::GetRotation(const Object* a_object, float a_time) const
 }
 glm::vec3 Animation::GetScale(const Object* a_object, float a_time) const
 {
-    Transform* transform = a_object->GetTransform();
-
+    const Transform* transform = a_object->GetTransform();
     if (transform != nullptr)
     {
         for (auto iter = m_nodes.begin(); iter != m_nodes.end(); ++iter)
@@ -316,7 +313,7 @@ glm::vec3 Animation::GetScale(const Object* a_object, float a_time) const
 
                         if (prev != iter->Nodes.end())
                         {
-                            prevScale = prev->Translation;
+                            prevScale = prev->Scale;
                             prevTime = prev->Time;
                         }
 

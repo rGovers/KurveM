@@ -15,13 +15,13 @@ private:
     AnimationNode m_node;
     AnimationNode m_oldNode;
 
-    Object*       m_object;
+    const Object* m_object;
     Animation*    m_animation;
 
 protected:
 
 public:
-    SetAnimationNodeAction(Animation* a_animation, Object* a_object, const AnimationNode& a_node);
+    SetAnimationNodeAction(Animation* a_animation, const Object* a_object, const AnimationNode& a_node);
     virtual ~SetAnimationNodeAction();
 
     virtual e_ActionType GetActionType();

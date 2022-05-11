@@ -235,7 +235,7 @@ void AnimatorWindow::Update(double a_delta)
 
                         for (auto iter = objs.begin(); iter != objs.end(); ++iter)
                         {
-                            const Object* obj = *iter;
+                            Object* obj = *iter;
 
                             AnimationGroup* group = nullptr; 
 
@@ -290,6 +290,9 @@ void AnimatorWindow::Update(double a_delta)
                                     if (ImGuiExt::ColoredButton(buttonStr.c_str(), color, glm::vec2(20)))
                                     {
                                         m_workspace->ResetAnimationObjects();
+
+                                        m_workspace->ClearSelectedObjects();
+                                        m_workspace->AddSelectedObject(obj);
 
                                         m_editor->SetSelectedTime(curTime);
                                         m_editor->SetAnimationTime(curTime);

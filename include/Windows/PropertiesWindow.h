@@ -55,7 +55,7 @@ private:
     e_ObjectPropertiesTab m_propertiesMode;
 
     void PushRotation(const glm::quat& a_quat);
-    void PushAnimationNode(Animation* a_animation, Object* a_obj, const AnimationNode& a_node);
+    void PushAnimationNode(Animation* a_animation, const Object* a_obj, const AnimationNode& a_node);
 
     void LineStiffness(const char* a_displayName, Object* const* a_objs, unsigned int a_objectCount, const Softbody* a_body) const;
     void LineAngularStiffness(const char* a_displayName, Object* const* a_objs, unsigned int a_objectCount, const Softbody* a_body) const;

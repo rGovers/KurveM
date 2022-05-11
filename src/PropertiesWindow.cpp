@@ -105,7 +105,7 @@ void PropertiesWindow::PushRotation(const glm::quat& a_quat)
     }
     }
 }
-void PropertiesWindow::PushAnimationNode(Animation* a_animation, Object* a_obj, const AnimationNode& a_node)
+void PropertiesWindow::PushAnimationNode(Animation* a_animation, const Object* a_obj, const AnimationNode& a_node)
 {
     switch (m_workspace->GetCurrentActionType())
     {
@@ -435,12 +435,14 @@ void PropertiesWindow::AnimateTab()
     Animation* animation = m_workspace->GetCurrentAnimation();
     Object* obj = m_workspace->GetSelectedObject();
     const float time = m_editor->GetSelectedTime();
+    const int referenceFramerate = animation->GetReferenceFramerate();
+    const int selectedFrame = (int)(time * referenceFramerate);
 
     if (animation != nullptr)
     {
-        if (m_lastObject != obj || m_node.Time != -1 || m_lastTime != time)
+        if (m_lastObject != obj || m_node.Time == -1 || m_lastTime != time)
         {
-            m_node = animation->GetNode(obj, time);
+            m_node = animation->GetKeyNode(obj, selectedFrame);
 
             m_nodeQuaternion = m_node.Rotation;
             m_nodeAxisAngle = glm::vec4(glm::axis(m_nodeQuaternion), glm::angle(m_nodeQuaternion));
@@ -450,7 +452,7 @@ void PropertiesWindow::AnimateTab()
             m_lastObject = obj;
         }
 
-        AnimationNode node = animation->GetKeyNode(obj, (int)(time * animation->GetReferenceFramerate()));
+        AnimationNode node = animation->GetKeyNode(obj, selectedFrame);
 
         if (node.Time >= 0)
         {

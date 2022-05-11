@@ -1,6 +1,6 @@
 #include "Actions/SetAnimationNodeAction.h"
 
-SetAnimationNodeAction::SetAnimationNodeAction(Animation* a_animation, Object* a_object, const AnimationNode& a_node)
+SetAnimationNodeAction::SetAnimationNodeAction(Animation* a_animation, const Object* a_object, const AnimationNode& a_node)
 {
     m_animation = a_animation;
 
