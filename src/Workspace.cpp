@@ -16,6 +16,7 @@
 #include "EditorControls/ShapeEditor.h"
 #include "EditorControls/UVEditor.h"
 #include "Gizmos.h"
+#include "IO/AnimationSerializer.h"
 #include "IO/ObjectSerializer.h"
 #include "ImGuiExt.h"
 #include "imgui_internal.h"
@@ -293,29 +294,59 @@ void Workspace::Open(const char* a_dir)
         const tinyxml2::XMLElement* sceneElement = doc.FirstChildElement("Scene");
         if (sceneElement != nullptr)
         {
-            const tinyxml2::XMLElement* objectsElement = sceneElement->FirstChildElement("Objects");
-            if (objectsElement != nullptr)
-            {   
-                std::list<ObjectBoneGroup> bones;
-                std::unordered_map<long long, long long> idMap;
+            std::list<ObjectBoneGroup> bones;
+            std::unordered_map<long long, long long> idMap;
 
-                for (const tinyxml2::XMLElement* iter = objectsElement->FirstChildElement(); iter != nullptr; iter = iter->NextSiblingElement())
-                {
-                    m_objectList.emplace_back(ObjectSerializer::ParseData(this, m_editor, iter, nullptr, &bones, &idMap));
-                }
-
-                for (auto iter = m_objectList.begin(); iter != m_objectList.end(); ++iter)
-                {
-                    ObjectSerializer::PostParseData(*iter, bones, idMap);
-                }
-
-                printf("Opened: ");
-                printf(a_dir);
-                printf("\n");
-            }   
-            else
+            for (const tinyxml2::XMLElement* iter = sceneElement->FirstChildElement(); iter != nullptr; iter = iter->NextSiblingElement())
             {
-                PushModal(new ErrorModal("Error Opening File: No Objects Node"));
+                const char* str = iter->Value();
+
+                if (strcmp(str, "Objects") == 0)
+                {
+                    for (const tinyxml2::XMLElement* innerIter = iter->FirstChildElement(); innerIter != nullptr; innerIter = innerIter->NextSiblingElement())
+                    {
+                        m_objectList.emplace_back(ObjectSerializer::ParseData(this, m_editor, innerIter, nullptr, &bones, &idMap));
+                    }
+                }
+                else if (strcmp(str, "Animations") == 0)
+                {
+                    for (const tinyxml2::XMLElement* innerIter = iter->FirstChildElement(); innerIter != nullptr; innerIter = innerIter->NextSiblingElement())
+                    {
+                        const char* str = innerIter->Value();
+                        if (strcmp("Animation", str) == 0)
+                        {
+                            Animation* anim = AnimationSerializer::ParseData(innerIter);
+                            if (anim != nullptr)
+                            {
+                                m_animations.emplace_back(anim);
+                            }
+                        }
+                        else
+                        {
+                            printf("Error Opening File: Invalid animation node: ");
+                            printf(str);
+                            printf("\n");
+                        }
+                    }
+                }
+                else
+                {
+                    PushModal(new ErrorModal("Error Opening File: Invalid scene child"));
+
+                    printf("Invalid scene child: ");
+                    printf(str);
+                    printf("\n");
+                }
+            }
+
+            for (auto iter = m_objectList.begin(); iter != m_objectList.end(); ++iter)
+            {
+                ObjectSerializer::PostParseData(*iter, bones, idMap);
+            }
+
+            for (auto iter = m_animations.begin(); iter != m_animations.end(); ++iter)
+            {
+                AnimationSerializer::PostParseData(*iter, idMap);
             }
         }
         else
@@ -380,6 +411,14 @@ void Workspace::Save() const
     for (auto iter = m_objectList.begin(); iter != m_objectList.end(); ++iter)
     {
         SaveObject(&doc, objects, *iter);
+    }
+
+    tinyxml2::XMLElement* animations = doc.NewElement("Animations");
+    scene->InsertEndChild(animations);
+
+    for (auto iter = m_animations.begin(); iter != m_animations.end(); ++iter)
+    {
+        AnimationSerializer::Serialize(&doc, animations, *iter);
     }
 
     doc.SaveFile(m_currentDir);

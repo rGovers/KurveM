@@ -19,7 +19,7 @@ struct AnimationNode
 
 struct AnimationGroup
 {
-    const Object* SelectedObject;
+    long long ObjectID;
 
     std::list<AnimationNode> Nodes;
 };
@@ -69,7 +69,12 @@ public:
     }
 
     void AddNode(const Object* a_object, const AnimationNode& a_node);
+    void AddNode(long long a_object, const AnimationNode& a_node);
+
     void RemoveNode(const Object* a_object, const AnimationNode& a_node);
+    void RemoveNode(long long a_object, const AnimationNode& a_node);
+
+    void ClearNodes();
 
     AnimationNode GetNode(const Object* a_object, float a_time) const;
     AnimationNode GetKeyNode(const Object* a_object, int a_frame) const;

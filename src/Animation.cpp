@@ -27,9 +27,13 @@ Animation::~Animation()
 
 void Animation::AddNode(const Object* a_object, const AnimationNode& a_node)
 {
+    AddNode(a_object->GetID(), a_node);
+}
+void Animation::AddNode(long long a_object, const AnimationNode& a_node)
+{
     for (auto iter = m_nodes.begin(); iter != m_nodes.end(); ++iter)
     {
-        if (iter->SelectedObject == a_object)
+        if (iter->ObjectID == a_object)
         {
             for (auto innerIter = iter->Nodes.begin(); innerIter != iter->Nodes.end(); ++innerIter)
             {
@@ -48,16 +52,21 @@ void Animation::AddNode(const Object* a_object, const AnimationNode& a_node)
     }
 
     AnimationGroup group;
-    group.SelectedObject = a_object;
+    group.ObjectID = a_object;
     group.Nodes.emplace_back(a_node);
 
     m_nodes.emplace_back(group);
 }
+
 void Animation::RemoveNode(const Object* a_object, const AnimationNode& a_node)
+{
+    RemoveNode(a_object->GetID(), a_node);
+}
+void Animation::RemoveNode(long long a_object, const AnimationNode& a_node)
 {
     for (auto iter = m_nodes.begin(); iter != m_nodes.end(); ++iter)
     {
-        if (iter->SelectedObject == a_object)
+        if (iter->ObjectID == a_object)
         {
             for (auto innerIter = iter->Nodes.begin(); innerIter != iter->Nodes.end(); ++innerIter)
             {
@@ -79,11 +88,18 @@ void Animation::RemoveNode(const Object* a_object, const AnimationNode& a_node)
     }
 }
 
+void Animation::ClearNodes() 
+{
+    m_nodes.clear();
+}
+
 AnimationNode Animation::GetNode(const Object* a_object, float a_time) const
 {
+    const long long objectID = a_object->GetID();
+
     for (auto iter = m_nodes.begin(); iter != m_nodes.end(); ++iter)
     {
-        if (iter->SelectedObject == a_object)
+        if (iter->ObjectID == objectID)
         {
             for (auto innerIter = iter->Nodes.begin(); innerIter != iter->Nodes.end(); ++innerIter)
             {
@@ -120,9 +136,11 @@ AnimationNode Animation::GetKeyNode(const Object* a_object, int a_frame) const
     const float startFrame = (a_frame + 0) * frameStep;
     const float endFrame = (a_frame + 1) * frameStep;
 
+    const long long objectID = a_object->GetID();
+
     for (auto iter = m_nodes.begin(); iter != m_nodes.end(); ++iter)
     {
-        if (iter->SelectedObject == a_object)
+        if (iter->ObjectID == objectID)
         {
             for (auto innerIter = iter->Nodes.begin(); innerIter != iter->Nodes.end(); ++innerIter)
             {
@@ -146,10 +164,12 @@ AnimationNode Animation::GetKeyNode(const Object* a_object, int a_frame) const
 }
 
 void Animation::SetNode(const Object* a_object, const AnimationNode& a_node)
-{
+{   
+    const long long objectID = a_object->GetID();
+
     for (auto iter = m_nodes.begin(); iter != m_nodes.end(); ++iter)
     {
-        if (iter->SelectedObject == a_object)
+        if (iter->ObjectID == objectID)
         {
             for (auto innerIter = iter->Nodes.begin(); innerIter != iter->Nodes.end(); ++innerIter)
             {
@@ -170,9 +190,11 @@ void Animation::SetNode(const Object* a_object, const AnimationNode& a_node)
 
 bool Animation::ContainsObject(const Object* a_object) const
 {
+    const long long objectID = a_object->GetID();
+
     for (auto iter = m_nodes.begin(); iter != m_nodes.end(); ++iter)
     {
-        if (iter->SelectedObject == a_object)
+        if (iter->ObjectID == objectID)
         {
             return true;
         }
@@ -183,12 +205,14 @@ bool Animation::ContainsObject(const Object* a_object) const
 
 glm::vec3 Animation::GetTranslation(const Object* a_object, float a_time) const
 {
+    const long long objectID = a_object->GetID();
+
     const Transform* transform = a_object->GetTransform();
     if (transform != nullptr)
     {
         for (auto iter = m_nodes.begin(); iter != m_nodes.end(); ++iter)
         {
-            if (iter->SelectedObject == a_object)
+            if (iter->ObjectID == objectID)
             {
                 for (auto innerIter = iter->Nodes.begin(); innerIter != iter->Nodes.end(); ++innerIter)
                 {
@@ -234,12 +258,14 @@ glm::vec3 Animation::GetTranslation(const Object* a_object, float a_time) const
 }
 glm::quat Animation::GetRotation(const Object* a_object, float a_time) const
 {
+    const long long objectID = a_object->GetID();
+
     const Transform* transform = a_object->GetTransform();
     if (transform != nullptr)
     {
         for (auto iter = m_nodes.begin(); iter != m_nodes.end(); ++iter)
         {
-            if (iter->SelectedObject == a_object)
+            if (iter->ObjectID == objectID)
             {
                 for (auto innerIter = iter->Nodes.begin(); innerIter != iter->Nodes.end(); ++innerIter)
                 {
@@ -285,12 +311,14 @@ glm::quat Animation::GetRotation(const Object* a_object, float a_time) const
 }
 glm::vec3 Animation::GetScale(const Object* a_object, float a_time) const
 {
+    const long long objectID = a_object->GetID();
+
     const Transform* transform = a_object->GetTransform();
     if (transform != nullptr)
     {
         for (auto iter = m_nodes.begin(); iter != m_nodes.end(); ++iter)
         {
-            if (iter->SelectedObject == a_object)
+            if (iter->ObjectID == objectID)
             {
                 for (auto innerIter = iter->Nodes.begin(); innerIter != iter->Nodes.end(); ++innerIter)
                 {

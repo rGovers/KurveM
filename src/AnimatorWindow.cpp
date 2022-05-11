@@ -98,12 +98,13 @@ void AnimatorWindow::Update(double a_delta)
                     for (auto iter = objs.begin(); iter != objs.end(); ++iter)
                     {
                         Object* obj = *iter;
+                        const long long objectID = obj->GetID();
 
                         const AnimationGroup* group = nullptr; 
 
                         for (auto innerIter = animationNodes.begin(); innerIter != animationNodes.end(); ++innerIter)
                         {
-                            if (innerIter->SelectedObject == obj)
+                            if (innerIter->ObjectID == objectID)
                             {
                                 group = &*innerIter;
 
@@ -236,12 +237,13 @@ void AnimatorWindow::Update(double a_delta)
                         for (auto iter = objs.begin(); iter != objs.end(); ++iter)
                         {
                             Object* obj = *iter;
+                            const long long objID = obj->GetID();
 
                             AnimationGroup* group = nullptr; 
 
                             for (auto innerIter = animationNodes.begin(); innerIter != animationNodes.end(); ++innerIter)
                             {
-                                if (innerIter->SelectedObject == obj)
+                                if (innerIter->ObjectID == objID)
                                 {
                                     group = &*innerIter;
 
