@@ -450,7 +450,7 @@ void PropertiesWindow::AnimateTab()
             m_lastObject = obj;
         }
 
-        AnimationNode node = animation->GetNode(obj, time);
+        AnimationNode node = animation->GetKeyNode(obj, (int)(time * animation->GetReferenceFramerate()));
 
         if (node.Time >= 0)
         {

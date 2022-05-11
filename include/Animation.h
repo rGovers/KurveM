@@ -7,7 +7,6 @@
 #include <list>
 
 class Object;
-class Workspace;
 
 struct AnimationNode
 {
@@ -20,16 +19,14 @@ struct AnimationNode
 
 struct AnimationGroup
 {
-    Object* SelectedObject;
+    const Object* SelectedObject;
 
     std::list<AnimationNode> Nodes;
 };
 
 class Animation
 {
-private:
-    Workspace*                m_workspace;
-          
+private:       
     char*                     m_name;
           
     int                       m_referenceFramerate;
@@ -40,7 +37,7 @@ private:
 protected:
 
 public:
-    Animation(const char* a_name, Workspace* a_workspace);
+    Animation(const char* a_name);
     ~Animation();
 
     inline const char* GetName() const
@@ -71,15 +68,17 @@ public:
         return m_nodes;
     }
 
-    void AddNode(Object* a_object, const AnimationNode& a_node);
-    void RemoveNode(Object* a_object, const AnimationNode& a_node);
+    void AddNode(const Object* a_object, const AnimationNode& a_node);
+    void RemoveNode(const Object* a_object, const AnimationNode& a_node);
 
-    AnimationNode GetNode(Object* a_object, float a_time) const;
-    void SetNode(Object* a_object, const AnimationNode& a_node);
+    AnimationNode GetNode(const Object* a_object, float a_time) const;
+    AnimationNode GetKeyNode(const Object* a_object, int a_frame) const;
+
+    void SetNode(const Object* a_object, const AnimationNode& a_node);
 
     bool ContainsObject(const Object* a_object) const;
 
-    glm::vec3 GetTranslation(Object* a_object, float a_time) const;
-    glm::quat GetRotation(Object* a_object, float a_time) const;
-    glm::vec3 GetScale(Object* a_object, float a_time) const;
+    glm::vec3 GetTranslation(const Object* a_object, float a_time) const;
+    glm::quat GetRotation(const Object* a_object, float a_time) const;
+    glm::vec3 GetScale(const Object* a_object, float a_time) const;
 };

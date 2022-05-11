@@ -2,13 +2,12 @@
 
 #include <string.h>
 
+#include "EditorControls/Editor.h"
 #include "Object.h"
 #include "Transform.h"
 
-Animation::Animation(const char* a_name, Workspace* a_workspace)
+Animation::Animation(const char* a_name)
 {
-    m_workspace = a_workspace;
-
     const int strLength = strlen(a_name) + 1;
 
     m_name = new char[strLength];
@@ -26,7 +25,7 @@ Animation::~Animation()
     delete[] m_name;
 }
 
-void Animation::AddNode(Object* a_object, const AnimationNode& a_node)
+void Animation::AddNode(const Object* a_object, const AnimationNode& a_node)
 {
     for (auto iter = m_nodes.begin(); iter != m_nodes.end(); ++iter)
     {
@@ -54,7 +53,7 @@ void Animation::AddNode(Object* a_object, const AnimationNode& a_node)
 
     m_nodes.emplace_back(group);
 }
-void Animation::RemoveNode(Object* a_object, const AnimationNode& a_node)
+void Animation::RemoveNode(const Object* a_object, const AnimationNode& a_node)
 {
     for (auto iter = m_nodes.begin(); iter != m_nodes.end(); ++iter)
     {
@@ -80,7 +79,7 @@ void Animation::RemoveNode(Object* a_object, const AnimationNode& a_node)
     }
 }
 
-AnimationNode Animation::GetNode(Object* a_object, float a_time) const
+AnimationNode Animation::GetNode(const Object* a_object, float a_time) const
 {
     for (auto iter = m_nodes.begin(); iter != m_nodes.end(); ++iter)
     {
@@ -106,17 +105,47 @@ AnimationNode Animation::GetNode(Object* a_object, float a_time) const
         }
     }
 
-    Transform* transform = a_object->GetTransform();
-
     AnimationNode node;
-    node.Time = -1;
-    node.Translation = glm::vec3(0);
+    node.Time = -1.0f;
+    node.Translation = glm::vec3(0.0f);
     node.Rotation = glm::identity<glm::quat>();
-    node.Scale = glm::vec3(1);
+    node.Scale = glm::vec3(1.0f);
 
     return node;
 }
-void Animation::SetNode(Object* a_object, const AnimationNode& a_node)
+AnimationNode Animation::GetKeyNode(const Object* a_object, int a_frame) const
+{
+    const float frameStep = 1.0f / m_referenceFramerate;
+
+    const float startFrame = (a_frame + 0) * frameStep;
+    const float endFrame = (a_frame + 1) * frameStep;
+
+    for (auto iter = m_nodes.begin(); iter != m_nodes.end(); ++iter)
+    {
+        if (iter->SelectedObject == a_object)
+        {
+            for (auto innerIter = iter->Nodes.begin(); innerIter != iter->Nodes.end(); ++innerIter)
+            {
+                if (innerIter->Time >= startFrame && innerIter->Time < endFrame)
+                {
+                    return *innerIter;
+                }
+            }
+
+            break;
+        }
+    }
+
+    AnimationNode node;
+    node.Time = -1.0f;
+    node.Translation = glm::vec3(0.0f);
+    node.Rotation = glm::identity<glm::quat>();
+    node.Scale = glm::vec3(1.0f);
+
+    return node;
+}
+
+void Animation::SetNode(const Object* a_object, const AnimationNode& a_node)
 {
     for (auto iter = m_nodes.begin(); iter != m_nodes.end(); ++iter)
     {
@@ -152,7 +181,7 @@ bool Animation::ContainsObject(const Object* a_object) const
     return false;   
 }
 
-glm::vec3 Animation::GetTranslation(Object* a_object, float a_time) const
+glm::vec3 Animation::GetTranslation(const Object* a_object, float a_time) const
 {
     Transform* transform = a_object->GetTransform();
 
@@ -204,7 +233,7 @@ glm::vec3 Animation::GetTranslation(Object* a_object, float a_time) const
     
     return glm::vec3(0);
 }
-glm::quat Animation::GetRotation(Object* a_object, float a_time) const
+glm::quat Animation::GetRotation(const Object* a_object, float a_time) const
 {
     Transform* transform = a_object->GetTransform();
 
@@ -256,7 +285,7 @@ glm::quat Animation::GetRotation(Object* a_object, float a_time) const
     
     return glm::identity<glm::quat>();
 }
-glm::vec3 Animation::GetScale(Object* a_object, float a_time) const
+glm::vec3 Animation::GetScale(const Object* a_object, float a_time) const
 {
     Transform* transform = a_object->GetTransform();
 

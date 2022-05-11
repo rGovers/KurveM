@@ -46,7 +46,7 @@ bool CreateAnimationAction::Execute()
 
     if (m_animation == nullptr)
     {
-        m_animation = new Animation(m_name, m_workspace);
+        m_animation = new Animation(m_name);
     }
 
     m_workspace->AddAnimation(m_animation);
