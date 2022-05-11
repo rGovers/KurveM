@@ -24,9 +24,6 @@ layout(location = 2) out vec2 vTexCoord;
 
 void main()
 {
-    vNormal = mat3(World) * Normal;
-    vTexCoord = TexCoord;
-
     float s = 1 - max(sign(dot(vec4(1), Weights)), 0.0f);
 
     mat4 mat = mat4(s);
@@ -36,4 +33,7 @@ void main()
     mat += BoneMatrices[uint(Bones.w * BoneCount)] * Weights.w;
 
     vPosition = gl_Position = Projection * View * (World * (mat * Position));
+
+    vNormal = normalize(mat3(World) * (mat3(mat) * Normal));
+    vTexCoord = TexCoord;
 }

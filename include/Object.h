@@ -4,15 +4,18 @@
 #include <glm/glm.hpp>
 
 #include <list>
+#include <vector>
 
 #include "Physics/CollisionObjects/CollisionObject.h"
 #include "Physics/CollisionShapes/CollisionShape.h"
 
 class Animation; 
+class ArmatureBody;
 class Camera;
 class CurveModel;
 class Model;
 class PathModel;
+class PhysicsEngine;
 class ShaderProgram;
 class ShaderStorageBuffer;
 class Texture;
@@ -74,13 +77,16 @@ private:
     Object*              m_rootObject;
 
     ShaderStorageBuffer* m_armatureBuffer;
+    ArmatureBody*        m_armatureBody;
     
     unsigned int         m_armatureMatrixCount;
     glm::mat4*           m_armatureMatrices;
 
     ShaderProgram*       m_baseProgram;
+
     ShaderProgram*       m_animatorProgram;
     ShaderProgram*       m_animatorSBodyProgram;
+ 
     ShaderProgram*       m_weightProgram;
 
     ShaderProgram*       m_referenceProgram;
@@ -91,6 +97,7 @@ private:
     CollisionShape*      m_collisionShape;
     CollisionObject*     m_collisionObject;
 
+    void UpdateMatrices(const glm::mat4& a_parent, const glm::mat4& a_animParent, Object* a_obj, std::vector<glm::mat4>* a_matrices) const;
     void DrawModel(const Model* model, const glm::mat4& a_world, const glm::mat4& a_view, const glm::mat4& a_proj);
     void DrawModelAnim(const Model* a_model, const Object* a_armature, unsigned int a_nodeCount, unsigned int a_armatureNodeCount, const glm::mat4& a_world, const glm::mat4& a_view, const glm::mat4& a_proj);
     void DrawModelWeight(const Model* a_model, const Object* a_armature, unsigned int a_bone, unsigned int a_boneCount, const glm::mat4& a_world, const glm::mat4& a_view, const glm::mat4& a_proj);
@@ -138,6 +145,9 @@ public:
     {
         return m_rootObject;
     }
+
+    ArmatureBody* GetArmatureBody(PhysicsEngine* a_engine);
+
     inline Object* GetParent() const
     {
         return m_parent;

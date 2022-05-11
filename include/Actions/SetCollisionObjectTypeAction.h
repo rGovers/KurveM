@@ -8,10 +8,12 @@
 #include "Physics/CollisionObjects/CollisionObject.h"
 
 class Object;
+class Workspace;
 
 class SetCollisionObjectTypeAction : public Action
 {
 private:
+    Workspace*            m_workspace;
     PhysicsEngine*        m_engine;
 
     unsigned int          m_objectCount;
@@ -25,7 +27,7 @@ private:
 protected:
 
 public:
-    SetCollisionObjectTypeAction(e_CollisionObjectType a_type, Object* const* a_objs, unsigned int a_objectCount, PhysicsEngine* a_engine);
+    SetCollisionObjectTypeAction(e_CollisionObjectType a_type, Object* const* a_objs, unsigned int a_objectCount, Workspace* a_workspace, PhysicsEngine* a_engine);
     virtual ~SetCollisionObjectTypeAction();
 
     virtual e_ActionType GetActionType();
@@ -34,6 +36,7 @@ public:
     {
         m_type = a_type;
     }
+    virtual void SetData(void* a_data);
 
     virtual bool Redo();
     virtual bool Execute();

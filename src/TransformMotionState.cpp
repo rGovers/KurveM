@@ -19,6 +19,7 @@ void TransformMotionState::getWorldTransform(btTransform& a_worldTrans) const
     const glm::vec3& pos = trans->Translation();
     const glm::quat& quat = trans->Quaternion();
 
+    a_worldTrans.setIdentity();
     a_worldTrans.setOrigin(btVector3(pos.x, pos.y, pos.z));
     a_worldTrans.setRotation(btQuaternion(quat.x, quat.y, quat.z, quat.w));
 }
@@ -31,4 +32,13 @@ void TransformMotionState::setWorldTransform(const btTransform& a_worldTrans)
 
     trans->Translation() = glm::vec3(pos.x(), pos.y(), pos.z());
     trans->Quaternion() = glm::quat(quat.x(), quat.y(), quat.z(), quat.w());
+}
+
+Transform* TransformMotionState::GetTransform() const
+{
+    return m_object->GetTransform();
+}
+Transform* TransformMotionState::GetAnimationTransform() const
+{
+    return m_object->GetAnimationTransform();
 }

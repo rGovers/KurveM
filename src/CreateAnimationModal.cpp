@@ -7,13 +7,19 @@
 #include "Modals/ErrorModal.h"
 #include "Workspace.h"
 
-#define BUFFER_SIZE 2048
+constexpr unsigned short BufferSize = 2048;
+constexpr const char DefaultName[] = "Animation";
 
 CreateAnimationModal::CreateAnimationModal(Workspace* a_workspace)
 {
     m_workspace = a_workspace;
 
-    m_name = new char[BUFFER_SIZE] { 0 };
+    m_name = new char[BufferSize];
+
+    for (int i = 0; i < IM_ARRAYSIZE(DefaultName); ++i)
+    {
+        m_name[i] = DefaultName[i];
+    }
 }
 CreateAnimationModal::~CreateAnimationModal()
 {
@@ -34,7 +40,7 @@ glm::vec2 CreateAnimationModal::GetSize()
 
 bool CreateAnimationModal::Execute()
 {
-    ImGui::InputText("Name", m_name, BUFFER_SIZE);
+    ImGui::InputText("Name", m_name, (size_t)BufferSize);
 
     if (ImGui::Button("OK"))
     {

@@ -5,18 +5,17 @@
 #include "CurveModel.h"
 #include "Object.h"
 #include "PathModel.h"
+#include "Physics/ArmatureBody.h"
 #include "Physics/CollisionShapes/CollisionShape.h"
 #include "Physics/TransformMotionState.h"
 #include "PhysicsEngine.h"
 #include "ShaderStorageBuffer.h"
+#include "Transform.h"
+#include "Workspace.h"
 
-Softbody::Softbody(Object* a_object, PhysicsEngine* a_engine) : CollisionObject()
+Softbody::Softbody(Object* a_object, Workspace* a_workspace, PhysicsEngine* a_engine) : CollisionObject(a_object, a_engine)
 {
-    m_engine = a_engine;
-
-    m_object = a_object;
-
-    m_transformState = new TransformMotionState(m_object);
+    m_workspace = a_workspace;
     m_deltaData = nullptr;
 
     m_lineMat = nullptr;
@@ -47,12 +46,6 @@ Softbody::~Softbody()
         m_faceMat = nullptr;
     }
 
-    if (m_transformState != nullptr)
-    {
-        delete m_transformState;
-        m_transformState = nullptr;
-    }
-
     if (m_deltaData != nullptr)
     {
         delete m_deltaData;
@@ -66,6 +59,9 @@ btSoftBody* Softbody::GenerateBody()
 
     m_faceMat = nullptr;
     m_lineMat = nullptr;
+
+    const Transform* transform = m_transformState->GetAnimationTransform();
+    const glm::mat4 transMat = transform->ToMatrix();
 
     switch (m_object->GetObjectType())
     {
@@ -81,12 +77,32 @@ btSoftBody* Softbody::GenerateBody()
             btScalar* nM = new btScalar[nodeCount];
             for (unsigned int i = 0; i < nodeCount; ++i)
             {
-                const glm::vec3 pos = nodes[i].Nodes[0].Node.GetPosition();
+                const BezierCurveNode3& node = nodes[i].Nodes[0].Node;
+
+                const glm::vec4 pos = transMat * glm::vec4(node.GetPosition(), 1.0f);
                 nP[i] = btVector3(pos.x, pos.y, pos.z);
                 nM[i] = 1.0f;
             }
 
             body = new btSoftBody(&((btSoftRigidDynamicsWorld*)m_engine->GetDynamicsWorld())->getWorldInfo(), (int)nodeCount, nP, nM);
+
+            for (int i = 0; i < nodeCount; ++i)
+            {
+                const std::vector<BoneCluster> bones = nodes[i].Nodes[0].Node.GetBones();
+
+                for (auto iter = bones.begin(); iter != bones.end(); ++iter)
+                {
+                    Object* obj = m_workspace->GetObject(iter->ID);
+                    if (obj != nullptr)
+                    {
+                        const ArmatureBody* armBody = obj->GetArmatureBody(m_engine);
+                        if (armBody != nullptr)
+                        {
+                            body->appendAnchor(i, armBody->GetRigidbody(), true, iter->Weight);
+                        }
+                    }
+                }
+            }
 
             m_lineMat = body->appendMaterial();
             m_faceMat = body->appendMaterial();
@@ -149,7 +165,8 @@ btSoftBody* Softbody::GenerateBody()
             btScalar* nM = new btScalar[nodeCount];
             for (unsigned int i = 0; i < nodeCount; ++i)
             {
-                const glm::vec3 pos = nodes[i].Nodes[0].Node.GetPosition();
+                const BezierCurveNode3& node = nodes[i].Nodes[0].Node;
+                const glm::vec4 pos = transMat * glm::vec4(node.GetPosition(), 1.0f);
                 nP[i] = btVector3(pos.x, pos.y, pos.z);
                 nM[i] = 1.0f;
             }
@@ -168,6 +185,24 @@ btSoftBody* Softbody::GenerateBody()
             {
                 const PathLine& line = lines[i];
                 body->appendLink((int)line.Index[0], (int)line.Index[1], m_lineMat);
+            }
+
+            for (int i = 0; i < nodeCount; ++i)
+            {
+                const std::vector<BoneCluster> bones = nodes[i].Nodes[0].Node.GetBones();
+
+                for (auto iter = bones.begin(); iter != bones.end(); ++iter)
+                {
+                    Object* obj = m_workspace->GetObject(iter->ID);
+                    if (obj != nullptr)
+                    {
+                        const ArmatureBody* armBody = obj->GetArmatureBody(m_engine);
+                        if (armBody != nullptr)
+                        {
+                            body->appendAnchor(i, armBody->GetRigidbody(), true, iter->Weight);
+                        }
+                    }
+                }
             }
         }
 

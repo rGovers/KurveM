@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "CurveModel.h"
+#include "EditorControls/Editor.h"
 #include "LongTasks/TriangulateCurveLongTask.h"
 #include "LongTasks/TriangulatePathLongTask.h"
 #include "Object.h"

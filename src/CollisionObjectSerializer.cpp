@@ -4,6 +4,7 @@
 #include "Physics/CollisionObjects/Rigidbody.h"
 #include "Physics/CollisionObjects/Softbody.h"
 #include "PhysicsEngine.h"
+#include "Workspace.h"
 
 void CollisionObjectSerializer::Serialize(tinyxml2::XMLDocument* a_doc, tinyxml2::XMLElement* a_parent, CollisionObject* a_object)
 {
@@ -66,7 +67,7 @@ void CollisionObjectSerializer::Serialize(tinyxml2::XMLDocument* a_doc, tinyxml2
     }
 }
 
-CollisionObject* CollisionObjectSerializer::ParseData(const tinyxml2::XMLElement* a_element, Object* a_object, PhysicsEngine* a_engine)
+CollisionObject* CollisionObjectSerializer::ParseData(Workspace* a_workspace, const tinyxml2::XMLElement* a_element, Object* a_object, PhysicsEngine* a_engine)
 {
     const e_CollisionObjectType type = (e_CollisionObjectType)a_element->IntAttribute("Type");
 
@@ -104,7 +105,7 @@ CollisionObject* CollisionObjectSerializer::ParseData(const tinyxml2::XMLElement
     }
     case CollisionObjectType_Softbody:
     {
-        Softbody* body = new Softbody(a_object, a_engine);
+        Softbody* body = new Softbody(a_object, a_workspace, a_engine);
         obj = body;
 
         for (const tinyxml2::XMLElement* iter = a_element->FirstChildElement(); iter != nullptr; iter = iter->NextSiblingElement())

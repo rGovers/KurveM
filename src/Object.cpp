@@ -9,6 +9,7 @@
 #include "Datastore.h"
 #include "Model.h"
 #include "PathModel.h"
+#include "Physics/ArmatureBody.h"
 #include "Physics/CollisionObjects/Softbody.h"
 #include "Physics/CollisionShapes/MeshCollisionShape.h"
 #include "ShaderPixel.h"
@@ -61,6 +62,8 @@ Object::Object(const char* a_name, e_ObjectType a_objectType)
 
     m_rootObject = nullptr;
 
+    m_armatureBody = nullptr;
+
     m_baseProgram = Datastore::GetShaderProgram("SHADER_EDITORSTANDARD");
     if (m_baseProgram == nullptr)
     {
@@ -106,6 +109,12 @@ Object::Object(const char* a_name, Object* a_rootObject) :
 }
 Object::~Object()
 {
+    if (m_armatureBody != nullptr)
+    {
+        delete m_armatureBody;
+        m_armatureBody = nullptr;
+    }
+
     if (m_curveModel != nullptr)
     {
         delete m_curveModel;
@@ -226,6 +235,16 @@ void Object::SetName(const char* a_name)
             }
         }
     }
+}
+
+ArmatureBody* Object::GetArmatureBody(PhysicsEngine* a_engine)
+{
+    if (m_objectType == ObjectType_ArmatureNode && m_armatureBody == nullptr)
+    {
+        m_armatureBody = new ArmatureBody(this, a_engine);
+    }
+
+    return m_armatureBody;
 }
 
 void Object::SetParent(Object* a_parent)
@@ -412,7 +431,7 @@ void Object::DrawBase(const Camera* a_camera, const glm::vec2& a_winSize)
     }   
 }
 
-void UpdateMatrices(const glm::mat4& a_parent, const glm::mat4& a_animParent, const Object* a_obj, std::vector<glm::mat4>* a_matrices)
+void Object::UpdateMatrices(const glm::mat4& a_parent, const glm::mat4& a_animParent, Object* a_obj, std::vector<glm::mat4>* a_matrices) const
 {
     if (a_obj != nullptr && a_obj->GetObjectType() == ObjectType_ArmatureNode)
     {
@@ -513,6 +532,7 @@ void Object::DrawModelAnim(const Model* a_model, const Object* a_armature, unsig
         break;
     }
     case AnimatorDrawMode_Softbody:
+    case AnimatorDrawMode_BoneSoftbody:
     {   
         programHandle = m_animatorSBodyProgram->GetHandle();
 
@@ -524,8 +544,16 @@ void Object::DrawModelAnim(const Model* a_model, const Object* a_armature, unsig
 
     switch (drawMode)
     {
+    case AnimatorDrawMode_Base:
+    {
+        glUniformMatrix4fv(2, 1, false, (float*)&a_world);
+
+        break;
+    }
     case AnimatorDrawMode_Bone:
     {
+        glUniformMatrix4fv(2, 1, false, (float*)&a_world);
+
         glUniform1ui(3, a_armatureNodeCount);
 
         const ShaderStorageBuffer* buffer = a_armature->m_armatureBuffer;
@@ -537,18 +565,19 @@ void Object::DrawModelAnim(const Model* a_model, const Object* a_armature, unsig
         break;
     }
     case AnimatorDrawMode_Softbody:
+    case AnimatorDrawMode_BoneSoftbody:
     {
         if (m_collisionObject != nullptr)
         {
             Softbody* body = (Softbody*)m_collisionObject;
             body->UpdateDeltaStorageBuffer();
             
-            glUniform1ui(3, a_nodeCount);
+            glUniform1ui(2, a_nodeCount);
 
             const ShaderStorageBuffer* buffer = body->GetDeltaStorageBuffer();
             if (buffer != nullptr)
             {
-                glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, buffer->GetHandle());
+                glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, buffer->GetHandle());
             }
         }
 
@@ -561,7 +590,6 @@ void Object::DrawModelAnim(const Model* a_model, const Object* a_armature, unsig
 
     glUniformMatrix4fv(0, 1, false, (float*)&a_view);
     glUniformMatrix4fv(1, 1, false, (float*)&a_proj);
-    glUniformMatrix4fv(2, 1, false, (float*)&a_world);
 
     glDrawElements(GL_TRIANGLES, a_model->GetIndexCount(), GL_UNSIGNED_INT, nullptr);
 }

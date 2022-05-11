@@ -10,10 +10,9 @@ layout(location = 6) in vec4 BodyW;
 
 layout(location = 0) uniform mat4 View;
 layout(location = 1) uniform mat4 Projection;
-layout(location = 2) uniform mat4 World;
-layout(location = 3) uniform uint NodeCount;
+layout(location = 2) uniform uint NodeCount;
 
-layout(std140, binding = 4) buffer BodyData
+layout(std140, binding = 3) buffer BodyData
 {
     vec4 Delta[];
 };
@@ -24,13 +23,14 @@ layout(location = 2) out vec2 vTexCoord;
 
 void main()
 {
-    vNormal = mat3(World) * Normal;
-    vTexCoord = TexCoord;
-
     vec4 d = Delta[int(BodyI.x * NodeCount)] * BodyW.x + 
         Delta[int(BodyI.y * NodeCount)] * BodyW.y + 
         Delta[int(BodyI.z * NodeCount)] * BodyW.z +
         Delta[int(BodyI.w * NodeCount)] * BodyW.w;
 
-    vPosition = gl_Position = Projection * View * (World * (Position + d));
+    vec3 dN = normalize(d.xyz);
+
+    vPosition = gl_Position = Projection * View * (Position + d);
+    vNormal = normalize(Normal - dN);
+    vTexCoord = TexCoord;
 }

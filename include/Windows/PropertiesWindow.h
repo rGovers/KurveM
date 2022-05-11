@@ -6,6 +6,7 @@
 #include <glm/gtc/quaternion.hpp>
 
 #include "Animation.h"
+#include "Physics/CollisionObjects/CollisionObject.h"
 #include "Windows/Window.h"
 
 class Editor;
@@ -61,6 +62,8 @@ private:
     void LineVolumeStiffness(const char* a_displayName, Object* const* a_objs, unsigned int a_objectCount, const Softbody* a_body) const;
 
     void RotationModeDisplay();
+
+    bool DisplayCollisionObjectOption(e_CollisionObjectType a_type, const Object* a_object) const;
 
     void ObjectTab();
     void AnimateTab();

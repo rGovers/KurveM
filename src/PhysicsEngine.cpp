@@ -64,6 +64,13 @@ void PhysicsEngine::Draw(const Camera* a_camera)
 
         const btTransform& transform = cObj->getWorldTransform();
         const btCollisionShape* shape = cObj->getCollisionShape();
-        m_world->debugDrawObject(transform, shape, btVector3(0.0f, 1.0f, 0.0f));
+
+        btVector3 color = btVector3(0.0f, 1.0f, 0.0f);
+        if (cObj->getCollisionFlags() & btCollisionObject::CF_NO_CONTACT_RESPONSE)
+        {
+            color = btVector3(0.0f, 0.0f, 1.0f);
+        }
+
+        m_world->debugDrawObject(transform, shape, color);
     }
 }

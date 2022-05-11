@@ -8,10 +8,12 @@
 #include <BulletSoftBody/btSoftBody.h>
 
 class ShaderStorageBuffer;
+class Workspace;
 
 class Softbody : public CollisionObject
 {
 private:
+    Workspace*            m_workspace;
     ShaderStorageBuffer*  m_deltaData;
 
     float                 m_mass;
@@ -34,7 +36,7 @@ private:
 protected:
 
 public:
-    Softbody(Object* a_object, PhysicsEngine* a_engine);
+    Softbody(Object* a_object, Workspace* a_workspace, PhysicsEngine* a_engine);
     virtual ~Softbody();
 
     inline ShaderStorageBuffer* GetDeltaStorageBuffer() const

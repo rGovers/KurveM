@@ -347,7 +347,7 @@ Object* ObjectSerializer::ParseData(Workspace* a_workspace, Editor* a_editor, co
         }
         else if (strcmp(str, "CollisionObject") == 0)
         {
-            obj->m_collisionObject = CollisionObjectSerializer::ParseData(iter, obj, a_editor->GetPhysicsEngine());
+            obj->m_collisionObject = CollisionObjectSerializer::ParseData(a_workspace, iter, obj, a_editor->GetPhysicsEngine());
 
             CollisionShape* shape = obj->m_collisionShape;
             if (shape != nullptr)

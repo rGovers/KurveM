@@ -4,8 +4,9 @@
 #include "Physics/CollisionObjects/Rigidbody.h"
 #include "Physics/CollisionObjects/Softbody.h"
 
-SetCollisionObjectTypeAction::SetCollisionObjectTypeAction(e_CollisionObjectType a_type, Object* const* a_objs, unsigned int a_objectCount, PhysicsEngine* a_engine)
+SetCollisionObjectTypeAction::SetCollisionObjectTypeAction(e_CollisionObjectType a_type, Object* const* a_objs, unsigned int a_objectCount, Workspace* a_workspace, PhysicsEngine* a_engine)
 {
+    m_workspace = a_workspace;
     m_engine = a_engine;
 
     m_objectCount = a_objectCount;
@@ -60,6 +61,11 @@ e_ActionType SetCollisionObjectTypeAction::GetActionType()
     return ActionType_SetCollisionObjectType;
 }
 
+void SetCollisionObjectTypeAction::SetData(void* a_data)
+{
+    m_type = *(e_CollisionObjectType*)a_data;
+}
+
 bool SetCollisionObjectTypeAction::Redo()
 {
     return Execute();
@@ -105,13 +111,25 @@ bool SetCollisionObjectTypeAction::Execute()
             }
             case CollisionObjectType_Rigidbody:
             {
-                cObj = new Rigidbody(obj, m_engine);
+                if (obj->GetObjectType() != ObjectType_ArmatureNode)
+                {
+                    cObj = new Rigidbody(obj, m_engine);
+                }
 
                 break;
             }
             case CollisionObjectType_Softbody:
             {
-                cObj = new Softbody(obj, m_engine);
+                switch (obj->GetObjectType())
+                {
+                case ObjectType_CurveModel:
+                case ObjectType_PathModel:
+                {
+                    cObj = new Softbody(obj, m_workspace, m_engine);
+
+                    break;
+                }
+                }
 
                 break;
             }

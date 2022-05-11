@@ -172,6 +172,32 @@ void PropertiesWindow::RotationModeDisplay()
     }
 }
 
+bool PropertiesWindow::DisplayCollisionObjectOption(e_CollisionObjectType a_type, const Object* a_object) const
+{
+    switch (a_type)
+    {
+    case CollisionObjectType_Rigidbody:
+    {
+        return a_object->GetObjectType() != ObjectType_ArmatureNode;
+    }
+    case CollisionObjectType_Softbody:
+    {
+        switch (a_object->GetObjectType())
+        {
+        case ObjectType_CurveModel:
+        case ObjectType_PathModel:
+        {
+            return true;
+        }
+        }
+
+        return false;
+    }
+    }
+
+    return true;
+}
+
 void PropertiesWindow::PropertiesTabButton(const char* a_label, const char* a_path, e_ObjectPropertiesTab a_propertiesTab, const char* a_tooltip)
 {
     if (ImGuiExt::ImageToggleButton(a_label, a_path, m_propertiesMode == a_propertiesTab, glm::vec2(16, 16)))
@@ -868,7 +894,7 @@ void PropertiesWindow::PhysicsTab()
 {
     constexpr float infinity = std::numeric_limits<float>::infinity();
 
-    Object* obj = m_workspace->GetSelectedObject();
+    const Object* obj = m_workspace->GetSelectedObject();
     if (obj != nullptr)
     {
         const unsigned int objectCount = m_workspace->GetSelectedObjectCount();
@@ -879,19 +905,10 @@ void PropertiesWindow::PhysicsTab()
         {
             for (int i = 0; i < CollisionObjectType_End; ++i)
             {
-                if (ImGui::Selectable(CollisionObject_String[i]))
-                {
-                    if (m_workspace->GetCurrentActionType() == ActionType_SetCollisionObjectType)
-                    {
-                        SetCollisionObjectTypeAction* action = (SetCollisionObjectTypeAction*)m_workspace->GetCurrentAction();
-                        action->SetType((e_CollisionObjectType)i);
-
-                        action->Execute();
-                    }
-                    else
-                    {   
-                        m_workspace->PushActionSet(new SetCollisionObjectTypeAction((e_CollisionObjectType)i, objs, objectCount, m_editor->GetPhysicsEngine()), "Error setting collsion object type");
-                    }
+                e_CollisionObjectType type = (e_CollisionObjectType)i;
+                if (DisplayCollisionObjectOption(type, obj) && ImGui::Selectable(CollisionObject_String[i]))
+                {                    
+                    m_workspace->PushActionSet(new SetCollisionObjectTypeAction(type, objs, objectCount, m_workspace, m_editor->GetPhysicsEngine()), &type, "Error setting collsion object type");
                 }
             }
 

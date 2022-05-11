@@ -3,6 +3,7 @@
 #include <LinearMath/btMotionState.h>
 
 class Object;
+class Transform;
 
 class TransformMotionState : public btMotionState
 {
@@ -17,4 +18,7 @@ public:
 
     virtual void getWorldTransform(btTransform& a_worldTrans) const;
     virtual void setWorldTransform(const btTransform& a_worldTrans);
+
+    Transform* GetTransform() const;
+    Transform* GetAnimationTransform() const;
 };

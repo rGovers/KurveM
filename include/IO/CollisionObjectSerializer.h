@@ -5,6 +5,7 @@
 class CollisionObject;
 class Object;
 class PhysicsEngine;
+class Workspace;
 
 class CollisionObjectSerializer
 {
@@ -16,5 +17,5 @@ public:
     CollisionObjectSerializer() = delete;
 
     static void Serialize(tinyxml2::XMLDocument* a_doc, tinyxml2::XMLElement* a_parent, CollisionObject* a_object);
-    static CollisionObject* ParseData(const tinyxml2::XMLElement* a_element, Object* a_object, PhysicsEngine* a_engine);
+    static CollisionObject* ParseData(Workspace* a_workspace, const tinyxml2::XMLElement* a_element, Object* a_object, PhysicsEngine* a_engine);
 };

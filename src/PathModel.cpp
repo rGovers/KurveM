@@ -583,7 +583,7 @@ void PathModel::GetModelData(int a_shapeSteps, int a_pathSteps, unsigned int** a
             const float bR = glm::mix(lerp, 1.0f, lerp);
             const float bM = glm::mix(bL, bR, lerp);
 
-            const glm::vec4 bodyW = glm::vec4(bM, 1.0f - bM, 0.0f, 0.0f);
+            const glm::vec4 bodyW = glm::vec4(1 - bM, bM, 0.0f, 0.0f);
 
             for (unsigned int k = 0; k < shapeVertexCount; ++k)
             {
