@@ -4,7 +4,7 @@
 #include "PathModel.h"
 #include "Workspace.h"
 
-MovePathNodeAction::MovePathNodeAction(Workspace* a_workspace, const unsigned int* a_nodeIndices, unsigned int a_nodeCount, PathModel* a_pathModel, const glm::vec3& a_startPos, const glm::vec3& a_axis)
+MovePathNodeAction::MovePathNodeAction(Workspace* a_workspace, const unsigned int* a_nodeIndices, unsigned int a_nodeCount, PathModel* a_pathModel, const glm::vec3& a_startPos, const glm::vec3& a_axis, e_MirrorMode a_mirrorMode)
 {
     m_workspace = a_workspace;
 
@@ -19,6 +19,7 @@ MovePathNodeAction::MovePathNodeAction(Workspace* a_workspace, const unsigned in
 
     m_oldPos = new glm::vec3[m_nodeCount];
     m_nodeIndices = new unsigned int[m_nodeCount];
+    m_mirrorIndices = new unsigned int*[m_nodeCount];
 
     const PathNodeCluster* nodes = m_pathModel->GetPathNodes();
 
@@ -27,16 +28,39 @@ MovePathNodeAction::MovePathNodeAction(Workspace* a_workspace, const unsigned in
         const unsigned int index = a_nodeIndices[i];
 
         m_nodeIndices[i] = index;
-
-        const PathNode& node = nodes[index].Nodes[0];
-
-        m_oldPos[i] = node.Node.GetPosition();
+        m_oldPos[i] = nodes[index].Nodes[0].Node.GetPosition();
+        m_mirrorIndices[i] = m_pathModel->GetMirroredPathIndices(index, a_mirrorMode);
     }
 }
 MovePathNodeAction::~MovePathNodeAction()
 {
     delete[] m_oldPos;
     delete[] m_nodeIndices;
+
+    for (unsigned int i = 0; i < m_nodeCount; ++i)
+    {
+        delete[] m_mirrorIndices[i];
+    }
+    delete[] m_mirrorIndices;
+}
+
+glm::vec3 MovePathNodeAction::GetMirrorMultiplier(e_MirrorMode a_mode) const
+{
+    glm::vec3 mul = glm::vec3(1.0f);
+    if (a_mode & MirrorMode_X)
+    {
+        mul.x = -1.0f;
+    }
+    if (a_mode & MirrorMode_Y)
+    {
+        mul.y = -1.0f;
+    }
+    if (a_mode & MirrorMode_Z)
+    {
+        mul.z = -1.0f;
+    }
+
+    return mul;
 }
 
 e_ActionType MovePathNodeAction::GetActionType() 
@@ -60,15 +84,36 @@ bool MovePathNodeAction::Execute()
 
         const float scale = glm::dot(scaledAxis, endAxis);
 
+        const glm::vec3 sPos = m_startPos + (m_axis * scale);
+
         PathNodeCluster* nodes = m_pathModel->GetPathNodes();
         for (unsigned int i = 0; i < m_nodeCount; ++i)
         {
             const glm::vec3 diff = m_oldPos[i] - m_startPos;
+            const glm::vec3 pos = sPos + diff;
 
-            std::vector<PathNode>& cNodes = nodes[m_nodeIndices[i]].Nodes;
-            for (auto iter = cNodes.begin(); iter != cNodes.end(); ++iter)
+            PathNodeCluster& c = nodes[m_nodeIndices[i]];
+            for (auto iter = c.Nodes.begin(); iter != c.Nodes.end(); ++iter)
             {
-                iter->Node.SetPosition((m_startPos + (m_axis * scale)) + diff);   
+                iter->Node.SetPosition(pos);   
+            }
+
+            for (int j = 0; j < 7; ++j)
+            {
+                const unsigned int index = m_mirrorIndices[i][j];
+                if (index != -1)
+                {
+                    const e_MirrorMode mode = (e_MirrorMode)(j + 1);
+                    const glm::vec3 mul = GetMirrorMultiplier(mode);
+
+                    const glm::vec3 nPos = pos * mul;
+
+                    PathNodeCluster& c = nodes[index];
+                    for (auto iter = c.Nodes.begin(); iter != c.Nodes.end(); ++iter)
+                    {
+                        iter->Node.SetPosition(nPos);
+                    }
+                }
             }
         }
     }
@@ -83,10 +128,30 @@ bool MovePathNodeAction::Revert()
 
     for (unsigned int i = 0; i < m_nodeCount; ++i)
     {
-        std::vector<PathNode>& cNodes = nodes[m_nodeIndices[i]].Nodes;
-        for (auto iter = cNodes.begin(); iter != cNodes.end(); ++iter)
+        const glm::vec3& pos = m_oldPos[i];
+
+        PathNodeCluster& c = nodes[m_nodeIndices[i]];
+        for (auto iter = c.Nodes.begin(); iter != c.Nodes.end(); ++iter)
         {
-            iter->Node.SetPosition(m_oldPos[i]);
+            iter->Node.SetPosition(pos);
+        }
+
+        for (int j = 0; j < 7; ++j)
+        {
+            const unsigned int index = m_mirrorIndices[i][j];
+            if (index != -1)
+            {
+                const e_MirrorMode mode = (e_MirrorMode)(j + 1);
+                const glm::vec3 mul = GetMirrorMultiplier(mode);
+
+                const glm::vec3 nPos = pos * mul;
+
+                PathNodeCluster& c = nodes[index];
+                for (auto iter = c.Nodes.begin(); iter != c.Nodes.end(); ++iter)
+                {
+                    iter->Node.SetPosition(nPos);
+                }
+            }
         }
     }
 

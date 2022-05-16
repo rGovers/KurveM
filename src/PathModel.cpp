@@ -58,6 +58,25 @@ PathModel::~PathModel()
     }
 }
 
+glm::vec3 PathModel::GetMirrorMultiplier(e_MirrorMode a_mode) const
+{
+    glm::vec3 mul = glm::vec3(1.0f);
+    if (a_mode & MirrorMode_X)
+    {
+        mul.x = -1.0f;
+    }
+    if (a_mode & MirrorMode_Y)
+    {
+        mul.y = -1.0f;
+    }
+    if (a_mode & MirrorMode_Z)
+    {
+        mul.z = -1.0f;
+    }
+
+    return mul;
+}
+
 void PathModel::SetArmature(long long a_value)
 {
     const Object* obj = m_workspace->GetObject(a_value);
@@ -111,6 +130,110 @@ std::list<Object*> PathModel::GetArmatureNodes() const
 unsigned int PathModel::GetArmatureNodeCount() const
 {
     return GetArmatureNodes().size();
+}
+
+unsigned int* PathModel::GetMirroredPathIndices(unsigned int a_index, e_MirrorMode a_mode) const
+{
+    unsigned int* indices = new unsigned int[7];
+
+    const bool xMode = (a_mode & MirrorMode_X) != 0;
+    const bool yMode = (a_mode & MirrorMode_Y) != 0;
+    const bool zMode = (a_mode & MirrorMode_Z) != 0;
+
+    const glm::vec3 pos = m_pathNodes[a_index].Nodes[0].Node.GetPosition();
+
+    for (int i = 0; i < 7; ++i)
+    {
+        indices[i] = -1;
+
+        const e_MirrorMode mode = (e_MirrorMode)(i + 1);
+
+        if ((mode & MirrorMode_X && !xMode) ||
+            (mode & MirrorMode_Y && !yMode) ||
+            (mode & MirrorMode_Z && !zMode))
+        {
+            continue;
+        }
+
+        const glm::vec3 mul = GetMirrorMultiplier(mode);
+        const glm::vec3 invPos = pos * mul;
+
+        for (unsigned int j = 0; j < m_pathNodeCount; ++j)
+        {
+            if (j == a_index)
+            {
+                continue;
+            }
+
+            const glm::vec3 pos = m_pathNodes[j].Nodes[0].Node.GetPosition();
+
+            if (glm::length(pos - invPos) <= 0.0001f)
+            {
+                indices[i] = j;
+
+                break;
+            }
+        }
+    }
+
+    return indices;
+}
+void PathModel::GetMirroredPathHandle(unsigned int a_index, unsigned char a_nodeIndex, e_MirrorMode a_mode, unsigned int** a_outIndex, unsigned char** a_outNodeIndex) const
+{
+    *a_outIndex = new unsigned int[7];
+    *a_outNodeIndex = new unsigned char[7];
+
+    const bool xMode = (a_mode & MirrorMode_X) != 0;
+    const bool yMode = (a_mode & MirrorMode_Y) != 0;
+    const bool zMode = (a_mode & MirrorMode_Z) != 0;
+
+    const BezierCurveNode3& curve = m_pathNodes[a_index].Nodes[a_nodeIndex].Node;
+    const glm::vec3 pos = curve.GetPosition();
+    const glm::vec3 hPos = curve.GetHandlePosition();
+
+    for (int i = 0; i < 7; ++i)
+    {
+        (*a_outIndex)[i] = -1;
+        (*a_outNodeIndex)[i] = -1;
+
+        const e_MirrorMode mode = (e_MirrorMode)(i + 1);
+
+        if ((mode & MirrorMode_X && !xMode) ||
+            (mode & MirrorMode_Y && !yMode) ||
+            (mode & MirrorMode_Z && !zMode))
+        {
+            continue;
+        }
+
+        const glm::vec3 mul = GetMirrorMultiplier(mode);
+        const glm::vec3 invPos = pos * mul;
+        const glm::vec3 invHPos = hPos * mul;
+
+        for (unsigned int j = 0; j < m_pathNodeCount; ++j)
+        {
+            const PathNodeCluster& c = m_pathNodes[j];
+
+            const glm::vec3 pos = c.Nodes[0].Node.GetPosition();
+            if (glm::length(pos - invPos) <= 0.0001f)
+            {
+                const unsigned char size = (unsigned char)c.Nodes.size();
+
+                for (unsigned char k = 0; k < size; ++k)
+                {
+                    const glm::vec3 hPos = c.Nodes[k].Node.GetHandlePosition();
+                    if (glm::length(hPos - invHPos) <= 0.001f)
+                    {
+                        (*a_outIndex)[i] = j;
+                        (*a_outNodeIndex)[i] = k;
+
+                        goto NextIter;
+                    }
+                }
+            }
+        }
+
+NextIter:;
+    }
 }
 
 void PathModel::EmplacePathNodes(const PathNodeCluster* a_nodes, unsigned int a_nodeCount)

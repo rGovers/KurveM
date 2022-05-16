@@ -4,7 +4,7 @@
 #include "PathModel.h"
 #include "Workspace.h"
 
-RotatePathNodeAction::RotatePathNodeAction(Workspace* a_workspace, const unsigned int* a_indices, unsigned int a_indexCount, PathModel* a_pathModel, const glm::vec3& a_startPos, const glm::vec3& a_axis)
+RotatePathNodeAction::RotatePathNodeAction(Workspace* a_workspace, const unsigned int* a_indices, unsigned int a_indexCount, PathModel* a_pathModel, const glm::vec3& a_startPos, const glm::vec3& a_axis, e_MirrorMode a_mirrorMode)
 {
     m_workspace = a_workspace;
 
@@ -20,18 +20,26 @@ RotatePathNodeAction::RotatePathNodeAction(Workspace* a_workspace, const unsigne
 
     m_nodeIndices = new unsigned int[m_nodeCount];
     m_startRotation = new float[m_nodeCount];
+    m_mirrorIndices = new unsigned int*[m_nodeCount];
 
     for (unsigned int i = 0; i < m_nodeCount; ++i)
     {
         const unsigned int index = a_indices[i];
         m_nodeIndices[i] = index;
         m_startRotation[i] = nodes[index].Nodes[0].Rotation;
+        m_mirrorIndices[i] = m_pathModel->GetMirroredPathIndices(index, a_mirrorMode);
     }
 }
 RotatePathNodeAction::~RotatePathNodeAction()
 {
     delete[] m_nodeIndices;
     delete[] m_startRotation;
+
+    for (unsigned int i = 0; i < m_nodeCount; ++i)
+    {
+        delete[] m_mirrorIndices[i];
+    }
+    delete[] m_mirrorIndices;
 }
 
 e_ActionType RotatePathNodeAction::GetActionType()
@@ -61,11 +69,25 @@ bool RotatePathNodeAction::Execute()
 
         for (unsigned int i = 0; i < m_nodeCount; ++i)
         {
-            std::vector<PathNode>& cNodes = nodes[m_nodeIndices[i]].Nodes;
+            const float rot = m_startRotation[i] + scale;
 
-            for (auto iter = cNodes.begin(); iter != cNodes.end(); ++iter)
+            PathNodeCluster& c = nodes[m_nodeIndices[i]];
+            for (auto iter = c.Nodes.begin(); iter != c.Nodes.end(); ++iter)
             {
-                iter->Rotation = m_startRotation[i] + scale;
+                iter->Rotation = rot;
+            }
+
+            for (int j = 0; j < 7; ++j)
+            {
+                const unsigned int index = m_mirrorIndices[i][j];
+                if (index != -1)
+                {
+                    PathNodeCluster& c = nodes[index];
+                    for (auto iter = c.Nodes.begin(); iter != c.Nodes.end(); ++iter)
+                    {
+                        iter->Rotation = rot;
+                    }
+                }
             }
         }
     }
@@ -84,7 +106,26 @@ bool RotatePathNodeAction::Revert()
 
         for (auto iter = cNodes.begin(); iter != cNodes.end(); ++iter)
         {
-            iter->Rotation = m_startRotation[i];
+            const float rot = m_startRotation[i];
+
+            PathNodeCluster& c = nodes[m_nodeIndices[i]];
+            for (auto iter = c.Nodes.begin(); iter != c.Nodes.end(); ++iter)
+            {
+                iter->Rotation = rot;
+            }
+
+            for (int j = 0; j < 7; ++j)
+            {
+                const unsigned int index = m_mirrorIndices[i][j];
+                if (index != -1)
+                {
+                    PathNodeCluster& c = nodes[index];
+                    for (auto iter = c.Nodes.begin(); iter != c.Nodes.end(); ++iter)
+                    {
+                        iter->Rotation = rot;
+                    }
+                }
+            }
         }
     }
 

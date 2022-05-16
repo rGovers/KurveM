@@ -4,7 +4,7 @@
 #include "PathModel.h"
 #include "Workspace.h"
 
-ScalePathNodeAction::ScalePathNodeAction(Workspace* a_workspace, const unsigned int* a_indices, unsigned int a_indexCount, PathModel* a_model, const glm::vec3& a_startPos, const glm::vec3& a_axis)
+ScalePathNodeAction::ScalePathNodeAction(Workspace* a_workspace, const unsigned int* a_indices, unsigned int a_indexCount, PathModel* a_model, const glm::vec3& a_startPos, const glm::vec3& a_axis, e_MirrorMode a_mirrorMode)
 {   
     m_workspace = a_workspace;
 
@@ -21,6 +21,7 @@ ScalePathNodeAction::ScalePathNodeAction(Workspace* a_workspace, const unsigned 
 
     m_indices = new unsigned int[m_indexCount];
     m_startScale = new glm::vec2[m_indexCount];
+    m_mirrorIndices = new unsigned int*[m_indexCount];
 
     for (unsigned int i = 0; i < m_indexCount; ++i)
     {
@@ -28,12 +29,19 @@ ScalePathNodeAction::ScalePathNodeAction(Workspace* a_workspace, const unsigned 
 
         m_indices[i] = index;  
         m_startScale[i] = nodes[index].Nodes[0].Scale;
+        m_mirrorIndices[i] = m_model->GetMirroredPathIndices(index, a_mirrorMode);
     }
 }
 ScalePathNodeAction::~ScalePathNodeAction()
 {
     delete[] m_startScale;
     delete[] m_indices;
+
+    for (unsigned int i = 0; i < m_indexCount; ++i)
+    {
+        delete[] m_mirrorIndices[i];
+    }
+    delete[] m_mirrorIndices;
 }
 
 e_ActionType ScalePathNodeAction::GetActionType()
@@ -63,10 +71,23 @@ bool ScalePathNodeAction::Execute()
         {
             const glm::vec2 scale = m_startScale[i] + scaleAxis;
 
-            std::vector<PathNode>& cNodes = nodes[m_indices[i]].Nodes;
-            for (auto iter = cNodes.begin(); iter != cNodes.end(); ++iter)
+            PathNodeCluster& c = nodes[m_indices[i]];
+            for (auto iter = c.Nodes.begin(); iter != c.Nodes.end(); ++iter)
             {
                 iter->Scale = scale;
+            }
+
+            for (int j = 0; j < 7; ++j)
+            {
+                const unsigned int index = m_mirrorIndices[i][j];
+                if (index != -1)
+                {
+                    PathNodeCluster& c = nodes[index];
+                    for (auto iter = c.Nodes.begin(); iter != c.Nodes.end(); ++iter)
+                    {
+                        iter->Scale = scale;
+                    }
+                }
             }
         }
 
@@ -81,10 +102,25 @@ bool ScalePathNodeAction::Revert()
 
     for (unsigned int i = 0; i < m_indexCount; ++i)
     {
-        std::vector<PathNode>& cNodes = nodes[m_indices[i]].Nodes;
-        for (auto iter = cNodes.begin(); iter != cNodes.end(); ++iter)
+        const glm::vec2& scale = m_startScale[i];
+
+        PathNodeCluster& c = nodes[m_indices[i]];
+        for (auto iter = c.Nodes.begin(); iter != c.Nodes.end(); ++iter)
         {
-            iter->Scale = m_startScale[i];
+            iter->Scale = scale;
+        }
+
+        for (int j = 0; j < 7; ++j)
+        {
+            const unsigned int index = m_mirrorIndices[i][j];
+            if (index != -1)
+            {
+                PathNodeCluster& c = nodes[index];
+                for (auto iter = c.Nodes.begin(); iter != c.Nodes.end(); ++iter)
+                {
+                    iter->Scale = scale;
+                }
+            }
         }
     }
 

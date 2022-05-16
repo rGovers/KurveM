@@ -50,19 +50,9 @@ bool ScalePathNodeToolAction::Interact(const glm::mat4& a_viewProj, const glm::v
     {
         const glm::vec3 cPos = a_camera->GetScreenToWorld(glm::vec3(a_cursorPos, 0.9f), a_screenSize);
         const unsigned int nodeCount = m_editor->GetSelectedNodeCount();
-        const unsigned int *indices = m_editor->GetSelectedNodesArray();
+        const unsigned int* indices = m_editor->GetSelectedNodesArray();
 
-        Action *action = new ScalePathNodeAction(m_workspace, indices, nodeCount, a_model, cPos, axis);
-        if (m_workspace->PushAction(action))
-        {
-            m_editor->SetCurrentAction(action);
-        }
-        else
-        {
-            printf("Error scaling path node \n");
-
-            delete action;
-        }
+        m_editor->PushAction(new ScalePathNodeAction(m_workspace, indices, nodeCount, a_model, cPos, axis, m_editor->GetMirrorMode()), "Error scaling path node");
 
         delete[] indices;
 

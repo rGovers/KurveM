@@ -109,17 +109,7 @@ bool EditEditor::IsInteractingPathNodeHandle(const PathNodeCluster& a_node, unsi
     {
         if (SelectionControl::NodeHandleInPoint(a_viewProj, a_cursorPos, 0.025f, a_transform, iter->Node))
         {
-            Action* action = new MovePathNodeHandleAction(m_workspace, a_nodeIndex, iter - a_node.Nodes.begin(), a_model, a_cursorPos, a_right, a_up);
-            if (!m_workspace->PushAction(action))
-            {
-                printf("Error moving node handle \n");
-
-                delete action;
-            }
-            else
-            {
-                m_editor->SetCurrentAction(action);
-            }
+            m_editor->PushAction(new MovePathNodeHandleAction(m_workspace, a_nodeIndex, iter - a_node.Nodes.begin(), a_model, a_cursorPos, a_right, a_up, m_editor->GetMirrorMode()), "Error moving node handle");
 
             return true;
         }

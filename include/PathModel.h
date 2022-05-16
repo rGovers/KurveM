@@ -5,6 +5,7 @@
 
 #include "BezierCurveNode2.h"
 #include "BezierCurveNode3.h"
+#include "EditorControls/Editor.h"
 
 struct Vertex;
 
@@ -124,7 +125,8 @@ private:
     Model*            m_model;
 
     void GetArmatureNodes(std::list<Object*>* a_list, Object* a_object) const;
-    
+    glm::vec3 GetMirrorMultiplier(e_MirrorMode a_mode) const;
+
 protected:
 
 public:
@@ -215,6 +217,9 @@ public:
     }
     std::list<Object*> GetArmatureNodes() const;
     unsigned int GetArmatureNodeCount() const;
+
+    unsigned int* GetMirroredPathIndices(unsigned int a_index, e_MirrorMode a_mode) const;
+    void GetMirroredPathHandle(unsigned int a_index, unsigned char a_nodeIndex, e_MirrorMode a_mode, unsigned int** a_outIndex, unsigned char** a_outNodeIndex) const;
 
     void EmplacePathNodes(const PathNodeCluster* a_nodes, unsigned int a_nodeCount);
     void DestroyPathNodes(unsigned int a_startIndex, unsigned int a_endIndex);
