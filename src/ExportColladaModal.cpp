@@ -17,7 +17,7 @@ void ExportColladaModal::Overwrite(bool a_value)
     {
         m_ret = false;
 
-        m_workspace->ExportCollada(m_fPath, m_exportSelected, m_smartStep, m_curveStep, m_pathStep, m_shapeStep, m_author, m_copyright);
+        m_workspace->ExportCollada(m_fPath, m_exportAnimations, m_exportSelected, m_smartStep, m_curveStep, m_pathStep, m_shapeStep, m_author, m_copyright);
     }
 }
 
@@ -64,6 +64,8 @@ ExportColladaModal::ExportColladaModal(Workspace* a_workspace, const char* a_pat
     m_copyright = new char[PATHSIZE] { 0 };
 
     m_exportSelected = false;
+
+    m_exportAnimations = true;
 
     m_ret = true;
 
@@ -153,6 +155,10 @@ bool ExportColladaModal::Execute()
         m_shapeStep = glm::max(m_shapeStep, 1);
     }
 
+    ImGui::Separator();
+
+    ImGui::Checkbox("Export Animations", &m_exportAnimations);
+
     ImGui::PopItemWidth();
 
     ImGui::EndGroup();
@@ -219,7 +225,7 @@ bool ExportColladaModal::Execute()
             }
             else
             {
-                m_workspace->ExportCollada(m_fPath, m_exportSelected, m_smartStep, m_curveStep, m_pathStep, m_shapeStep, m_author, m_copyright);
+                m_workspace->ExportCollada(m_fPath, m_exportAnimations, m_exportSelected, m_smartStep, m_curveStep, m_pathStep, m_shapeStep, m_author, m_copyright);
 
                 return false;
             }

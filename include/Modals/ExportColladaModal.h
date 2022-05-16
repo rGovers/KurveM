@@ -31,6 +31,7 @@ private:
     int              m_shapeStep;
 
     bool             m_exportSelected;
+    bool             m_exportAnimations;
 
     void Overwrite(bool a_value);
     

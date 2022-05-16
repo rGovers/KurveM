@@ -514,7 +514,7 @@ void SaveColladaObject(tinyxml2::XMLDocument* a_doc, tinyxml2::XMLElement* a_geo
         }
     }
 }
-void Workspace::ExportCollada(const char* a_dir, bool a_selectedObjects, bool a_smartStep, int a_steps, int a_pathSteps, int a_shapeSteps, const char* a_author, const char* a_copyright) const
+void Workspace::ExportCollada(const char* a_dir, bool a_exportAnimations, bool a_selectedObjects, bool a_smartStep, int a_steps, int a_pathSteps, int a_shapeSteps, const char* a_author, const char* a_copyright) const
 {
     tinyxml2::XMLDocument doc;
 
@@ -601,6 +601,16 @@ void Workspace::ExportCollada(const char* a_dir, bool a_selectedObjects, bool a_
         }
     }
 
+    if (a_exportAnimations && m_animations.size() > 0)
+    {
+        tinyxml2::XMLElement* libraryAnimationsElement = doc.NewElement("library_animations");
+        rootElement->InsertEndChild(libraryAnimationsElement);
+
+        for (auto iter = m_animations.begin(); iter != m_animations.end(); ++iter)
+        {
+            AnimationSerializer::WriteCollada(this, &doc, libraryAnimationsElement, *iter);
+        }
+    }
 
     doc.SaveFile(a_dir);
 }
