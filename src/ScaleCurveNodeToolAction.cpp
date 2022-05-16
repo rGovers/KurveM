@@ -52,17 +52,7 @@ bool ScaleCurveNodeToolAction::Interact(const glm::mat4& a_viewProj, const glm::
         const unsigned int nodeCount = m_editor->GetSelectedNodeCount();
         const unsigned int* indices = m_editor->GetSelectedNodesArray();
 
-        Action* action = new ScaleCurveNodeAction(m_workspace, indices, nodeCount, a_model, cPos, axis);
-        if (m_workspace->PushAction(action))
-        {
-            m_editor->SetCurrentAction(action);
-        }
-        else
-        {
-            printf("Error scaling curve node \n");
-
-            delete action;
-        }
+        m_editor->PushAction(new ScaleCurveNodeAction(m_workspace, indices, nodeCount, a_model, cPos, axis, m_editor->GetMirrorMode()), "Error scaling curve node");
 
         delete[] indices;
 

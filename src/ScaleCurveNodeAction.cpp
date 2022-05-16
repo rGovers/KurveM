@@ -4,7 +4,7 @@
 #include "LongTasks/TriangulateCurveLongTask.h"
 #include "Workspace.h"
 
-ScaleCurveNodeAction::ScaleCurveNodeAction(Workspace* a_workspace, const unsigned int* a_nodeIndices, unsigned int a_nodeCount, CurveModel* a_curveModel, const glm::vec3& a_startPos, const glm::vec3& a_axis)
+ScaleCurveNodeAction::ScaleCurveNodeAction(Workspace* a_workspace, const unsigned int* a_nodeIndices, unsigned int a_nodeCount, CurveModel* a_curveModel, const glm::vec3& a_startPos, const glm::vec3& a_axis, e_MirrorMode a_mirrorMode)
 {
     m_workspace = a_workspace;
 
@@ -17,10 +17,13 @@ ScaleCurveNodeAction::ScaleCurveNodeAction(Workspace* a_workspace, const unsigne
 
     m_axis = a_axis;
 
-    m_centre = glm::vec3(0); 
+    m_centre = glm::vec3(0.0f); 
 
     m_nodeIndices = new unsigned int[m_nodeCount];
     m_oldPos = new glm::vec3[m_nodeCount];
+    m_invNodeIndices = new unsigned int*[m_nodeCount];
+
+    m_mirrorMode = a_mirrorMode;
 
     const CurveNodeCluster* nodes = m_curveModel->GetNodes(); 
 
@@ -34,6 +37,7 @@ ScaleCurveNodeAction::ScaleCurveNodeAction(Workspace* a_workspace, const unsigne
 
         m_oldPos[i] = pos;
         m_centre += pos;
+        m_invNodeIndices[i] = m_curveModel->GetMirroredIndices(index, m_mirrorMode);
     }
 
     m_centre /= m_nodeCount;
@@ -41,8 +45,32 @@ ScaleCurveNodeAction::ScaleCurveNodeAction(Workspace* a_workspace, const unsigne
 ScaleCurveNodeAction::~ScaleCurveNodeAction()
 {
     delete[] m_oldPos;
-
     delete[] m_nodeIndices;
+
+    for (unsigned int i = 0; i < m_nodeCount; ++i)
+    {
+        delete[] m_invNodeIndices[i];
+    }
+    delete[] m_invNodeIndices;
+}
+
+glm::vec3 ScaleCurveNodeAction::GetMirrorMultiplier(e_MirrorMode a_mode) const
+{
+    glm::vec3 mul = glm::vec3(1.0f);
+    if (a_mode & MirrorMode_X)
+    {
+        mul.x = -1.0f;
+    }
+    if (a_mode & MirrorMode_Y)
+    {
+        mul.y = -1.0f;
+    }
+    if (a_mode & MirrorMode_Z)
+    {
+        mul.z = -1.0f;
+    }
+
+    return mul;
 }
 
 e_ActionType ScaleCurveNodeAction::GetActionType()
@@ -76,9 +104,28 @@ bool ScaleCurveNodeAction::Execute()
             const glm::vec3 sT = t * sVec;
             const glm::vec3 pos = m_centre + sT;
 
-            for (auto iter = nodes[m_nodeIndices[i]].Nodes.begin(); iter != nodes[m_nodeIndices[i]].Nodes.end(); ++iter)
+            CurveNodeCluster& c = nodes[m_nodeIndices[i]];
+            for (auto iter = c.Nodes.begin(); iter != c.Nodes.end(); ++iter)
             {
                 iter->Node.SetPosition(pos);
+            }
+
+            for (int j = 0; j < 7; ++j)
+            {
+                const unsigned int index = m_invNodeIndices[i][j];
+                if (index != -1)
+                {
+                    const e_MirrorMode mode = (e_MirrorMode)(j + 1);
+                    const glm::vec3 mul = GetMirrorMultiplier(mode);
+
+                    const glm::vec3 invPos = pos * mul;
+
+                    CurveNodeCluster& c = nodes[index];
+                    for (auto iter = c.Nodes.begin(); iter != c.Nodes.end(); ++iter)
+                    {
+                        iter->Node.SetPosition(invPos);
+                    }
+                }
             }
         }
     }
@@ -93,13 +140,29 @@ bool ScaleCurveNodeAction::Revert()
 
     for (unsigned int i = 0; i < m_nodeCount; ++i)
     {
-        const unsigned int index = m_nodeIndices[i];
-        const unsigned int nodeSize = nodes[index].Nodes.size();
-
-        const glm::vec3 pos = m_oldPos[i];
-        for (unsigned int j = 0; j < nodeSize; ++j)
+        const glm::vec3& pos = m_oldPos[i];
+        CurveNodeCluster& c = nodes[m_nodeIndices[i]];
+        for (auto iter = c.Nodes.begin(); iter != c.Nodes.end(); ++iter)
         {
-            nodes[index].Nodes[j].Node.SetPosition(pos);
+            iter->Node.SetPosition(pos);
+        }
+
+        for (int j = 0; j < 7; ++j)
+        {
+            const unsigned int index = m_invNodeIndices[i][j];
+            if (index != -1)
+            {
+                const e_MirrorMode mode = (e_MirrorMode)(j + 1);
+                const glm::vec3 mul = GetMirrorMultiplier(mode);
+
+                const glm::vec3 invPos = pos * mul;
+
+                CurveNodeCluster& c = nodes[index];
+                for (auto iter = c.Nodes.begin(); iter != c.Nodes.end(); ++iter)
+                {
+                    iter->Node.SetPosition(invPos);
+                }
+            }
         }
     }
 

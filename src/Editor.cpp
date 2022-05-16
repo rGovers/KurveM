@@ -56,6 +56,8 @@ Editor::Editor(Workspace* a_workspace)
     m_brushRadius = 1;
     m_brushIntensity = 1;
 
+    m_mirrorMode = MirrorMode_None;
+
     Init();
 
     m_cameraController = new CameraController(m_camera);
@@ -352,6 +354,20 @@ e_ActionType Editor::GetCurrentActionType() const
     }
 
     return ActionType_Null;
+}
+void Editor::PushAction(Action* a_action, const char* a_errorMsg)
+{
+    if (!m_workspace->PushAction(a_action))
+    {
+        printf(a_errorMsg);
+        printf("\n");
+
+        delete a_action;
+    }
+    else
+    {
+        m_curAction = a_action;
+    }
 }
 
 void Editor::CurveDeleteDown(Object* a_object)

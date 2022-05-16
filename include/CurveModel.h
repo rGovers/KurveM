@@ -1,6 +1,7 @@
 #pragma once
 
 #include "BezierCurveNode3.h"
+#include "EditorControls/Editor.h"
 
 #include <list>
 #include <vector>
@@ -91,20 +92,22 @@ class CurveModel
 private:
     friend class CurveModelSerializer;
 
-    Workspace*    m_workspace;
+    Workspace*        m_workspace;
 
-    long long     m_armature;
+    long long         m_armature;
 
-    int           m_steps;
+    int               m_steps;
 
-    bool          m_stepAdjust;
+    bool              m_stepAdjust;
 
-    unsigned int  m_nodeCount;
+    unsigned int      m_nodeCount;
     CurveNodeCluster* m_nodes;
-    unsigned int  m_faceCount;
-    CurveFace*    m_faces;
+    unsigned int      m_faceCount;
+    CurveFace*        m_faces;
     
-    Model*        m_displayModel;
+    Model*            m_displayModel;
+
+    glm::vec3 GetMirrorMultiplier(e_MirrorMode a_mode) const;
 
 protected:
 
@@ -170,6 +173,9 @@ public:
     }
     std::list<Object*> GetArmatureNodes() const;
     unsigned int GetArmatureNodeCount() const;
+
+    unsigned int* GetMirroredIndices(unsigned int a_index, e_MirrorMode a_mirrorMode) const;
+    void GetMirroredHandles(unsigned int a_index, unsigned int a_nodeIndex, e_MirrorMode a_mode, unsigned int** a_outIndices, unsigned int** a_outNodeIndices) const;
 
     unsigned int Get3PointFaceIndex(unsigned int a_indexA, unsigned int a_indexB, unsigned int a_indexC) const;
     unsigned int Get3PointFaceIndex(const unsigned int a_indices[6]) const;

@@ -45,6 +45,26 @@ CurveModel::~CurveModel()
     }
 }
 
+glm::vec3 CurveModel::GetMirrorMultiplier(e_MirrorMode a_mode) const
+{
+    glm::vec3 mul = glm::vec3(1.0f);
+
+    if (a_mode & MirrorMode_X)
+    {
+        mul.x = -1.0f;
+    }
+    if (a_mode & MirrorMode_Y)
+    {
+        mul.y = -1.0f;
+    }
+    if (a_mode & MirrorMode_Z)
+    {
+        mul.z = -1.0f;
+    }
+
+    return mul;
+}
+
 void CurveModel::SetArmature(long long a_id)
 {
     const Object* obj = m_workspace->GetObject(a_id);
@@ -119,6 +139,112 @@ float GetNodeDist(const BezierCurveNode3& a_nodeA, const BezierCurveNode3& a_nod
     const glm::vec3 bDiff = posB - handlePosB;
 
     return glm::length(aDiff) + glm::length(abDiff) + glm::length(bDiff);
+}
+
+unsigned int* CurveModel::GetMirroredIndices(unsigned int a_index, e_MirrorMode a_mirrorMode) const
+{
+    unsigned int* indices = new unsigned int[7];
+
+    const bool xMode = (a_mirrorMode & MirrorMode_X) != 0;
+    const bool yMode = (a_mirrorMode & MirrorMode_Y) != 0;
+    const bool zMode = (a_mirrorMode & MirrorMode_Z) != 0;
+
+    const glm::vec3 pos = m_nodes[a_index].Nodes[0].Node.GetPosition();
+
+    for (int i = 0; i < 7; ++i)
+    {
+        indices[i] = -1;
+
+        const e_MirrorMode mode = (e_MirrorMode)(i + 1);
+        
+        if ((mode & MirrorMode_X && !xMode) ||
+            (mode & MirrorMode_Y && !yMode) ||
+            (mode & MirrorMode_Z && !zMode))
+        {
+            continue;
+        }
+
+        const glm::vec3 mul = GetMirrorMultiplier(mode);
+
+        const glm::vec3 invPos = pos * mul;
+
+        for (unsigned int j = 0; j < m_nodeCount; ++j)
+        {
+            if (j == a_index)
+            {
+                continue;
+            }
+
+            const glm::vec3 pos = m_nodes[j].Nodes[0].Node.GetPosition();
+
+            if (glm::length(pos - invPos) <= 0.0001f)
+            {
+                indices[i] = j;
+
+                break;
+            }
+        }
+    }
+
+    return indices;
+}
+void CurveModel::GetMirroredHandles(unsigned int a_index, unsigned int a_nodeIndex, e_MirrorMode a_mode, unsigned int** a_outIndices, unsigned int** a_outNodeIndices) const
+{
+    *a_outIndices = new unsigned int[7];
+    *a_outNodeIndices = new unsigned int[7];
+
+    const bool xMode = (a_mode & MirrorMode_X) != 0;
+    const bool yMode = (a_mode & MirrorMode_Y) != 0;
+    const bool zMode = (a_mode & MirrorMode_Z) != 0;
+
+    const BezierCurveNode3& curve = m_nodes[a_index].Nodes[a_nodeIndex].Node;
+    const glm::vec3 pos = curve.GetPosition();
+    const glm::vec3 hPos = curve.GetHandlePosition();
+
+    for (int i = 0; i < 7; ++i)
+    {
+        (*a_outIndices)[i] = -1;
+        (*a_outNodeIndices)[i] = -1;
+
+        const e_MirrorMode mode = (e_MirrorMode)(i + 1);
+
+        if ((mode & MirrorMode_X && !xMode) ||
+            (mode & MirrorMode_Y && !yMode) ||
+            (mode & MirrorMode_Z && !zMode))
+        {
+            continue;
+        }
+
+        const glm::vec3 mul = GetMirrorMultiplier(mode);
+
+        const glm::vec3 invPos = pos * mul;
+        const glm::vec3 invHPos = hPos * mul;
+
+        for (unsigned int j = 0; j < m_nodeCount; ++j)
+        {
+            const CurveNodeCluster& c = m_nodes[j];
+            const glm::vec3 pos = c.Nodes[0].Node.GetPosition();
+
+            if (glm::length(pos - invPos) <= 0.0001f)
+            {
+                const unsigned int size = (unsigned int)c.Nodes.size();
+
+                for (unsigned int k = 0; k < size; ++k)
+                {
+                    const glm::vec3 hPos = c.Nodes[k].Node.GetHandlePosition();
+                    if (glm::length(hPos - invHPos) <= 0.0001f)
+                    {
+                        (*a_outIndices)[i] = j;
+                        (*a_outNodeIndices)[i] = k;
+
+                        goto NextIter;
+                    }
+                }
+            }
+        }
+
+NextIter:;
+    }
 }
 
 unsigned int CurveModel::Get3PointFaceIndex(unsigned int a_indexA, unsigned int a_indexB, unsigned int a_indexC) const

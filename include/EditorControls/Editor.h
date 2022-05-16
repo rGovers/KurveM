@@ -26,6 +26,19 @@ enum e_EditorMode
     EditorMode_End
 };
 
+enum e_MirrorMode
+{
+    MirrorMode_None = 0,
+    MirrorMode_X = 0b1 << 0,
+    MirrorMode_Y = 0b1 << 1,
+    MirrorMode_Z = 0b1 << 2,
+
+    MirrorMode_XY = MirrorMode_X | MirrorMode_Y,
+    MirrorMode_XZ = MirrorMode_X | MirrorMode_Z,
+    MirrorMode_XYZ = MirrorMode_X | MirrorMode_Y | MirrorMode_Z,
+    MirrorMode_YZ = MirrorMode_Y | MirrorMode_Z
+};
+
 enum e_EditorFaceCullingMode
 {
     EditorFaceCullingMode_Back,
@@ -72,6 +85,8 @@ private:
     float                     m_animTime;
     float                     m_selectedTime;
 
+    e_MirrorMode              m_mirrorMode;
+
     void DrawObject(Object* a_object, const glm::vec2& a_winSize);
 
 protected:
@@ -94,6 +109,7 @@ public:
     {
         m_curAction = a_action;
     }
+    void PushAction(Action* a_action, const char* a_errorMsg);
 
     inline float GetBrushRadius() const
     {
@@ -129,6 +145,15 @@ public:
     inline void SetSelectedTime(float a_time)
     {
         m_selectedTime = a_time;
+    }
+
+    inline e_MirrorMode GetMirrorMode() const
+    {
+        return m_mirrorMode;
+    }
+    inline void SetMirrorMode(e_MirrorMode a_value)
+    {
+        m_mirrorMode = a_value;
     }
 
     void Init();

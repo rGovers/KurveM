@@ -15,34 +15,6 @@
 #include "PathModel.h"
 #include "Workspace.h"
 
-const char* EditorMode_String[] = 
-{ 
-    "Object Mode", 
-    "Edit Mode", 
-    "Weight Mode",
-    "Animate Mode"
-};
-const char* EditorMode_Path[] =
-{
-    "Textures/EDITOR_OBJECT.png",
-    "Textures/EDITOR_EDIT.png",
-    "Textures/EDITOR_WEIGHT.png",
-    "Textures/EDITOR_ANIMATE.png"
-};
-
-const char* EditorMode_Preview_Path[] =
-{
-    "Textures/EDITOR_OBJECT_DARK.png",
-    "Textures/EDITOR_EDIT_DARK.png",
-    "Textures/EDITOR_WEIGHT_DARK.png",
-    "Textures/EDITOR_ANIMATE_DARK.png"
-};
-
-#define FRONTFACE_TOOLTIP "Displays the object front faces"
-#define BACKFACE_TOOLTIP "Displays the objects back faces"
-#define BOTHFACE_TOOLTIP "Displays both of the objects faces"
-#define NOFACE_TOOLTIP "Displays none of the objects faces" 
-
 OptionsWindow::OptionsWindow(Workspace* a_workspace, Editor* a_editor)
 {
     m_workspace = a_workspace;
@@ -58,6 +30,39 @@ void OptionsWindow::EditorFaceButton(const char* a_text, const char* a_path, e_E
     if (ImGuiExt::ImageToggleButton(a_text, a_path, m_editor->GetEditorFaceCullingMode() == a_face, glm::vec2(16, 16)))
     {
         m_editor->SetEditorFaceCullingMode(a_face);
+    }
+
+    if (ImGui::IsItemHovered())
+    {
+        ImGui::BeginTooltip();
+
+        ImGui::Text(a_text);
+
+        ImGui::Separator();
+
+        ImGui::Text(a_tooltip);
+
+        ImGui::EndTooltip();
+    }
+}
+void OptionsWindow::EditorMirrorButton(const char* a_text, const char* a_path, e_MirrorMode a_mode, const char* a_tooltip)
+{
+    e_MirrorMode mode = m_editor->GetMirrorMode();
+
+    const bool active = (mode & a_mode) != 0;
+
+    if (ImGuiExt::ImageToggleButton(a_text, a_path, active, glm::vec2(16.0f)))
+    {
+        if (active)
+        {
+            mode = (e_MirrorMode)(mode & ~a_mode);
+        }
+        else
+        {
+            mode = (e_MirrorMode)(mode | a_mode);
+        }
+
+        m_editor->SetMirrorMode(mode);
     }
 
     if (ImGui::IsItemHovered())
@@ -98,19 +103,19 @@ void OptionsWindow::Update(double a_delta)
 
         const e_EditorMode currentIndex = m_editor->GetEditorMode();
 
-        if (ImGuiExt::BeginImageCombo("##combo", EditorMode_Preview_Path[currentIndex], glm::vec2(16, 16), EditorMode_String[currentIndex]))
+        if (ImGuiExt::BeginImageCombo("##combo", EditorModePreviewPath[currentIndex], glm::vec2(16.0f), EditorModeString[currentIndex]))
         {
             for (int i = 0; i < EditorMode_End; ++i)
             {
                 if (m_editor->IsEditorModeEnabled((e_EditorMode)i))
                 {   
                     const bool selected = currentIndex == i;
-                    if (ImGuiExt::Image(EditorMode_Path[i], glm::vec2(16, 16)))
+                    if (ImGuiExt::Image(EditorModePath[i], glm::vec2(16.0f)))
                     {
                         ImGui::SameLine();
                     }
 
-                    if (ImGui::Selectable(EditorMode_String[i], selected))
+                    if (ImGui::Selectable(EditorModeString[i], selected))
                     {
                         m_editor->SetEditorMode((e_EditorMode)i);
                     }
@@ -129,18 +134,34 @@ void OptionsWindow::Update(double a_delta)
 
         ImGui::BeginGroup();
 
-        EditorFaceButton("Front Faces", "Textures/CULL_BACK.png", EditorFaceCullingMode_Back, FRONTFACE_TOOLTIP);
+        EditorFaceButton("Front Faces", "Textures/CULL_BACK.png", EditorFaceCullingMode_Back, FrontFaceTooltip);
         ImGui::SameLine();
-        EditorFaceButton("Back Faces", "Textures/CULL_FRONT.png", EditorFaceCullingMode_Front, BACKFACE_TOOLTIP);
+        EditorFaceButton("Back Faces", "Textures/CULL_FRONT.png", EditorFaceCullingMode_Front, BackFaceTooltip);
         ImGui::SameLine();
-        EditorFaceButton("Both Faces", "Textures/CULL_NONE.png", EditorFaceCullingMode_None, BOTHFACE_TOOLTIP);
+        EditorFaceButton("Both Faces", "Textures/CULL_NONE.png", EditorFaceCullingMode_None, BothFaceTooltip);
         ImGui::SameLine();
-        EditorFaceButton("No Faces", "Textures/CULL_ALL.png", EditorFaceCullingMode_All, NOFACE_TOOLTIP);
+        EditorFaceButton("No Faces", "Textures/CULL_ALL.png", EditorFaceCullingMode_All, NoFaceTooltip);
 
         ImGui::EndGroup();
 
         switch (currentIndex)
         {
+        case EditorMode_Edit:
+        {
+            ImGui::NextColumn();
+
+            ImGui::BeginGroup();
+
+            EditorMirrorButton("X", "Textures/MIRROR_X.png", MirrorMode_X, MirrorXTooltip);
+            ImGui::SameLine();
+            EditorMirrorButton("Y", "Textures/MIRROR_Y.png", MirrorMode_Y, MirrorYTooltip);
+            ImGui::SameLine();
+            EditorMirrorButton("Z", "Textures/MIRROR_Z.png", MirrorMode_Z, MirrorZTooltip);
+
+            ImGui::EndGroup();
+
+            break;
+        }
         case EditorMode_Animate:
         {
             ImGui::NextColumn();

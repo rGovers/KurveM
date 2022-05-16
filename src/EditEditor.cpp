@@ -95,17 +95,7 @@ bool EditEditor::IsInteractingCurveNodeHandle(const CurveNodeCluster& a_node, un
     {
         if (SelectionControl::NodeHandleInPoint(a_viewProj, a_cursorPos, 0.025f, a_transform, nodeIter->Node))
         {
-            Action* action = new MoveCurveNodeHandleAction(m_workspace, nodeIter - a_node.Nodes.begin(), a_nodeIndex, a_model, a_cursorPos, a_right, a_up);
-            if (!m_workspace->PushAction(action))
-            {
-                printf("Error moving node handle \n");
-
-                delete action;
-            }
-            else
-            {
-                m_editor->SetCurrentAction(action);
-            }
+            m_editor->PushAction(new MoveCurveNodeHandleAction(m_workspace, nodeIter - a_node.Nodes.begin(), a_nodeIndex, a_model, a_cursorPos, a_right, a_up, m_editor->GetMirrorMode()), "Error moving node handle");
 
             return true;
         }
