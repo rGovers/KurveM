@@ -5,6 +5,8 @@ class Camera;
 class CameraController
 {
 private:
+    const float Distance = 2.5f;
+
     Camera* m_camera;
 
     bool    m_orthoDown;

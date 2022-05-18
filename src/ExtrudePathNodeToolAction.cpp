@@ -8,6 +8,7 @@
 #include "Gizmos.h"
 #include "PathModel.h"
 #include "SelectionControl.h"
+#include "ToolSettings.h"
 #include "Transform.h"
 #include "TransformVisualizer.h"
 #include "Workspace.h"
@@ -26,11 +27,10 @@ bool ExtrudePathNodeToolAction::Interact(const glm::mat4& a_viewProj, const glm:
 {
     constexpr glm::mat4 iden = glm::identity<glm::mat4>();
     constexpr glm::vec4 vec4Zero = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
-    constexpr float scale = 0.25f;
-    constexpr glm::vec3 scale3 = glm::vec3(scale);
+    const glm::vec3 scale3 = glm::vec3(ToolSettings::EditToolScale);
 
     const glm::vec3 axis = AxisControl::GetAxis(a_axis);
-    const glm::vec3 scaledAxis = axis * scale;
+    const glm::vec3 scaledAxis = axis * ToolSettings::EditToolScale;
 
     glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
     if (glm::abs(glm::dot(up, axis)) >= 0.95f)
@@ -163,7 +163,7 @@ void ExtrudePathNodeToolAction::Draw(Camera* a_camera)
             const glm::mat4 transformMat = object->GetGlobalMatrix();
             const glm::vec4 fPos = transformMat * glm::vec4(pos, 1.0f);
 
-            Gizmos::DrawScale(fPos, camTrans->Forward(), 0.25f);
+            Gizmos::DrawScale(fPos, camTrans->Forward(), ToolSettings::EditToolScale);
         }
     }
 }

@@ -1340,17 +1340,17 @@ SmartNext:;
         {
             for (unsigned int i = 0; i < *a_indexCount; ++i)
             {
-                const Vertex vert = dirtyVertices[i];
+                const Vertex& vert = dirtyVertices[i];
 
                 for (unsigned int j = 0; j < vertexIndex; ++j)
                 {
-                    const Vertex otherVert = (*a_vertices)[j];
+                    const Vertex& otherVert = (*a_vertices)[j];
 
                     const glm::vec3 diff = vert.Position - otherVert.Position;
                     const glm::vec2 uvDiff = vert.UV - otherVert.UV;
 
                     // Using an epsilon because floating point precision was causing issues
-                    if (glm::dot(diff, diff) <= 0.0001f && glm::dot(uvDiff, uvDiff) <= 0.0001f)
+                    if (glm::length(diff) <= 0.001f && glm::dot(uvDiff, uvDiff) <= 0.0001f)
                     {
                         (*a_vertices)[j].Normal += vert.Normal;
                         (*a_indices)[i] = j;

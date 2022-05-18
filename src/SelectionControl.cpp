@@ -28,7 +28,7 @@ bool SelectionControl::PointInMesh(const glm::mat4& a_transform, const Vertex* a
 
         const float f = (aA + aB + aC) - aO;
 
-        if (glm::abs(f) <= 0.0001f)
+        if (glm::abs(f) <= 0.00001f)
         {
             return true;
         }

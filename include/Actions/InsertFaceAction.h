@@ -24,7 +24,7 @@ private:
     void Wind4Points(const CurveNodeCluster* a_nodes, unsigned int* a_a, unsigned int* a_b, unsigned int* a_c, unsigned int* a_d) const;
 
     bool GetIndex(const CurveFace& a_face, e_FaceIndex a_faceIndexA, e_FaceIndex a_faceIndexB, unsigned int a_indexA, unsigned int a_indexB, unsigned int* a_out) const;
-    unsigned int PushNode(CurveNodeCluster* a_cluster, unsigned int a_startIndex, unsigned int a_endIndex, const CurveFace* a_faces, unsigned int a_faceCount) const;
+    unsigned int PushNode(CurveNodeCluster* a_cluster, const CurveNodeCluster& a_neighbour, unsigned int a_startIndex, unsigned int a_endIndex, const CurveFace* a_faces, unsigned int a_faceCount) const;
     void PopNode(CurveNodeCluster* a_cluster, unsigned int a_index) const;
 
 protected:

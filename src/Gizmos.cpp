@@ -233,7 +233,7 @@ void Gizmos::DrawCurve(int a_steps, const glm::mat4& a_modelMatrix, const Bezier
         const glm::vec4 pointA = a_modelMatrix * glm::vec4(BezierCurveNode3::GetPoint(a_nodeA, a_nodeB, (float)i / a_steps), 1);
         const glm::vec4 pointB = a_modelMatrix * glm::vec4(BezierCurveNode3::GetPoint(a_nodeA, a_nodeB, (float)(i + 1) / a_steps), 1);
 
-        Gizmos::DrawLine(pointA, pointB, 0.0025f, a_color);
+        Gizmos::DrawLine(pointA, pointB, 0.00025f, a_color);
     }
 }
 
@@ -327,6 +327,7 @@ void Gizmos::DrawTriangle(const glm::vec3& a_position, const glm::vec3& a_dir, c
 void Gizmos::DrawTranslation(const glm::vec3& a_position, const glm::vec3& a_dir, float a_scale)
 {
     constexpr glm::mat4 iden = glm::identity<glm::mat4>();
+    const float lineScale = a_scale * 0.05f;
 
     const glm::mat4 transform = glm::translate(iden, a_position) * glm::scale(iden, glm::vec3(a_scale));
 
@@ -346,13 +347,14 @@ void Gizmos::DrawTranslation(const glm::vec3& a_position, const glm::vec3& a_dir
     const glm::vec3 endY = a_position + glm::vec3(0, a_scale, 0);
     const glm::vec3 endZ = a_position + glm::vec3(0, 0, a_scale);
 
-    Gizmos::DrawLine(a_position, endX, a_dir, 0.01f, glm::vec4(1, 0, 0, 1));
-    Gizmos::DrawLine(a_position, endY, a_dir, 0.01f, glm::vec4(0, 1, 0, 1));
-    Gizmos::DrawLine(a_position, endZ, a_dir, 0.01f, glm::vec4(0, 0, 1, 1));
+    Gizmos::DrawLine(a_position, endX, a_dir, lineScale, glm::vec4(1, 0, 0, 1));
+    Gizmos::DrawLine(a_position, endY, a_dir, lineScale, glm::vec4(0, 1, 0, 1));
+    Gizmos::DrawLine(a_position, endZ, a_dir, lineScale, glm::vec4(0, 0, 1, 1));
 }
 void Gizmos::DrawScale(const glm::vec3& a_position, const glm::vec3& a_dir, float a_scale)
 {
     constexpr glm::mat4 iden = glm::identity<glm::mat4>();
+    const float lineScale = a_scale * 0.05f;
 
     const glm::mat4 transform = glm::translate(iden, a_position) * glm::scale(iden, glm::vec3(a_scale));
 
@@ -372,9 +374,9 @@ void Gizmos::DrawScale(const glm::vec3& a_position, const glm::vec3& a_dir, floa
     const glm::vec3 endY = a_position + glm::vec3(0, a_scale, 0);
     const glm::vec3 endZ = a_position + glm::vec3(0, 0, a_scale);
 
-    Gizmos::DrawLine(a_position, endX, a_dir, 0.01f, glm::vec4(1, 0, 0, 1));
-    Gizmos::DrawLine(a_position, endY, a_dir, 0.01f, glm::vec4(0, 1, 0, 1));
-    Gizmos::DrawLine(a_position, endZ, a_dir, 0.01f, glm::vec4(0, 0, 1, 1));
+    Gizmos::DrawLine(a_position, endX, a_dir, lineScale, glm::vec4(1, 0, 0, 1));
+    Gizmos::DrawLine(a_position, endY, a_dir, lineScale, glm::vec4(0, 1, 0, 1));
+    Gizmos::DrawLine(a_position, endZ, a_dir, lineScale, glm::vec4(0, 0, 1, 1));
 }
 void Gizmos::DrawRotation(const glm::vec3& a_position, const glm::vec3& a_dir, float a_scale)
 {

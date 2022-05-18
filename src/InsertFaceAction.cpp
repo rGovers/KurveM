@@ -169,13 +169,13 @@ bool InsertFaceAction::GetIndex(const CurveFace& a_face, e_FaceIndex a_faceIndex
 
     return false;
 }
-unsigned int InsertFaceAction::PushNode(CurveNodeCluster* a_cluster, unsigned int a_startIndex, unsigned int a_endIndex, const CurveFace* a_faces, unsigned int a_faceCount) const
+unsigned int InsertFaceAction::PushNode(CurveNodeCluster* a_cluster, const CurveNodeCluster& a_neighbour, unsigned int a_startIndex, unsigned int a_endIndex, const CurveFace* a_faces, unsigned int a_faceCount) const
 {
     constexpr float infinity = std::numeric_limits<float>::infinity();
 
     for (unsigned int i = 0; i < a_faceCount; ++i)
     {
-        const CurveFace face = a_faces[i];
+        const CurveFace& face = a_faces[i];
         switch (face.FaceMode)
         {
         case FaceMode_3Point:
@@ -221,24 +221,28 @@ unsigned int InsertFaceAction::PushNode(CurveNodeCluster* a_cluster, unsigned in
         }
     }
 
-    const unsigned int size = (unsigned int)a_cluster->Nodes.size();
+    const glm::vec3 pos = a_cluster->Nodes[0].Node.GetPosition();
+    const glm::vec3 otherPos = a_neighbour.Nodes[0].Node.GetPosition();
+    const glm::vec3 diff = otherPos - pos;
+    const float len = glm::length(diff);
+    const glm::vec3 norm = diff / len;
+    const glm::vec3 handlePos = pos + norm * (len * 0.25f);
 
+    const unsigned int size = (unsigned int)a_cluster->Nodes.size();
     for (unsigned int i = 0; i < size; ++i)
     {
         CurveNode& node = a_cluster->Nodes[i];
         if (node.Node.GetHandlePosition().x == infinity)
         {
-            node.Node.SetHandlePosition(a_cluster->Nodes[i].Node.GetPosition());
+            node.Node.SetHandlePosition(handlePos);
 
             return i;
         }
     }
 
-    const glm::vec3 pos = a_cluster->Nodes[0].Node.GetPosition();
-
     BezierCurveNode3 node;
     node.SetPosition(pos);
-    node.SetHandlePosition(pos);
+    node.SetHandlePosition(handlePos);
 
     a_cluster->Nodes.emplace_back(node);
 
@@ -316,12 +320,12 @@ bool InsertFaceAction::Execute()
         face.Index[FaceIndex_3Point_CA] = pointC;
         face.Index[FaceIndex_3Point_CB] = pointC;
 
-        face.ClusterIndex[FaceIndex_3Point_AB] = PushNode(&nodes[pointA], pointA, pointB, faces, faceCount);
-        face.ClusterIndex[FaceIndex_3Point_AC] = PushNode(&nodes[pointA], pointA, pointC, faces, faceCount);
-        face.ClusterIndex[FaceIndex_3Point_BA] = PushNode(&nodes[pointB], pointB, pointA, faces, faceCount);
-        face.ClusterIndex[FaceIndex_3Point_BC] = PushNode(&nodes[pointB], pointB, pointC, faces, faceCount);
-        face.ClusterIndex[FaceIndex_3Point_CA] = PushNode(&nodes[pointC], pointC, pointA, faces, faceCount);
-        face.ClusterIndex[FaceIndex_3Point_CB] = PushNode(&nodes[pointC], pointC, pointB, faces, faceCount);
+        face.ClusterIndex[FaceIndex_3Point_AB] = PushNode(&nodes[pointA], nodes[pointB], pointA, pointB, faces, faceCount);
+        face.ClusterIndex[FaceIndex_3Point_AC] = PushNode(&nodes[pointA], nodes[pointC], pointA, pointC, faces, faceCount);
+        face.ClusterIndex[FaceIndex_3Point_BA] = PushNode(&nodes[pointB], nodes[pointA], pointB, pointA, faces, faceCount);
+        face.ClusterIndex[FaceIndex_3Point_BC] = PushNode(&nodes[pointB], nodes[pointC], pointB, pointC, faces, faceCount);
+        face.ClusterIndex[FaceIndex_3Point_CA] = PushNode(&nodes[pointC], nodes[pointA], pointC, pointA, faces, faceCount);
+        face.ClusterIndex[FaceIndex_3Point_CB] = PushNode(&nodes[pointC], nodes[pointB], pointC, pointB, faces, faceCount);
 
         m_curveModel->EmplaceFace(face);
 
@@ -353,14 +357,14 @@ bool InsertFaceAction::Execute()
         face.Index[FaceIndex_4Point_DB] = pointC;
         face.Index[FaceIndex_4Point_DC] = pointC;
 
-        face.ClusterIndex[FaceIndex_4Point_AB] = PushNode(&nodes[pointA], pointA, pointB, faces, faceCount);
-        face.ClusterIndex[FaceIndex_4Point_AC] = PushNode(&nodes[pointA], pointA, pointC, faces, faceCount);
-        face.ClusterIndex[FaceIndex_4Point_BA] = PushNode(&nodes[pointB], pointB, pointA, faces, faceCount);
-        face.ClusterIndex[FaceIndex_4Point_BD] = PushNode(&nodes[pointB], pointB, pointD, faces, faceCount);
-        face.ClusterIndex[FaceIndex_4Point_CA] = PushNode(&nodes[pointD], pointD, pointA, faces, faceCount);
-        face.ClusterIndex[FaceIndex_4Point_CD] = PushNode(&nodes[pointD], pointD, pointC, faces, faceCount);
-        face.ClusterIndex[FaceIndex_4Point_DB] = PushNode(&nodes[pointC], pointC, pointB, faces, faceCount);
-        face.ClusterIndex[FaceIndex_4Point_DC] = PushNode(&nodes[pointC], pointC, pointD, faces, faceCount);
+        face.ClusterIndex[FaceIndex_4Point_AB] = PushNode(&nodes[pointA], nodes[pointB], pointA, pointB, faces, faceCount);
+        face.ClusterIndex[FaceIndex_4Point_AC] = PushNode(&nodes[pointA], nodes[pointD], pointA, pointD, faces, faceCount);
+        face.ClusterIndex[FaceIndex_4Point_BA] = PushNode(&nodes[pointB], nodes[pointA], pointB, pointA, faces, faceCount);
+        face.ClusterIndex[FaceIndex_4Point_BD] = PushNode(&nodes[pointB], nodes[pointC], pointB, pointC, faces, faceCount);
+        face.ClusterIndex[FaceIndex_4Point_CA] = PushNode(&nodes[pointD], nodes[pointA], pointD, pointA, faces, faceCount);
+        face.ClusterIndex[FaceIndex_4Point_CD] = PushNode(&nodes[pointD], nodes[pointC], pointD, pointC, faces, faceCount);
+        face.ClusterIndex[FaceIndex_4Point_DB] = PushNode(&nodes[pointC], nodes[pointB], pointC, pointB, faces, faceCount);
+        face.ClusterIndex[FaceIndex_4Point_DC] = PushNode(&nodes[pointC], nodes[pointD], pointC, pointD, faces, faceCount);
 
         m_curveModel->EmplaceFace(face);
 

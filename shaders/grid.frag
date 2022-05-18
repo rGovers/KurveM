@@ -29,12 +29,12 @@ void main()
 
     vec4 col = vec4(0.4.xxx, 1 - min(l, 1));
     
-    if(fragPos.z > -0.025 && fragPos.z < 0.025)
+    if(fragPos.z > -0.0025 && fragPos.z < 0.0025)
     {
         col = vec4(1, 0, 0, 1);
     }
     
-    if(fragPos.x > -0.025 && fragPos.x < 0.025)
+    if(fragPos.x > -0.0025 && fragPos.x < 0.0025)
     {
         col = vec4(0, 0, 1, 1);
     }

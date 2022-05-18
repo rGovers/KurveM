@@ -27,6 +27,7 @@
 #include "ToolActions/RotatePathNodeToolAction.h"
 #include "ToolActions/ScaleCurveNodeToolAction.h"
 #include "ToolActions/ScalePathNodeToolAction.h"
+#include "ToolSettings.h"
 #include "Transform.h"
 #include "TransformVisualizer.h"
 #include "Workspace.h"
@@ -93,7 +94,7 @@ bool EditEditor::IsInteractingCurveNodeHandle(const CurveNodeCluster& a_node, un
 {
     for (auto nodeIter = a_node.Nodes.begin(); nodeIter != a_node.Nodes.end(); ++nodeIter)
     {
-        if (SelectionControl::NodeHandleInPoint(a_viewProj, a_cursorPos, 0.025f, a_transform, nodeIter->Node))
+        if (SelectionControl::NodeHandleInPoint(a_viewProj, a_cursorPos, ToolSettings::EditHandleSize, a_transform, nodeIter->Node))
         {
             m_editor->PushAction(new MoveCurveNodeHandleAction(m_workspace, nodeIter - a_node.Nodes.begin(), a_nodeIndex, a_model, a_cursorPos, a_right, a_up, m_editor->GetMirrorMode()), "Error moving node handle");
 
@@ -107,7 +108,7 @@ bool EditEditor::IsInteractingPathNodeHandle(const PathNodeCluster& a_node, unsi
 {
     for (auto iter = a_node.Nodes.begin(); iter != a_node.Nodes.end(); ++iter)
     {
-        if (SelectionControl::NodeHandleInPoint(a_viewProj, a_cursorPos, 0.025f, a_transform, iter->Node))
+        if (SelectionControl::NodeHandleInPoint(a_viewProj, a_cursorPos, ToolSettings::EditHandleSize, a_transform, iter->Node))
         {
             m_editor->PushAction(new MovePathNodeHandleAction(m_workspace, a_nodeIndex, iter - a_node.Nodes.begin(), a_model, a_cursorPos, a_right, a_up, m_editor->GetMirrorMode()), "Error moving node handle");
 
@@ -391,12 +392,12 @@ NextArmatureDrawNodeLoop:;
                             {
                                 const glm::vec4 handlePos = modelMatrix * glm::vec4(iter->Node.GetHandlePosition(), 1);
 
-                                Gizmos::DrawLine(pos, handlePos, camFor, 0.005f, ColorTheme::Active);
-                                Gizmos::DrawCircleFilled(handlePos, camFor, 0.05f, 15, ColorTheme::Active);
+                                Gizmos::DrawLine(pos, handlePos, camFor, ToolSettings::EditLineSize, ColorTheme::Active);
+                                Gizmos::DrawCircleFilled(handlePos, camFor, ToolSettings::EditHandleSize, 10, ColorTheme::Active);
                             }
                             else
                             {
-                                Gizmos::DrawCircleFilled(pos, camFor, 0.05f, 15, ColorTheme::Active);
+                                Gizmos::DrawCircleFilled(pos, camFor, ToolSettings::EditHandleSize, 10, ColorTheme::Active);
                             }
                         }
 
@@ -404,7 +405,7 @@ NextArmatureDrawNodeLoop:;
                     }
                 }
 
-                Gizmos::DrawCircleFilled(pos, camFor, 0.025f, 10, ColorTheme::InActive);
+                Gizmos::DrawCircleFilled(pos, camFor, ToolSettings::EditInactiveHandleSize, 10, ColorTheme::InActive);
 
 NextCurveDrawNodeLoop:;
             }
@@ -452,8 +453,8 @@ NextCurveDrawNodeLoop:;
                             {
                                 const glm::vec4 hPos = modelMatrix * glm::vec4(handlePos, 1.0f);
 
-                                Gizmos::DrawLine(pos, hPos, camFor, 0.005f, ColorTheme::Active);
-                                Gizmos::DrawCircleFilled(hPos, camFor, 0.05f, 15, ColorTheme::Active);
+                                Gizmos::DrawLine(pos, hPos, camFor, ToolSettings::EditLineSize, ColorTheme::Active);
+                                Gizmos::DrawCircleFilled(hPos, camFor, ToolSettings::EditHandleSize, 10, ColorTheme::Active);
                             }
                         }
 
@@ -461,7 +462,7 @@ NextCurveDrawNodeLoop:;
                     }
                 }
 
-                Gizmos::DrawCircleFilled(pos, camFor, 0.025f, 10, ColorTheme::InActive);
+                Gizmos::DrawCircleFilled(pos, camFor, ToolSettings::EditInactiveHandleSize, 10, ColorTheme::InActive);
 
 NextPathDrawNodeLoop:;
             }

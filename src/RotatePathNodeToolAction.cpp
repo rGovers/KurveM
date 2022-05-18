@@ -10,6 +10,7 @@
 #include "LocalModel.h"
 #include "PathModel.h"
 #include "SelectionControl.h"
+#include "ToolSettings.h"
 #include "Transform.h"
 #include "TransformVisualizer.h"
 #include "Workspace.h"
@@ -26,13 +27,12 @@ RotatePathNodeToolAction::~RotatePathNodeToolAction()
 
 bool RotatePathNodeToolAction::Interact(const glm::mat4& a_viewProj, const glm::vec3& a_pos, const Camera* a_camera, const glm::vec2& a_cursorPos, const glm::vec2& a_screenSize, PathModel* a_model)
 {
-    constexpr float scale = 0.25f;
-    constexpr glm::vec3 scaleVec3 = glm::vec3(scale);
+    const glm::vec3 scaleVec3 = glm::vec3(ToolSettings::EditToolScale);
     constexpr glm::mat4 iden = glm::identity<glm::mat4>();
     constexpr glm::vec4 zeroVec4 = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
 
     const glm::vec3 axis = AxisControl::GetAxis(Axis_Y);
-    const glm::vec3 scaledAxis = axis * scale;
+    const glm::vec3 scaledAxis = axis * ToolSettings::EditToolScale;
 
     glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
     if (glm::abs(glm::dot(up, axis)) >= 0.95f)
@@ -132,8 +132,7 @@ bool RotatePathNodeToolAction::LeftReleased(Camera* a_camera, const glm::vec2& a
 void RotatePathNodeToolAction::Draw(Camera* a_camera)
 {
     constexpr glm::mat4 iden = glm::identity<glm::mat4>();
-    constexpr float scale = 0.25f;
-    constexpr glm::vec3 scale3 = glm::vec3(scale);
+    const glm::vec3 scale3 = glm::vec3(ToolSettings::EditToolScale);
 
     const Object* object = m_workspace->GetSelectedObject();
     if (object != nullptr)

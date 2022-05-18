@@ -43,7 +43,11 @@ struct CurveNode
     unsigned int FaceCount;
     BezierCurveNode3 Node;
 
-    CurveNode() {}
+    CurveNode() 
+    {
+        Node = BezierCurveNode3(glm::vec3(0.0f), glm::vec3(std::numeric_limits<float>::infinity()));
+        FaceCount = 0;
+    }
     CurveNode(const CurveNode& a_other)
     {
         Node = a_other.Node;

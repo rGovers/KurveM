@@ -283,7 +283,10 @@ Object* ObjectSerializer::ParseData(Workspace* a_workspace, Editor* a_editor, co
         }
         else if (strcmp(str, "ArmatureNode") == 0)
         {
-            obj->m_objectType = ObjectType_Armature;
+            if (obj->m_objectType != ObjectType_ArmatureNode)
+            {
+                obj->m_objectType = ObjectType_Armature;
+            }
 
             ParseData(a_workspace, a_editor, iter, obj, a_boneGroups, a_idMap);
         }

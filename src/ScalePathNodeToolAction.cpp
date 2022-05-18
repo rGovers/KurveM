@@ -9,6 +9,7 @@
 #include "LocalModel.h"
 #include "PathModel.h"
 #include "SelectionControl.h"
+#include "ToolSettings.h"
 #include "Transform.h"
 #include "TransformVisualizer.h"
 #include "Workspace.h"
@@ -25,13 +26,12 @@ ScalePathNodeToolAction::~ScalePathNodeToolAction()
 
 bool ScalePathNodeToolAction::Interact(const glm::mat4& a_viewProj, const glm::vec3& a_pos, e_Axis a_axis, const Camera* a_camera, const glm::vec2& a_cursorPos, const glm::vec2& a_screenSize, PathModel* a_model)
 {
-    constexpr float scale = 0.25f;
-    constexpr glm::vec3 scaleVec3 = glm::vec3(scale);
+    const glm::vec3 scaleVec3 = glm::vec3(ToolSettings::EditToolScale);
     constexpr glm::mat4 iden = glm::identity<glm::mat4>();
     constexpr glm::vec4 zeroVec4 = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
 
     const glm::vec3 axis = AxisControl::GetAxis(a_axis);
-    const glm::vec3 scaledAxis = axis * scale;
+    const glm::vec3 scaledAxis = axis * ToolSettings::EditToolScale;
 
     glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
     if (glm::abs(glm::dot(up, axis)) >= 0.95f)
@@ -134,8 +134,9 @@ void ScalePathNodeToolAction::Draw(Camera* a_camera)
     constexpr glm::mat4 iden = glm::identity<glm::mat4>();
     constexpr float pi = glm::pi<float>();
     constexpr float halfPi = pi * 0.5f;
-    constexpr float scale = 0.25f;
-    constexpr glm::vec3 scale3 = glm::vec3(scale);
+    const float scale = ToolSettings::EditToolScale;
+    const glm::vec3 scale3 = glm::vec3(scale);
+    const float lineScale = scale * 0.1f;
 
     const Object* object = m_workspace->GetSelectedObject();
     if (object != nullptr)
@@ -174,8 +175,8 @@ void ScalePathNodeToolAction::Draw(Camera* a_camera)
             Gizmos::DrawModel(glm::translate(iden, xAxis) * rightTransform, model, glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
             Gizmos::DrawModel(glm::translate(iden, yAxis) * forwardTransform, model, glm::vec4(0.0f, 1.0f, 0.0f, 1.0f));
 
-            Gizmos::DrawLine(fPos, fPos.xyz() + xAxis, viewInv[2], 0.01f, glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
-            Gizmos::DrawLine(fPos, fPos.xyz() + yAxis, viewInv[2], 0.01f, glm::vec4(0.0f, 1.0f, 0.0f, 1.0f));
+            Gizmos::DrawLine(fPos, fPos.xyz() + xAxis, viewInv[2], lineScale, glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
+            Gizmos::DrawLine(fPos, fPos.xyz() + yAxis, viewInv[2], lineScale, glm::vec4(0.0f, 1.0f, 0.0f, 1.0f));
         }
     }
 }

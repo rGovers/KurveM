@@ -99,32 +99,32 @@ void CameraController::FocusUpdate()
 
     if (glfwGetKey(window, GLFW_KEY_KP_1))
     {
-        camTransform->Translation() = { 0.0f, 0.0f, -10.0f };
+        camTransform->Translation() = { 0.0f, 0.0f, -Distance };
         camTransform->Quaternion() = glm::angleAxis(pi, up) * glm::angleAxis(pi2, right);
     }
     if (glfwGetKey(window, GLFW_KEY_KP_7))
     {
-        camTransform->Translation() = { 0.0f, 0.0f, 10.0f };
+        camTransform->Translation() = { 0.0f, 0.0f, Distance };
         camTransform->Quaternion() = glm::angleAxis(pi2, up) * glm::angleAxis(pi2, right);
     }
     if (glfwGetKey(window, GLFW_KEY_KP_8))
     {
-        camTransform->Translation() = { 0.0f, -10.0f, 0.0f };
+        camTransform->Translation() = { 0.0f, -Distance, 0.0f };
         camTransform->Quaternion() = glm::angleAxis(pi2, up) * glm::angleAxis(piHalf, right);
     }
     if (glfwGetKey(window, GLFW_KEY_KP_2))
     {
-        camTransform->Translation() = { 0.0f, 10.0f, 0.0f };
+        camTransform->Translation() = { 0.0f, Distance, 0.0f };
         camTransform->Quaternion() = glm::angleAxis(pi2, up) * glm::angleAxis(pi + piHalf, right);
     }
     if (glfwGetKey(window, GLFW_KEY_KP_4))
     {
-        camTransform->Translation() = { 10.0f, 0.0f, 0.0f };
+        camTransform->Translation() = { Distance, 0.0f, 0.0f };
         camTransform->Quaternion() = glm::angleAxis(piHalf, up) * glm::angleAxis(pi2, right);
     }
     if (glfwGetKey(window, GLFW_KEY_KP_6))
     {
-        camTransform->Translation() = { -10.0f, 0.0f, 0.0f };
+        camTransform->Translation() = { -Distance, 0.0f, 0.0f };
         camTransform->Quaternion() = glm::angleAxis(pi + piHalf, up) * glm::angleAxis(pi2, right);
     }
 

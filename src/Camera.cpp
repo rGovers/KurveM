@@ -35,8 +35,8 @@ glm::mat4 Camera::GetProjection(int a_width, int a_height) const
         const float halfWidth = a_width * 0.5f;
         const float halfHeight = a_height * 0.5f;
 
-        const float widthScale = halfWidth / 100.0f;
-        const float heightScale = halfHeight / 100.0f;
+        const float widthScale = halfWidth / 750.0f;
+        const float heightScale = halfHeight / 750.0f;
 
         return glm::ortho(-widthScale, widthScale, -heightScale, heightScale, -m_far, m_far);
     }
