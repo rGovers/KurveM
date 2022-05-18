@@ -110,7 +110,7 @@ void StridingMeshInterface::Tick(const glm::mat4* a_matrices, unsigned int a_mat
     const Vertex* vertices = m_mesh->GetVertices();
     if (vertexCount > 0)
     {
-        m_verts = new glm::vec4(vertexCount);
+        m_verts = new glm::vec4[vertexCount];
 
         for (unsigned int i = 0; i < vertexCount; ++i)
         {
