@@ -51,17 +51,7 @@ bool ExtrudePathNodeToolAction::Interact(const glm::mat4& a_viewProj, const glm:
         const unsigned int nodeCount = m_editor->GetSelectedNodeCount();
         const unsigned int* indices = m_editor->GetSelectedNodesArray();
 
-        Action* action = new ExtrudePathNodeAction(m_workspace, m_editor, indices, nodeCount, a_model, cPos, axis);
-        if (m_workspace->PushAction(action))
-        {
-            m_editor->SetCurrentAction(action);
-        }
-        else
-        {
-            printf("Error extruding path node \n");
-
-            delete action;
-        }
+        m_editor->PushAction(new ExtrudePathNodeAction(m_workspace, m_editor, indices, nodeCount, a_model, cPos, axis, m_editor->GetMirrorMode()), "Error extruding path node");
 
         delete[] indices;
 

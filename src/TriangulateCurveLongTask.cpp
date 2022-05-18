@@ -12,10 +12,23 @@ TriangulateCurveLongTask::TriangulateCurveLongTask(CurveModel* a_curveModel) :
     LongTask("Triangulate Curve")
 {
     m_curveModel = a_curveModel;
+
+    m_indices = nullptr;
+    m_vertices = nullptr;
 }
 TriangulateCurveLongTask::~TriangulateCurveLongTask()
 {
+    if (m_indices != nullptr)
+    {
+        delete[] m_indices;
+        m_indices = nullptr;
+    }
 
+    if (m_vertices != nullptr)
+    {
+        delete[] m_vertices;
+        m_vertices = nullptr;
+    }
 }
 
 bool TriangulateCurveLongTask::PushAction(Workspace* a_workspace)
@@ -50,6 +63,18 @@ bool TriangulateCurveLongTask::Execute()
         printf(e.what());
         printf("\n");
 
+        if (m_indices != nullptr)
+        {
+            delete[] m_indices;
+            m_indices = nullptr;
+        }
+
+        if (m_vertices != nullptr)
+        {
+            delete[] m_vertices;
+            m_vertices = nullptr;
+        }
+
         return false;
     }
 
@@ -57,8 +82,20 @@ bool TriangulateCurveLongTask::Execute()
 }
 void TriangulateCurveLongTask::PostExecute()
 {
-    m_curveModel->PostTriangulate(m_indices, m_indexCount, m_vertices, m_vertexCount);
+    if (m_indices != nullptr && m_vertices != nullptr)
+    {
+        m_curveModel->PostTriangulate(m_indices, m_indexCount, m_vertices, m_vertexCount);
+    }
 
-    delete[] m_indices;
-    delete[] m_vertices;
+    if (m_indices != nullptr)
+    {
+        delete[] m_indices;
+        m_indices = nullptr;
+    }
+
+    if (m_vertices != nullptr)
+    {
+        delete[] m_vertices;
+        m_vertices = nullptr;
+    }
 }

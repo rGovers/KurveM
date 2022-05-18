@@ -265,7 +265,7 @@ bool ImGuiExt::ImageSwitchButton(const char* a_label, const char* a_pathEnabled,
 
     bool ret = false;
 
-    Texture* tex = Datastore::GetTexture(path);
+    const Texture* tex = Datastore::GetTexture(path);
     if (tex != nullptr)
     {
         const ImGuiID id = ImGui::GetID(a_label);
@@ -281,7 +281,7 @@ bool ImGuiExt::ImageSwitchButton(const char* a_label, const char* a_pathEnabled,
     }
     else
     {
-        ImGui::Checkbox(a_label, a_state);
+        ret = ImGui::Checkbox(a_label, a_state);
     }
 
     style.Colors[ImGuiCol_Button] = color;

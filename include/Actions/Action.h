@@ -63,6 +63,7 @@ enum e_ActionType
     ActionType_SetSoftbodyLineVolumeStiffness,
     ActionType_SetRigidbodyMass,
     ActionType_SetSoftbodyMass,
+    ActionType_SymmetricPathNodeHandle,
     ActionType_TranslateObject,
     ActionType_TranslateObjectRelative,
     ActionType_End

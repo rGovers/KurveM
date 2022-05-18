@@ -232,13 +232,14 @@ void ObjectEditor::UpdateContextMenu(const glm::vec2& a_winPos, const glm::vec2&
     m_workspace->CreatePathObjectMenuList(nullptr);
     m_workspace->ImportObjectMenuList(nullptr);
 
-    ImGuiExt::Image("Textures/OBJECT_ARMATURE.png", glm::vec2(16.0f));
-
-    ImGui::SameLine();
+    if (ImGuiExt::Image("Textures/OBJECT_ARMATURE.png", glm::vec2(16.0f)))
+    {
+        ImGui::SameLine();
+    }
 
     if (ImGui::MenuItem("New Armature"))
     {
-        Action *action = new CreateObjectAction(m_workspace, nullptr, CreateObjectType_Armature);
+        Action* action = new CreateObjectAction(m_workspace, nullptr, CreateObjectType_Armature);
         if (!m_workspace->PushAction(action))
         {
             printf("Error Creating Armature \n");

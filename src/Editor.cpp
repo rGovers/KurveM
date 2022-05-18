@@ -12,6 +12,7 @@
 #include "Actions/MovePathNodeHandleAction.h"
 #include "Actions/RotateObjectRelativeAction.h"
 #include "Actions/ScaleObjectRelativeAction.h"
+#include "Actions/SymmetricPathNodeHandleAction.h"
 #include "Actions/TranslateObjectRelativeAction.h"
 #include "Application.h"
 #include "BezierCurveNode3.h"
@@ -84,6 +85,8 @@ Editor::~Editor()
     delete m_camera;
 
     delete m_engine;
+
+    delete m_inputController;
 }
 
 void Editor::Init()
@@ -456,6 +459,26 @@ void Editor::PathFDown(Object* a_object)
         if (!m_workspace->PushAction(m_curAction))
         {
             printf("Cannot insert path line \n");
+
+            delete m_curAction;
+            m_curAction = nullptr;
+        }
+
+        delete[] indices;
+    }
+}
+void Editor::PathMDown(Object* a_object)
+{
+    PathModel* model = a_object->GetPathModel();
+    if (model != nullptr)
+    {
+        const unsigned int size = m_selectedNodes.size();
+        const unsigned int* indices = GetSelectedNodesArray();
+
+        m_curAction = new SymmetricPathNodeHandleAction(m_workspace, indices, size, model, m_mirrorMode);
+        if (!m_workspace->PushAction(m_curAction))
+        {
+            printf("Cannot snap path node handles \n");
 
             delete m_curAction;
             m_curAction = nullptr;

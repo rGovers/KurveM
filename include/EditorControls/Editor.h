@@ -223,6 +223,7 @@ public:
 
     void PathDeleteDown(Object* a_object);
     void PathFDown(Object* a_object);
+    void PathMDown(Object* a_object);
 
     void Update(double a_delta, const glm::vec2& a_winPos, const glm::vec2& a_winSize);
     void UpdateContextMenu(const glm::vec2& a_winPos, const glm::vec2& a_winSize);

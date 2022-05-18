@@ -136,7 +136,7 @@ void ScalePathNodeToolAction::Draw(Camera* a_camera)
     constexpr float halfPi = pi * 0.5f;
     const float scale = ToolSettings::EditToolScale;
     const glm::vec3 scale3 = glm::vec3(scale);
-    const float lineScale = scale * 0.1f;
+    const float lineScale = scale * 0.05f;
 
     const Object* object = m_workspace->GetSelectedObject();
     if (object != nullptr)

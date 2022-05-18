@@ -184,9 +184,10 @@ bool HierarchyWindow::ObjectHeirachyGUI(Object* a_object, bool* a_blockMenu)
             m_workspace->CreatePathObjectMenuList(a_object);
             m_workspace->ImportObjectMenuList(a_object);
 
-            ImGuiExt::Image("Textures/OBJECT_ARMATURE.png", glm::vec2(16.0f));
-
-            ImGui::SameLine();
+            if (ImGuiExt::Image("Textures/OBJECT_ARMATURE.png", glm::vec2(16.0f)))
+            {
+                ImGui::SameLine();
+            }
 
             if (ImGui::MenuItem("New Armature"))
             {
@@ -286,9 +287,11 @@ void HierarchyWindow::Update(double a_delta)
             m_workspace->CreateCurveObjectMenuList(nullptr);
             m_workspace->CreatePathObjectMenuList(nullptr);
             m_workspace->ImportObjectMenuList(nullptr);
-            ImGuiExt::Image("Textures/OBJECT_ARMATURE.png", glm::vec2(16.0f));
-
-            ImGui::SameLine();
+            
+            if (ImGuiExt::Image("Textures/OBJECT_ARMATURE.png", glm::vec2(16.0f)))
+            {
+                ImGui::SameLine();
+            }
 
             if (ImGui::MenuItem("New Armature"))
             {

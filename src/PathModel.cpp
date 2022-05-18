@@ -711,11 +711,13 @@ void PathModel::GetModelData(int a_shapeSteps, int a_pathSteps, unsigned int** a
     index = 0;
     for (unsigned int i = 0; i < m_pathLineCount; ++i)
     {
-        const unsigned int indexA = m_pathLines[i].Index[0];
-        const unsigned int indexB = m_pathLines[i].Index[1];
+        const PathLine& line = m_pathLines[i];
 
-        const unsigned char clusterIndexA = m_pathLines[i].ClusterIndex[0];
-        const unsigned char clusterIndexB = m_pathLines[i].ClusterIndex[1];
+        const unsigned int indexA = line.Index[0];
+        const unsigned int indexB = line.Index[1];
+
+        const unsigned char clusterIndexA = line.ClusterIndex[0];
+        const unsigned char clusterIndexB = line.ClusterIndex[1];
 
         const glm::vec4 bodyI = glm::vec4((float)indexA / m_pathNodeCount, (float)indexB / m_pathNodeCount, 0.0f, 0.0f);
 
@@ -742,10 +744,10 @@ void PathModel::GetModelData(int a_shapeSteps, int a_pathSteps, unsigned int** a
             sRB = 1.0f;
         }
 
-        for (unsigned int j = 0; j <= a_pathSteps; ++j)
+        for (int j = 0; j <= a_pathSteps; ++j)
         {
-            const float lerp = (j + 0U) / (float)a_pathSteps;
-            const float nextLerp = (j + 1U) / (float)a_pathSteps;
+            const float lerp = j / (float)a_pathSteps;
+            const float nextLerp = (j + 1) / (float)a_pathSteps;
 
             const glm::vec3 pos = BezierCurveNode3::GetPoint(nodeA.Node, nodeB.Node, lerp);
             const glm::vec3 nextPos = BezierCurveNode3::GetPoint(nodeA.Node, nodeB.Node, nextLerp);
@@ -837,7 +839,7 @@ void PathModel::GetModelData(int a_shapeSteps, int a_pathSteps, unsigned int** a
 
             const glm::vec3 diff = vert.Position - cVert.Position;
 
-            if (glm::dot(diff, diff) <= 0.001f)
+            if (glm::length(diff) <= 0.01f)
             {
                 cVert.Normal += vert.Normal;
                 indexMap.emplace(i, j);
@@ -853,10 +855,12 @@ Next:;
 
     delete[] dirtyVertices;
 
-    *a_vertexCount = vertices.size();
-    *a_vertices = new Vertex[*a_vertexCount];
+    const unsigned int vertCount = (unsigned int)vertices.size();
 
-    for (unsigned int i = 0; i < *a_vertexCount; ++i)
+    *a_vertexCount = vertCount;
+    *a_vertices = new Vertex[vertCount];
+
+    for (unsigned int i = 0; i < vertCount; ++i)
     {
         Vertex& vert = vertices[i];
         vert.Normal = glm::normalize(vert.Normal);

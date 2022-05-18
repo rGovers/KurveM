@@ -56,7 +56,7 @@ void RunTasks(Workspace* a_workspace)
 
             if (curTask != nullptr && a_workspace->GetPostTask() == nullptr)
             {
-                if (!curTask->Execute() || timeOut > 5)
+                if (curTask->Execute() || timeOut > 5)
                 {
                     timeOut = 0;
                     a_workspace->PushCurrentTask();
@@ -767,6 +767,8 @@ void Workspace::PushModal(Modal* a_modal)
     {
         if (strcmp((*iter)->GetName(), a_modal->GetName()) == 0)
         {
+            delete a_modal;
+
             return;
         }
     }
@@ -863,6 +865,10 @@ void Workspace::PushLongTask(LongTask* a_longTask)
     if (a_longTask->PushAction(this))
     {
         m_taskQueue.emplace_back(a_longTask);
+    }
+    else
+    {
+        delete a_longTask;
     }
 }
 
@@ -1078,9 +1084,10 @@ void Workspace::UVWindowConfig()
 
 void Workspace::CreateCurveObjectMenuList(Object* a_parent)
 {
-    ImGuiExt::Image("Textures/OBJECT_CURVE.png", glm::vec2(16, 16));
-
-    ImGui::SameLine();
+    if (ImGuiExt::Image("Textures/OBJECT_CURVE.png", glm::vec2(16.0f)))
+    {
+        ImGui::SameLine();
+    }
 
     if (ImGui::BeginMenu("New Curve Object"))
     {
@@ -1133,9 +1140,10 @@ void Workspace::CreateCurveObjectMenuList(Object* a_parent)
 }
 void Workspace::CreatePathObjectMenuList(Object* a_parent)
 {
-    ImGuiExt::Image("Textures/OBJECT_PATH.png", glm::vec2(16, 16));
-
-    ImGui::SameLine();
+    if (ImGuiExt::Image("Textures/OBJECT_PATH.png", glm::vec2(16.0f)))
+    {
+        ImGui::SameLine();
+    }
 
     if (ImGui::BeginMenu("New Path Object"))
     {
@@ -1188,9 +1196,10 @@ void Workspace::CreatePathObjectMenuList(Object* a_parent)
 }
 void Workspace::ImportObjectMenuList(Object* a_parent)
 {
-    ImGuiExt::Image("Textures/OBJECT_REFERENCEIMAGE.png", glm::vec2(16, 16));
-
-    ImGui::SameLine();
+    if (ImGuiExt::Image("Textures/OBJECT_REFERENCEIMAGE.png", glm::vec2(16.0f)))
+    {
+        ImGui::SameLine();
+    }
 
     if (ImGui::BeginMenu("New Reference Image"))
     {
@@ -1337,9 +1346,9 @@ void Workspace::Update(double a_delta)
         if (m_postTask != nullptr)
         {
             m_postTask->PostExecute();
-            m_postTask = nullptr;
-
+            
             delete m_postTask;
+            m_postTask = nullptr;
         }
 
         if (m_taskQueue.size() > 0)

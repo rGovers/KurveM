@@ -20,7 +20,7 @@ void PhysicsDebugDrawer::drawLine(const btVector3& a_from, const btVector3& a_to
     const glm::vec3 to = glm::vec3(a_to.x(), a_to.y(), a_to.z());
     const glm::vec4 color = glm::vec4(a_color.x(), a_color.y(), a_color.z(), 1.0f);
 
-    Gizmos::DrawLine(from, to, m_cFor, 0.01f, color);
+    Gizmos::DrawLine(from, to, m_cFor, 0.001f, color);
 }
 void PhysicsDebugDrawer::drawContactPoint(const btVector3& a_pointOnB, const btVector3& a_normalOnB, btScalar a_distance, int a_lifeTime, const btVector3& a_color)
 {

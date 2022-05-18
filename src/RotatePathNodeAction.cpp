@@ -85,7 +85,7 @@ bool RotatePathNodeAction::Execute()
                     PathNodeCluster& c = nodes[index];
                     for (auto iter = c.Nodes.begin(); iter != c.Nodes.end(); ++iter)
                     {
-                        iter->Rotation = rot;
+                        iter->Rotation = -rot;
                     }
                 }
             }
@@ -122,7 +122,7 @@ bool RotatePathNodeAction::Revert()
                     PathNodeCluster& c = nodes[index];
                     for (auto iter = c.Nodes.begin(); iter != c.Nodes.end(); ++iter)
                     {
-                        iter->Rotation = rot;
+                        iter->Rotation = -rot;
                     }
                 }
             }

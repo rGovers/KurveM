@@ -10,10 +10,23 @@ TriangulatePathLongTask::TriangulatePathLongTask(PathModel* a_pathModel) :
     LongTask("Triangulate Path")
 {
     m_pathModel = a_pathModel;
+
+    m_indices = nullptr;
+    m_vertices = nullptr;
 }
 TriangulatePathLongTask::~TriangulatePathLongTask()
 {
+    if (m_indices != nullptr)
+    {
+        delete[] m_indices;
+        m_indices = nullptr;
+    }
 
+    if (m_vertices != nullptr)
+    {
+        delete[] m_vertices;
+        m_vertices = nullptr;
+    }
 }
 
 bool TriangulatePathLongTask::PushAction(Workspace* a_workspace)
@@ -48,6 +61,18 @@ bool TriangulatePathLongTask::Execute()
         printf(e.what());
         printf("\n");
 
+        if (m_indices != nullptr)
+    {
+        delete[] m_indices;
+        m_indices = nullptr;
+    }
+
+    if (m_vertices != nullptr)
+    {
+        delete[] m_vertices;
+        m_vertices = nullptr;
+    }
+
         return false;
     }
     
@@ -55,8 +80,20 @@ bool TriangulatePathLongTask::Execute()
 }
 void TriangulatePathLongTask::PostExecute()
 {
-    m_pathModel->PostTriangulate(m_indices, m_indexCount, m_vertices, m_vertexCount);
+    if (m_indices != nullptr && m_vertices != nullptr)
+    {
+        m_pathModel->PostTriangulate(m_indices, m_indexCount, m_vertices, m_vertexCount);
+    }
 
-    delete[] m_indices;
-    delete[] m_vertices;
+    if (m_indices != nullptr)
+    {
+        delete[] m_indices;
+        m_indices = nullptr;
+    }
+
+    if (m_vertices != nullptr)
+    {
+        delete[] m_vertices;
+        m_vertices = nullptr;
+    }
 }

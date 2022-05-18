@@ -310,6 +310,8 @@ void PropertiesWindow::ObjectTab()
             }
         }
 
+        delete[] buff;
+
         ImGui::Separator();
     }
 
