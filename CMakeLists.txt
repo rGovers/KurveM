@@ -1,5 +1,5 @@
-cmake_minimum_required (VERSION 2.9)
-project (KurveM)
+cmake_minimum_required (VERSION 3.0)
+project (KurveM VERSION 1.0)
 
 FILE (STRINGS "lib/bullet3/VERSION" BULLET_VERSION)
 
@@ -10,8 +10,8 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug" AND NOT WIN32)
     set (CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -fsanitize=address")
 endif()
 
-set (KURVEM_VERSION_MAJOR 0)
-set (KURVEM_VERSION_MINOR 1)
+set (KURVEM_VERSION_MAJOR ${CMAKE_PROJECT_VERSION_MAJOR})
+set (KURVEM_VERSION_MINOR ${CMAKE_PROJECT_VERSION_MINOR})
 
 add_compile_definitions(IMGUI_IMPL_OPENGL_LOADER_GLAD)
 

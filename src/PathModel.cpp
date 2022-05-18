@@ -236,6 +236,109 @@ NextIter:;
     }
 }
 
+unsigned int* PathModel::GetMirroredShapeIndices(unsigned int a_index, e_MirrorMode a_mode) const
+{
+    unsigned int* indices = new unsigned int[3];
+
+    const bool xMode = (a_mode & MirrorMode_X) != 0;
+    const bool yMode = (a_mode & MirrorMode_Y) != 0;
+
+    const glm::vec2 pos = m_shapeNodes[a_index].Nodes[0].GetPosition();
+
+    for (int i = 0; i < 3; ++i)
+    {
+        indices[i] = -1;
+
+        const e_MirrorMode mode = (e_MirrorMode)(i + 1);
+
+        if ((mode & MirrorMode_X && !xMode) ||
+            (mode & MirrorMode_Y && !yMode))
+        {
+            continue;
+        }
+
+        const glm::vec2 mul = GetMirrorMultiplier(mode).xy();
+        const glm::vec2 invPos = pos * mul;
+
+        for (unsigned int j = 0; j < m_shapeNodeCount; ++j)
+        {
+            if (j == a_index)
+            {
+                continue;
+            }
+
+            const glm::vec2 pos = m_shapeNodes[j].Nodes[0].GetPosition();
+
+            if (glm::length(pos - invPos) <= 0.0001f)
+            {
+                indices[i] = j;
+
+                break;
+            }
+        }
+    }
+
+    return indices;
+}
+void PathModel::GetMirroredShapeHandle(unsigned int a_index, unsigned char a_nodeIndex, e_MirrorMode a_mode, unsigned int** a_outIndex, unsigned char** a_outNodeIndex) const
+{
+    *a_outIndex = new unsigned int[3];
+    *a_outNodeIndex = new unsigned char[3];
+
+    const bool xMode = (a_mode & MirrorMode_X) != 0;
+    const bool yMode = (a_mode & MirrorMode_Y) != 0;
+
+    const BezierCurveNode2& node = m_shapeNodes[a_index].Nodes[a_nodeIndex];
+
+    const glm::vec2 pos = node.GetPosition();
+    const glm::vec2 hPos = node.GetHandlePosition();
+
+    for (int i = 0; i < 3; ++i)
+    {
+        (*a_outIndex)[i] = -1;
+        (*a_outNodeIndex)[i] = -1;
+
+        const e_MirrorMode mode = (e_MirrorMode)(i + 1);
+
+        if ((mode & MirrorMode_X && !xMode) ||
+            (mode & MirrorMode_Y && !yMode))
+        {
+            continue;
+        }
+
+        const glm::vec2 mul = GetMirrorMultiplier(mode).xy();
+        const glm::vec2 invPos = pos * mul;
+        const glm::vec2 invHPos = hPos * mul;
+
+        for (unsigned int j = 0; j < m_shapeNodeCount; ++j)
+        {
+            const ShapeNodeCluster& c = m_shapeNodes[j];
+
+            const glm::vec2 pos = c.Nodes[0].GetPosition();
+
+            if (glm::length(pos - invPos) <= 0.0001f)
+            {
+                const unsigned char size = (unsigned char)c.Nodes.size();
+
+                for (unsigned char k = 0; k < size; ++k)
+                {
+                    const glm::vec2 hPos = c.Nodes[k].GetHandlePosition();
+                    if (glm::length(hPos - invHPos) <= 0.0001f)
+                    {
+                        (*a_outIndex)[i] = j;
+                        (*a_outNodeIndex)[i] = k;
+
+                        goto NextIter;
+                    }
+                }
+            }
+        }
+
+NextIter:;
+    }
+
+}
+
 void PathModel::EmplacePathNodes(const PathNodeCluster* a_nodes, unsigned int a_nodeCount)
 {
     const unsigned int size = m_pathNodeCount + a_nodeCount;

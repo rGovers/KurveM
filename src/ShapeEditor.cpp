@@ -43,8 +43,8 @@ ShapeEditor::ShapeEditor(Workspace* a_workspace, Editor* a_editor)
         m_shapeActions[i] = nullptr;
     }
 
-    m_shapeActions[ToolMode_Translate] = new MoveShapeNodeToolAction(m_workspace, this);
-    m_shapeActions[ToolMode_Extrude] = new ExtrudeShapeNodeToolAction(m_workspace, this);
+    m_shapeActions[ToolMode_Translate] = new MoveShapeNodeToolAction(m_workspace, m_editor, this);
+    m_shapeActions[ToolMode_Extrude] = new ExtrudeShapeNodeToolAction(m_workspace, m_editor, this);
 
     Init();
 }
@@ -133,7 +133,7 @@ bool ShapeEditor::MoveNodeHandle(const glm::mat4& a_viewProj, const ShapeNodeClu
     {
         if (SelectionControl::NodeHandleInPoint(a_viewProj, a_cursorPos, 0.05f, *iter))
         {
-            m_currentAction = new MoveShapeNodeHandleAction(m_workspace, a_index, iter - nodes.begin(), a_pathModel, a_cursorPos);
+            m_currentAction = new MoveShapeNodeHandleAction(m_workspace, a_index, iter - nodes.begin(), a_pathModel, a_cursorPos, m_editor->GetMirrorMode());
             if (!m_workspace->PushAction(m_currentAction))
             {
                 printf("Error moving shape handle node \n");
@@ -145,8 +145,6 @@ bool ShapeEditor::MoveNodeHandle(const glm::mat4& a_viewProj, const ShapeNodeClu
             return true;
         }
     }
-
-    
 
     return false;
 }

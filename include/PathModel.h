@@ -221,6 +221,9 @@ public:
     unsigned int* GetMirroredPathIndices(unsigned int a_index, e_MirrorMode a_mode) const;
     void GetMirroredPathHandle(unsigned int a_index, unsigned char a_nodeIndex, e_MirrorMode a_mode, unsigned int** a_outIndex, unsigned char** a_outNodeIndex) const;
 
+    unsigned int* GetMirroredShapeIndices(unsigned int a_index, e_MirrorMode a_mode) const;
+    void GetMirroredShapeHandle(unsigned int a_index, unsigned char a_nodeIndex, e_MirrorMode a_mode, unsigned int** a_outIndex, unsigned char** a_outNodeIndex) const;
+
     void EmplacePathNodes(const PathNodeCluster* a_nodes, unsigned int a_nodeCount);
     void DestroyPathNodes(unsigned int a_startIndex, unsigned int a_endIndex);
 

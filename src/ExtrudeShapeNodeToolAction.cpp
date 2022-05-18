@@ -9,9 +9,10 @@
 #include "Transform.h"
 #include "Workspace.h"
 
-ExtrudeShapeNodeToolAction::ExtrudeShapeNodeToolAction(Workspace* a_workspace, ShapeEditor* a_shapeEditor)
+ExtrudeShapeNodeToolAction::ExtrudeShapeNodeToolAction(Workspace* a_workspace, Editor* a_editor, ShapeEditor* a_shapeEditor)
 {
     m_workspace = a_workspace;
+    m_editor = a_editor;
     m_shapeEditor = a_shapeEditor;
 }
 ExtrudeShapeNodeToolAction::~ExtrudeShapeNodeToolAction()
@@ -31,7 +32,7 @@ bool ExtrudeShapeNodeToolAction::Interact(const glm::mat4& a_viewProj, const glm
         const unsigned int nodeCount = m_shapeEditor->GetSelectedIndicesCount();
         const unsigned int* indices = m_shapeEditor->GetSelectedIndicesArray();
 
-        Action* action = new ExtrudeShapeNodeAction(m_workspace, m_shapeEditor, indices, nodeCount, a_model, a_cursorPos, axis);
+        Action* action = new ExtrudeShapeNodeAction(m_workspace, m_shapeEditor, indices, nodeCount, a_model, a_cursorPos, axis, m_editor->GetMirrorMode());
         if (m_workspace->PushAction(action))
         {
             m_shapeEditor->SetCurrentAction(action);

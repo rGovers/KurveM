@@ -9,9 +9,10 @@
 #include "SelectionControl.h"
 #include "Workspace.h"
 
-MoveShapeNodeToolAction::MoveShapeNodeToolAction(Workspace* a_workspace, ShapeEditor* a_shapeEditor)
+MoveShapeNodeToolAction::MoveShapeNodeToolAction(Workspace* a_workspace, Editor* a_editor, ShapeEditor* a_shapeEditor)
 {
     m_workspace = a_workspace;
+    m_editor = a_editor;
     m_shapeEditor = a_shapeEditor;
 }
 MoveShapeNodeToolAction::~MoveShapeNodeToolAction()
@@ -31,7 +32,7 @@ bool MoveShapeNodeToolAction::Interact(const glm::mat4& a_viewProj, const glm::v
         const unsigned int nodeCount = m_shapeEditor->GetSelectedIndicesCount();
         const unsigned int* indices = m_shapeEditor->GetSelectedIndicesArray();
 
-        Action* action = new MoveShapeNodeAction(m_workspace, indices, nodeCount, a_model, a_cursorPos, axis);
+        Action* action = new MoveShapeNodeAction(m_workspace, indices, nodeCount, a_model, a_cursorPos, axis, m_editor->GetMirrorMode());
         if (m_workspace->PushAction(action))
         {
             m_shapeEditor->SetCurrentAction(action);
