@@ -4,6 +4,7 @@
 #include "EditorControls/Editor.h"
 
 #include <list>
+#include <unordered_map>
 #include <vector>
 
 struct Vertex;
@@ -91,6 +92,15 @@ struct CurveFace
     unsigned int ClusterIndex[8];
 };
 
+struct CurveEdge
+{
+    unsigned int IndexL;
+    unsigned int IndexH;
+
+    unsigned int SetCount[2];
+    unsigned int* Set[2];
+};
+
 class CurveModel
 {
 private:
@@ -110,6 +120,17 @@ private:
     CurveFace*        m_faces;
     
     Model*            m_displayModel;
+
+    float GetNodeDist(const BezierCurveNode3& a_nodeA, const BezierCurveNode3& a_nodeB) const;
+
+    float BlendWeight(float a_weightA, float a_weightB, float a_lerp) const;
+
+    void GetBoneData(const BezierCurveNode3& a_nodeA, const BezierCurveNode3& a_nodeB, float a_lerp, glm::vec4* a_weights, glm::vec4* a_bones, unsigned int a_boneCount, const std::unordered_map<long long, unsigned int>& a_idMap) const;
+    void BlendBoneDataNL(const glm::vec4& a_bonesA, const glm::vec4& a_weightsA, const glm::vec4& a_bonesB, const glm::vec4& a_weightsB, float a_lerp, glm::vec4* a_bones, glm::vec4* a_weights) const;
+    void BlendBoneData(const glm::vec4& a_bonesA, const glm::vec4& a_weightsA, const glm::vec4& a_bonesB, const glm::vec4& a_weightsB, float a_lerp, glm::vec4* a_bones, glm::vec4* a_weights) const;
+    glm::vec2 BlendUV(const glm::vec2& a_start, const glm::vec2& a_end, float a_lerp) const;
+
+    unsigned int GetEdge(std::vector<CurveEdge>& a_edge, unsigned int a_indexA, unsigned int a_indexB, char* a_index) const;
 
     glm::vec3 GetMirrorMultiplier(e_MirrorMode a_mode) const;
 
