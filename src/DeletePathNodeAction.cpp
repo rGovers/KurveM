@@ -42,8 +42,6 @@ DeletePathNodeAction::DeletePathNodeAction(Workspace* a_workspace, Editor* a_edi
 
     m_pathModel = a_model;
 
-    m_own = false;
-
     m_oldNodes = m_pathModel->GetPathNodes();
     m_oldLines = m_pathModel->GetPathLines();
 
@@ -108,16 +106,10 @@ NextFace:;
 }
 DeletePathNodeAction::~DeletePathNodeAction()
 {
-    if (m_own)
-    {
-        delete[] m_oldNodes;
-        delete[] m_oldLines;
-    }
-    else
-    {
-        delete[] m_nodes;
-        delete[] m_lines;
-    }
+    delete[] m_oldNodes;
+    delete[] m_oldLines;
+    delete[] m_nodes;
+    delete[] m_lines;
 }
 
 e_ActionType DeletePathNodeAction::GetActionType()
@@ -135,9 +127,7 @@ bool DeletePathNodeAction::Execute()
     {
         m_editor->ClearSelectedNodes();
 
-        m_own = true;
-
-        m_pathModel->PassPathModelData(m_nodes, m_nodeCount, m_lines, m_lineCount);
+        m_pathModel->SetPathModelData(m_nodes, m_nodeCount, m_lines, m_lineCount);
         
         m_workspace->PushLongTask(new TriangulatePathLongTask(m_pathModel));
 
@@ -152,9 +142,7 @@ bool DeletePathNodeAction::Revert()
     {
         m_editor->ClearSelectedNodes();
 
-        m_own = false;
-
-        m_pathModel->PassPathModelData(m_oldNodes, m_oldNodeCount, m_oldLines, m_oldLineCount);
+        m_pathModel->SetPathModelData(m_oldNodes, m_oldNodeCount, m_oldLines, m_oldLineCount);
         
         m_workspace->PushLongTask(new TriangulatePathLongTask(m_pathModel));
 

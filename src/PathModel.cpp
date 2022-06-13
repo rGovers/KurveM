@@ -5,7 +5,6 @@
 
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtx/quaternion.hpp>
-#include <unordered_map>
 
 PathModel::PathModel(Workspace* a_workspace)
 {
@@ -604,6 +603,109 @@ void PathModel::PassShapeModelData(ShapeNodeCluster* a_shapeNodes, unsigned int 
     m_shapeLines = a_shapeLines;
 }
 
+void PathModel::GeneratePathStep(const PathLine& a_line, const std::vector<Vertex>& a_shapeVertices, float a_lerp, float a_nextLerp, const std::unordered_map<long long, unsigned int>& a_idMap, std::vector<Vertex>* a_vertices) const
+{
+    constexpr float infinity = std::numeric_limits<float>::infinity();
+    constexpr glm::mat4 iden = glm::identity<glm::mat4>();
+    constexpr float pi = glm::pi<float>();
+    constexpr float pi2 = pi * 2;
+
+    const unsigned int indexA = a_line.Index[0];
+    const unsigned int indexB = a_line.Index[1];
+
+    const unsigned char clusterIndexA = a_line.ClusterIndex[0];
+    const unsigned char clusterIndexB = a_line.ClusterIndex[1];
+
+    const glm::vec4 bodyI = glm::vec4((float)indexA / m_pathNodeCount, (float)indexB / m_pathNodeCount, 0.0f, 0.0f);
+
+    const PathNode& nodeA = m_pathNodes[indexA].Nodes[clusterIndexA];
+    const PathNode& nodeB = m_pathNodes[indexB].Nodes[clusterIndexB];
+
+    const PathNode& sNodeA = m_pathNodes[indexA].Nodes[0];
+    const PathNode& sNodeB = m_pathNodes[indexB].Nodes[0];
+
+    const glm::vec3 nDA = nodeA.Node.GetHandlePosition() - nodeA.Node.GetPosition();
+    // const glm::vec3 nDB = nodeB.Node.GetHandlePosition() - nodeB.Node.GetPosition();
+
+    const glm::vec3 nSDA = sNodeA.Node.GetHandlePosition() - sNodeA.Node.GetPosition();
+    // const glm::vec3 nSDB = sNodeB.Node.GetHandlePosition() - sNodeB.Node.GetPosition();
+
+    float sRA = -1.0f;
+    if (glm::dot(nDA, nSDA) >= 0.0f)
+    {
+        sRA = 1.0f;
+    }
+    // float sRB = -1.0f;
+    // if (glm::dot(nDB, nSDB) >= 0.0f)
+    // {
+    //     sRB = 1.0f;
+    // }
+
+    const glm::vec3 pPos = BezierCurveNode3::GetPoint(nodeA.Node, nodeB.Node, a_lerp);
+    const glm::vec3 nextPos = BezierCurveNode3::GetPoint(nodeA.Node, nodeB.Node, a_nextLerp);
+
+    unsigned int boneCount;
+    const BoneCluster* boneCluster = BezierCurveNode3::GetBonesLerp(nodeA.Node, nodeB.Node, a_lerp, &boneCount);
+
+    glm::vec4 bones = glm::vec4(0.0f);
+    glm::vec4 weights = glm::vec4(0.0f);
+
+    for (unsigned int i = 0; i < boneCount; ++i)
+    {
+        const BoneCluster& bone = boneCluster[i];
+
+        float min = infinity;
+        int index = 0;
+
+        for (int j = 0; j < 4; ++j)
+        {
+            const float weight = weights[j];
+
+            if (weight < min)
+            {
+                min = weight;
+                index = j;
+            }
+        }
+
+        if (bone.Weight > min)
+        {
+            weights[i] = bone.Weight;
+            bones[i] = a_idMap.at(bone.ID) / (float)boneCount;
+        }
+    }
+
+    delete[] boneCluster;
+
+    const glm::vec3 forward = glm::normalize(nextPos - pPos);
+
+    const float bL = glm::mix(0.0f, a_lerp, a_lerp);
+    const float bR = glm::mix(a_lerp, 1.0f, a_lerp);
+    const float bM = glm::mix(bL, bR, a_lerp);
+
+    const float rot = glm::mix(nodeA.Rotation * sRA, nodeB.Rotation * sRA, bM);
+    const glm::vec2 scale = glm::mix(nodeA.Scale, nodeB.Scale, bM);
+
+    const glm::vec4 bodyW = glm::vec4(1 - bM, bM, 0.0f, 0.0f);
+
+    const glm::quat rotAxis = glm::angleAxis(rot, forward);
+
+    for (auto iter = a_shapeVertices.begin(); iter != a_shapeVertices.end(); ++iter)
+    {
+        const Vertex& sVert = *iter;
+
+        const glm::vec3 norm = rotAxis * sVert.Normal;
+
+        const glm::vec2 scalePos = scale * sVert.Position.xz();
+        const glm::vec3 rotPos = rotAxis * glm::vec3(scalePos.x, 0.0f, scalePos.y);
+
+        const glm::vec3 pos = rotPos + pPos;
+
+        a_vertices->emplace_back(Vertex{ glm::vec4(pos, 1.0f), -norm, glm::vec2(0.0f), bones, weights, bodyI, bodyW });
+        a_vertices->emplace_back(Vertex{ glm::vec4(pos, 1.0f), norm, glm::vec2(0.0f), bones, weights, bodyI, bodyW });
+    }
+}
+
 void PathModel::GetModelData(int a_shapeSteps, int a_pathSteps, unsigned int** a_indices, unsigned int* a_indexCount, Vertex** a_vertices, unsigned int* a_vertexCount) const
 {
     constexpr glm::mat4 iden = glm::identity<glm::mat4>();
@@ -694,8 +796,7 @@ void PathModel::GetModelData(int a_shapeSteps, int a_pathSteps, unsigned int** a
         }
     }
 
-    const unsigned int shapeVertexCount = shapeVertices.size();
-    const unsigned int dirtyVertexCount = m_pathLineCount * (a_pathSteps + 1) * shapeVertexCount; 
+    const unsigned int shapeVertexCount = (unsigned int)shapeVertices.size();
 
     std::unordered_map<long long, unsigned int> idMap;
     const std::list<Object*> armNodes = GetArmatureNodes();
@@ -707,240 +808,433 @@ void PathModel::GetModelData(int a_shapeSteps, int a_pathSteps, unsigned int** a
         idMap.emplace((*iter)->GetID(), index++);
     }
 
-    Vertex* dirtyVertices = new Vertex[dirtyVertexCount];
-    index = 0;
-    for (unsigned int i = 0; i < m_pathLineCount; ++i)
+    std::unordered_map<unsigned int, unsigned int*> indexMap;
+
+    std::vector<Vertex> vertices;
+    std::vector<unsigned int> indices;
+    const unsigned int shapeLines = shapeIndexCount / 2;
+    const int iPathSteps = a_pathSteps - 1;
+    const unsigned int indexStep = shapeVertexCount * 2;
+
+    if (a_pathSteps <= 1)
     {
-        const PathLine& line = m_pathLines[i];
-
-        const unsigned int indexA = line.Index[0];
-        const unsigned int indexB = line.Index[1];
-
-        const unsigned char clusterIndexA = line.ClusterIndex[0];
-        const unsigned char clusterIndexB = line.ClusterIndex[1];
-
-        const glm::vec4 bodyI = glm::vec4((float)indexA / m_pathNodeCount, (float)indexB / m_pathNodeCount, 0.0f, 0.0f);
-
-        const PathNode& nodeA = m_pathNodes[indexA].Nodes[clusterIndexA];
-        const PathNode& nodeB = m_pathNodes[indexB].Nodes[clusterIndexB];
-
-        const PathNode& sNodeA = m_pathNodes[indexA].Nodes[0];
-        const PathNode& sNodeB = m_pathNodes[indexB].Nodes[0];
-
-        const glm::vec3 nDA = nodeA.Node.GetHandlePosition() - nodeA.Node.GetPosition();
-        const glm::vec3 nDB = nodeB.Node.GetHandlePosition() - nodeB.Node.GetPosition();
-
-        const glm::vec3 nSDA = sNodeA.Node.GetHandlePosition() - sNodeA.Node.GetPosition();
-        const glm::vec3 nSDB = sNodeB.Node.GetHandlePosition() - sNodeB.Node.GetPosition();
-
-        float sRA = -1.0f;
-        if (glm::dot(nDA, nSDA) >= 0.0f)
+        for (unsigned int i = 0; i < m_pathLineCount; ++i)
         {
-            sRA = 1.0f;
-        }
-        float sRB = -1.0f;
-        if (glm::dot(nDB, nSDB) >= 0.0f)
-        {
-            sRB = 1.0f;
-        }
+            const PathLine& line = m_pathLines[i];
+            
+            const unsigned int lIndexA = line.Index[0];
+            const unsigned int lIndexB = line.Index[1];
 
-        for (int j = 0; j <= a_pathSteps; ++j)
-        {
-            const float lerp = j / (float)a_pathSteps;
-            const float nextLerp = (j + 1) / (float)a_pathSteps;
+            const auto iterA = indexMap.find(lIndexA);
+            const auto iterB = indexMap.find(lIndexB);
 
-            const glm::vec3 pos = BezierCurveNode3::GetPoint(nodeA.Node, nodeB.Node, lerp);
-            const glm::vec3 nextPos = BezierCurveNode3::GetPoint(nodeA.Node, nodeB.Node, nextLerp);
+            const bool foundA = iterA != indexMap.end();
+            const bool foundB = iterB != indexMap.end();
 
-            unsigned int boneCount; 
-            const BoneCluster* boneCluster = BezierCurveNode3::GetBonesLerp(nodeA.Node, nodeB.Node, lerp, &boneCount);
+            const unsigned int start = (unsigned int)vertices.size();
 
-            glm::vec4 bones = glm::vec4(0.0f);
-            glm::vec4 weights = glm::vec4(0.0f);
-
-            for (unsigned int i = 0; i < boneCount; ++i)
+            if (foundA && foundB)
             {
-                const BoneCluster& bone = boneCluster[i];
-
-                float min = infinity;
-                int index = 0;
-
-                for (int j = 0; j < 4; ++j)
+                unsigned int* lIndA = iterA->second;
+                unsigned int* lIndB = iterB->second;
+                for (unsigned int i = 0; i < shapeLines; ++i)
                 {
-                    const float weight = weights[j];
+                    const unsigned int index = i * 2;
 
-                    if (weight < min)
+                    const unsigned int indexA = lIndA[index];
+                    const unsigned int indexB = lIndA[index + 1];
+                    const unsigned int indexC = lIndB[index];
+                    const unsigned int indexD = lIndB[index + 1];
+
+                    indices.emplace_back(indexA);
+                    indices.emplace_back(indexB);
+                    indices.emplace_back(indexC);
+
+                    indices.emplace_back(indexB);
+                    indices.emplace_back(indexD);
+                    indices.emplace_back(indexC);
+
+                    const unsigned int invA = indexA + 1;
+                    const unsigned int invB = indexB + 1;
+                    const unsigned int invC = indexC + 1;
+                    const unsigned int invD = indexD + 1;
+
+                    indices.emplace_back(invA);
+                    indices.emplace_back(invC);
+                    indices.emplace_back(invB);
+
+                    indices.emplace_back(invB);
+                    indices.emplace_back(invC);
+                    indices.emplace_back(invD);
+                }
+            }
+            else if (foundA)
+            {
+                GeneratePathStep(line, shapeVertices, 1.0f, 1.0f + (1.0f / a_pathSteps), idMap, &vertices);
+
+                unsigned int* idBuff = new unsigned int[shapeIndexCount];
+
+                unsigned int* lIndA = iterA->second;
+                for (unsigned int i = 0; i < shapeLines; ++i)
+                {
+                    const unsigned int index = i * 2;
+
+                    const unsigned int indexA = lIndA[index];
+                    const unsigned int indexB = lIndA[index + 1];
+                    const unsigned int indexC = start + (shapeIndices[index] * 2);
+                    const unsigned int indexD = start + (shapeIndices[index + 1] * 2);
+
+                    indices.emplace_back(indexA);
+                    indices.emplace_back(indexB);
+                    indices.emplace_back(indexC);
+
+                    indices.emplace_back(indexB);
+                    indices.emplace_back(indexD);
+                    indices.emplace_back(indexC);
+
+                    idBuff[index] = indexC;
+                    idBuff[index + 1] = indexD;
+
+                    const unsigned int invA = indexA + 1;
+                    const unsigned int invB = indexB + 1;
+                    const unsigned int invC = indexC + 1;
+                    const unsigned int invD = indexD + 1;
+
+                    indices.emplace_back(invA);
+                    indices.emplace_back(invC);
+                    indices.emplace_back(invB);
+
+                    indices.emplace_back(invB);
+                    indices.emplace_back(invC);
+                    indices.emplace_back(invD);
+                }
+
+                indexMap.emplace(lIndexB, idBuff);
+            }
+            else if (foundB)
+            {
+                GeneratePathStep(line, shapeVertices, 0.0f, 1.0f / a_pathSteps, idMap, &vertices);
+
+                unsigned int* idBuff = new unsigned int[shapeIndexCount];
+
+                unsigned int* lIndB = iterB->second;
+                for (unsigned int i = 0; i < shapeLines; ++i)
+                {
+                    const unsigned int index = i * 2;
+
+                    const unsigned int indexA = start + (shapeIndices[index] * 2);
+                    const unsigned int indexB = start + (shapeIndices[index + 1] * 2);
+                    const unsigned int indexC = lIndB[index];
+                    const unsigned int indexD = lIndB[index + 1];
+
+                    indices.emplace_back(indexA);
+                    indices.emplace_back(indexB);
+                    indices.emplace_back(indexC);
+
+                    indices.emplace_back(indexB);
+                    indices.emplace_back(indexD);
+                    indices.emplace_back(indexC);
+
+                    idBuff[index] = indexA;
+                    idBuff[index + 1] = indexB;
+
+                    const unsigned int invA = indexA + 1;
+                    const unsigned int invB = indexB + 1;
+                    const unsigned int invC = indexC + 1;
+                    const unsigned int invD = indexD + 1;
+
+                    indices.emplace_back(invA);
+                    indices.emplace_back(invC);
+                    indices.emplace_back(invB);
+
+                    indices.emplace_back(invB);
+                    indices.emplace_back(invC);
+                    indices.emplace_back(invD);
+                }
+
+                indexMap.emplace(lIndexA, idBuff);
+            }
+            else
+            {
+                GeneratePathStep(line, shapeVertices, 0.0f, 1.0f / a_pathSteps, idMap, &vertices);
+                GeneratePathStep(line, shapeVertices, 1.0f, 1.0f + (1.0f / a_pathSteps), idMap, &vertices);
+
+                unsigned int* idBuffA = new unsigned int[shapeIndexCount];
+                unsigned int* idBuffB = new unsigned int[shapeIndexCount];
+
+                for (unsigned int i = 0; i < shapeLines; ++i)
+                {
+                    const unsigned int index = i * 2;
+
+                    const unsigned int indexA = start + (shapeIndices[index] * 2);
+                    const unsigned int indexB = start + (shapeIndices[index + 1] * 2);
+                    const unsigned int indexC = indexA + indexStep;
+                    const unsigned int indexD = indexB + indexStep;
+
+                    indices.emplace_back(indexA);
+                    indices.emplace_back(indexB);
+                    indices.emplace_back(indexC);
+
+                    indices.emplace_back(indexB);
+                    indices.emplace_back(indexD);
+                    indices.emplace_back(indexC);
+
+                    idBuffA[index] = indexA;
+                    idBuffA[index + 1] = indexB;
+                    idBuffB[index] = indexC;
+                    idBuffB[index + 1] = indexD;
+
+                    const unsigned int invA = indexA + 1;
+                    const unsigned int invB = indexB + 1;
+                    const unsigned int invC = indexC + 1;
+                    const unsigned int invD = indexD + 1;
+
+                    indices.emplace_back(invA);
+                    indices.emplace_back(invC);
+                    indices.emplace_back(invB);
+
+                    indices.emplace_back(invB);
+                    indices.emplace_back(invC);
+                    indices.emplace_back(invD);
+                }
+
+                indexMap.emplace(lIndexA, idBuffA);
+                indexMap.emplace(lIndexB, idBuffB);
+            }
+        }
+    }
+    else
+    {
+        for (unsigned int i = 0; i < m_pathLineCount; ++i)
+        {
+            const PathLine& line = m_pathLines[i];
+
+            const unsigned int lIndexA = line.Index[0];
+            const unsigned int lIndexB = line.Index[1];
+
+            auto iter = indexMap.find(lIndexA);
+            if (iter != indexMap.end())
+            {
+                const unsigned int start = (unsigned int)vertices.size();
+
+                unsigned int* lInd = iter->second;
+                for (unsigned int i = 0; i < shapeLines; ++i)
+                {
+                    const unsigned int index = i * 2;
+
+                    const unsigned int indexA = lInd[index];
+                    const unsigned int indexB = lInd[index + 1];
+                    const unsigned int indexC = start + (shapeIndices[index] * 2);
+                    const unsigned int indexD = start + (shapeIndices[index + 1] * 2);
+
+                    indices.emplace_back(indexA);
+                    indices.emplace_back(indexB);
+                    indices.emplace_back(indexC);
+
+                    indices.emplace_back(indexB);
+                    indices.emplace_back(indexD);
+                    indices.emplace_back(indexC);
+
+                    const unsigned int invA = indexA + 1;
+                    const unsigned int invB = indexB + 1;
+                    const unsigned int invC = indexC + 1;
+                    const unsigned int invD = indexD + 1;
+
+                    indices.emplace_back(invA);
+                    indices.emplace_back(invC);
+                    indices.emplace_back(invB);
+
+                    indices.emplace_back(invB);
+                    indices.emplace_back(invC);
+                    indices.emplace_back(invD);
+                }
+            }
+            else
+            {
+                const unsigned int start = (unsigned int)vertices.size();
+
+                GeneratePathStep(line, shapeVertices, 0.0f, 1.0f / a_pathSteps, idMap, &vertices);
+
+                unsigned int* idBuff = new unsigned int[shapeIndexCount];
+
+                for (unsigned int i = 0; i < shapeLines; ++i)
+                {
+                    const unsigned int index = i * 2;
+
+                    const unsigned int indexA = start + shapeIndices[index] * 2;
+                    const unsigned int indexB = start + shapeIndices[index + 1] * 2;
+                    const unsigned int indexC = indexA + indexStep;
+                    const unsigned int indexD = indexB + indexStep;
+
+                    idBuff[index] = indexA;
+                    idBuff[index + 1] = indexB;
+
+                    indices.emplace_back(indexA);
+                    indices.emplace_back(indexB);
+                    indices.emplace_back(indexC);
+
+                    indices.emplace_back(indexB);
+                    indices.emplace_back(indexD);
+                    indices.emplace_back(indexC);
+
+                    const unsigned int invA = indexA + 1;
+                    const unsigned int invB = indexB + 1;
+                    const unsigned int invC = indexC + 1;
+                    const unsigned int invD = indexD + 1;
+
+                    indices.emplace_back(invA);
+                    indices.emplace_back(invC);
+                    indices.emplace_back(invB);
+
+                    indices.emplace_back(invB);
+                    indices.emplace_back(invC);
+                    indices.emplace_back(invD);
+                }
+
+                indexMap.emplace(lIndexA, idBuff);
+            }
+
+            for (int i = 0; i < iPathSteps; ++i)
+            {
+                const unsigned int start = (unsigned int)vertices.size();
+
+                GeneratePathStep(line, shapeVertices, (float)(i + 1) / a_pathSteps, (float)(i + 2) / a_pathSteps, idMap, &vertices);
+
+                if (i < iPathSteps - 1)
+                {
+                    for (unsigned int j = 0; j < shapeLines; ++j)
                     {
-                        min = weight;
-                        index = j;
+                        const unsigned int index = j * 2;
+
+                        const unsigned int indexA = start + shapeIndices[index] * 2;
+                        const unsigned int indexB = start + shapeIndices[index + 1] * 2;
+                        const unsigned int indexC = indexA + indexStep;
+                        const unsigned int indexD = indexB + indexStep;
+
+                        indices.emplace_back(indexA);
+                        indices.emplace_back(indexB);
+                        indices.emplace_back(indexC);
+
+                        indices.emplace_back(indexB);
+                        indices.emplace_back(indexD);
+                        indices.emplace_back(indexC);
+
+                        const unsigned int invA = indexA + 1;
+                        const unsigned int invB = indexB + 1;
+                        const unsigned int invC = indexC + 1;
+                        const unsigned int invD = indexD + 1;
+
+                        indices.emplace_back(invA);
+                        indices.emplace_back(invC);
+                        indices.emplace_back(invB);
+
+                        indices.emplace_back(invB);
+                        indices.emplace_back(invC);
+                        indices.emplace_back(invD);
                     }
                 }
+            }
 
-                if (bone.Weight > min)
+            iter = indexMap.find(lIndexB);
+            if (iter != indexMap.end())
+            {
+                const unsigned int start = (unsigned int)vertices.size() - indexStep;
+
+                unsigned int* lInd = iter->second;
+                for (unsigned int i = 0; i < shapeLines; ++i)
                 {
-                    weights[i] = bone.Weight;
-                    bones[i] = idMap[bone.ID] / (float)boneCount;
+                    const unsigned int index = i * 2;
+
+                    const unsigned int indexA = lInd[index];
+                    const unsigned int indexB = lInd[index + 1];
+                    const unsigned int indexC = start + (shapeIndices[index] * 2);
+                    const unsigned int indexD = start + (shapeIndices[index + 1] * 2);
+
+                    indices.emplace_back(indexA);
+                    indices.emplace_back(indexB);
+                    indices.emplace_back(indexC);
+
+                    indices.emplace_back(indexB);
+                    indices.emplace_back(indexD);
+                    indices.emplace_back(indexC);
+
+                    const unsigned int invA = indexA + 1;
+                    const unsigned int invB = indexB + 1;
+                    const unsigned int invC = indexC + 1;
+                    const unsigned int invD = indexD + 1;
+
+                    indices.emplace_back(invA);
+                    indices.emplace_back(invC);
+                    indices.emplace_back(invB);
+
+                    indices.emplace_back(invB);
+                    indices.emplace_back(invC);
+                    indices.emplace_back(invD);
                 }
             }
-
-            delete[] boneCluster;
-
-            const glm::vec3 forward = glm::normalize(nextPos - pos);
-            
-            const float rot = glm::mix(nodeA.Rotation * sRA, nodeB.Rotation * sRB, lerp);
-
-            glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
-            if (glm::abs(glm::dot(up, forward)) >= 0.95f)
+            else
             {
-                up = glm::vec3(0.0f, 0.0f, 1.0f);
-            }
-            // Need to apply rotation around the axis to allow the rotation property to work this should theoretically allow it
-            const glm::vec3 right = glm::normalize(glm::angleAxis(rot, forward) * glm::cross(up, forward));
-            up = glm::cross(forward, right);
+                const unsigned int start = (unsigned int)vertices.size();
 
-            // Using a rotation matrix because quaternions do not work well with a axis with no rotation
-            // Deliberatly mixing axis to correct perspective
-            // Forward axis is relative to the next curve point
-            const glm::mat3 rotMat = glm::mat3(right, forward, up);
+                GeneratePathStep(line, shapeVertices, 1.0f, 1.0f + (1.0f / a_pathSteps), idMap, &vertices);
 
-            const glm::vec2 scale = glm::mix(nodeA.Scale, nodeB.Scale, lerp);
+                unsigned int* idBuff = new unsigned int[shapeIndexCount];
 
-            const glm::mat4 mat = glm::translate(iden, pos) * glm::mat4(rotMat) * glm::scale(iden, glm::vec3(scale.x, 1.0f, scale.y));
+                for (unsigned int i = 0; i < shapeLines; ++i)
+                {
+                    const unsigned int index = i * 2;
 
-            const float bL = glm::mix(0.0f, lerp, lerp);
-            const float bR = glm::mix(lerp, 1.0f, lerp);
-            const float bM = glm::mix(bL, bR, lerp);
+                    const unsigned int indexA = start + shapeIndices[index] * 2;
+                    const unsigned int indexB = start + shapeIndices[index + 1] * 2;
+                    const unsigned int indexC = indexA - indexStep;
+                    const unsigned int indexD = indexB - indexStep;
 
-            const glm::vec4 bodyW = glm::vec4(1 - bM, bM, 0.0f, 0.0f);
+                    indices.emplace_back(indexA);
+                    indices.emplace_back(indexC);
+                    indices.emplace_back(indexB);
 
-            for (unsigned int k = 0; k < shapeVertexCount; ++k)
-            {
-                const Vertex& sVert = shapeVertices[k];
-                const glm::vec4 pos = mat * sVert.Position; 
-                const glm::vec3 norm = rotMat * sVert.Normal;
+                    indices.emplace_back(indexB);
+                    indices.emplace_back(indexC);
+                    indices.emplace_back(indexD);
 
-                dirtyVertices[index++] = Vertex{ pos, norm, glm::vec2(0.0f), bones, weights, bodyI, bodyW };
+                    idBuff[index] = indexA;
+                    idBuff[index + 1] = indexB;
+
+                    const unsigned int invA = indexA + 1;
+                    const unsigned int invB = indexB + 1;
+                    const unsigned int invC = indexC + 1;
+                    const unsigned int invD = indexD + 1;
+
+                    indices.emplace_back(invA);
+                    indices.emplace_back(invB);
+                    indices.emplace_back(invC);
+
+                    indices.emplace_back(invB);
+                    indices.emplace_back(invD);
+                    indices.emplace_back(invC);
+                }
+
+                indexMap.emplace(lIndexB, idBuff);
             }
         }
     }
 
-    std::unordered_map<unsigned int, unsigned int> indexMap;
-    
-    std::vector<Vertex> vertices;
-    vertices.reserve(dirtyVertexCount);
-    for (unsigned int i = 0; i < dirtyVertexCount; ++i)
+    *a_vertexCount = (unsigned int)vertices.size();
+    *a_vertices = new Vertex[*a_vertexCount];
+
+    for (unsigned int i = 0; i < *a_vertexCount; ++i)
     {
-        const unsigned int size = (unsigned int)vertices.size();
-        const Vertex& vert = dirtyVertices[i];
-
-        for (unsigned int j = 0; j < size; ++j)
-        {
-            Vertex& cVert = vertices[j];
-
-            const glm::vec3 diff = vert.Position - cVert.Position;
-
-            if (glm::length(diff) <= 0.01f)
-            {
-                cVert.Normal += vert.Normal;
-                indexMap.emplace(i, j);
-
-                goto Next;
-            }
-        }
-
-        indexMap.emplace(i, size);
-        vertices.emplace_back(vert);
-Next:;
+        (*a_vertices)[i] = vertices[i];
     }
 
-    delete[] dirtyVertices;
-
-    const unsigned int vertCount = (unsigned int)vertices.size();
-
-    *a_vertexCount = vertCount;
-    *a_vertices = new Vertex[vertCount];
-
-    for (unsigned int i = 0; i < vertCount; ++i)
+    for (auto iter = indexMap.begin(); iter != indexMap.end(); ++iter)
     {
-        Vertex& vert = vertices[i];
-        vert.Normal = glm::normalize(vert.Normal);
-        (*a_vertices)[i] = vert;
-    }
-
-    std::vector<unsigned int> indices;
-
-    const unsigned int pathSize = shapeVertexCount * (a_pathSteps + 1);
-    const unsigned int shapeLines = shapeIndexCount / 2;
-    for (unsigned int i = 0; i < m_pathLineCount; ++i)
-    {
-        const unsigned int pathIndex = i * pathSize;
-        for (unsigned int j = 0; j < shapeLines; ++j)
-        {
-            const unsigned int jS = j * 2;
-            const unsigned int sIndexA = shapeIndices[jS + 0];
-            const unsigned int sIndexB = shapeIndices[jS + 1];
-
-            for (unsigned int k = 0; k < a_pathSteps; ++k)
-            {
-                const unsigned int lA = (k + 0) * shapeVertexCount;
-                const unsigned int lB = (k + 1) * shapeVertexCount;
-
-                const unsigned int indexA = indexMap[pathIndex + lA + sIndexA];
-                const unsigned int indexB = indexMap[pathIndex + lA + sIndexB];
-                const unsigned int indexC = indexMap[pathIndex + lB + sIndexA];
-                const unsigned int indexD = indexMap[pathIndex + lB + sIndexB];
-
-                if (indexA == indexD || indexB == indexC || (indexA == indexC && indexB == indexD))
-                {
-                    continue;
-                }
-
-                // Points merged makes a Tri
-                if (indexA == indexB || indexA == indexC)
-                {
-                    indices.emplace_back(indexB);
-                    indices.emplace_back(indexC);
-                    indices.emplace_back(indexD);
-
-                    indices.emplace_back(indexB);
-                    indices.emplace_back(indexD);
-                    indices.emplace_back(indexC);
-                }
-                // Points merged makes a Tri
-                else if (indexD == indexC || indexD == indexB)
-                {
-                    indices.emplace_back(indexA);
-                    indices.emplace_back(indexB);
-                    indices.emplace_back(indexC);
-
-                    indices.emplace_back(indexA);
-                    indices.emplace_back(indexC);
-                    indices.emplace_back(indexB);
-                }
-                // Makes a Quad
-                else
-                {
-                    indices.emplace_back(indexA);
-                    indices.emplace_back(indexB);
-                    indices.emplace_back(indexC);
-                    indices.emplace_back(indexB);
-                    indices.emplace_back(indexD);
-                    indices.emplace_back(indexC);
-
-                    indices.emplace_back(indexA);
-                    indices.emplace_back(indexC);
-                    indices.emplace_back(indexB);
-                    indices.emplace_back(indexB);
-                    indices.emplace_back(indexC);
-                    indices.emplace_back(indexD);
-                }
-            }       
-        }
+        delete[] iter->second;
     }
 
     delete[] shapeIndices;
 
-    *a_indexCount = indices.size();
+    *a_indexCount = (unsigned int)indices.size();
     *a_indices = new unsigned int[*a_indexCount];
 
     for (unsigned int i = 0; i < *a_indexCount; ++i)

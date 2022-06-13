@@ -1,6 +1,7 @@
 #pragma once
 
 #include <list>
+#include <unordered_map>
 #include <vector>
 
 #include "BezierCurveNode2.h"
@@ -126,6 +127,8 @@ private:
 
     void GetArmatureNodes(std::list<Object*>* a_list, Object* a_object) const;
     glm::vec3 GetMirrorMultiplier(e_MirrorMode a_mode) const;
+
+    void GeneratePathStep(const PathLine& a_line, const std::vector<Vertex>& a_shapeVertices, float a_lerp, float a_nextLerp, const std::unordered_map<long long, unsigned int>& a_idMap, std::vector<Vertex>* a_vertices) const;
 
 protected:
 

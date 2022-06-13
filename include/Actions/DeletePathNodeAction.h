@@ -26,8 +26,6 @@ private:
     unsigned int     m_lineCount;
     PathLine*        m_lines;
 
-    bool             m_own;
-
     unsigned int     m_oldNodeCount;
     PathNodeCluster* m_oldNodes;
     unsigned int     m_oldLineCount;

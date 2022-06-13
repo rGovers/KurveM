@@ -94,7 +94,7 @@ bool EditEditor::IsInteractingCurveNodeHandle(const CurveNodeCluster& a_node, un
 {
     for (auto nodeIter = a_node.Nodes.begin(); nodeIter != a_node.Nodes.end(); ++nodeIter)
     {
-        if (SelectionControl::NodeHandleInPoint(a_viewProj, a_cursorPos, ToolSettings::EditHandleSize, a_transform, nodeIter->Node))
+        if (SelectionControl::NodeHandleInPoint(a_viewProj, a_cursorPos, ToolSettings::EditHandleSize * 2, a_transform, nodeIter->Node))
         {
             m_editor->PushAction(new MoveCurveNodeHandleAction(m_workspace, nodeIter - a_node.Nodes.begin(), a_nodeIndex, a_model, a_cursorPos, a_right, a_up, m_editor->GetMirrorMode()), "Error moving node handle");
 
@@ -108,7 +108,7 @@ bool EditEditor::IsInteractingPathNodeHandle(const PathNodeCluster& a_node, unsi
 {
     for (auto iter = a_node.Nodes.begin(); iter != a_node.Nodes.end(); ++iter)
     {
-        if (SelectionControl::NodeHandleInPoint(a_viewProj, a_cursorPos, ToolSettings::EditHandleSize, a_transform, iter->Node))
+        if (SelectionControl::NodeHandleInPoint(a_viewProj, a_cursorPos, ToolSettings::EditHandleSize * 2, a_transform, iter->Node))
         {
             m_editor->PushAction(new MovePathNodeHandleAction(m_workspace, a_nodeIndex, iter - a_node.Nodes.begin(), a_model, a_cursorPos, a_right, a_up, m_editor->GetMirrorMode()), "Error moving node handle");
 
