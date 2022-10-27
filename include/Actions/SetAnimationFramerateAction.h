@@ -21,7 +21,7 @@ public:
     SetAnimationFramerateAction(Animation* a_animation, int a_framerate);
     virtual ~SetAnimationFramerateAction();
 
-    virtual e_ActionType GetActionType();
+    virtual e_ActionType GetActionType() const;
 
     inline void SetFramerate(int a_value)
     {

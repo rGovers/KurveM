@@ -29,9 +29,14 @@ SetPlaneCollisionShapeDistanceAction::~SetPlaneCollisionShapeDistanceAction()
     delete[] m_oldDist;
 }
 
-e_ActionType SetPlaneCollisionShapeDistanceAction::GetActionType()
+e_ActionType SetPlaneCollisionShapeDistanceAction::GetActionType() const
 {
     return ActionType_SetPlaneCollisionShapeDistance;
+}
+
+void SetPlaneCollisionShapeDistanceAction::SetData(void* a_data)
+{
+    m_newDist = *(float*)a_data;
 }
 
 bool SetPlaneCollisionShapeDistanceAction::Redo()

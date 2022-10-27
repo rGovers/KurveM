@@ -23,7 +23,7 @@ public:
     SetPathArmatureAction(Workspace* a_workspace, Object* const* a_objects, unsigned int a_objectCount, long long a_id);
     virtual ~SetPathArmatureAction();
 
-    virtual e_ActionType GetActionType();
+    virtual e_ActionType GetActionType() const;
 
     inline void SetID(long long a_value)
     {

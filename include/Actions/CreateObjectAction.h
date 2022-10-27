@@ -44,7 +44,7 @@ public:
     CreateObjectAction(Workspace* a_workspace, Object* a_parent, const char* a_texPath);
     virtual ~CreateObjectAction();
 
-    virtual e_ActionType GetActionType();
+    virtual e_ActionType GetActionType() const;
 
     virtual bool Redo();
     virtual bool Execute();

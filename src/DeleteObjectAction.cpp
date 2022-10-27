@@ -25,7 +25,7 @@ DeleteObjectAction::~DeleteObjectAction()
     }
 }
 
-e_ActionType DeleteObjectAction::GetActionType() 
+e_ActionType DeleteObjectAction::GetActionType() const
 {
     return ActionType_DeleteObject;
 }

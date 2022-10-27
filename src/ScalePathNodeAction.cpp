@@ -44,7 +44,7 @@ ScalePathNodeAction::~ScalePathNodeAction()
     delete[] m_mirrorIndices;
 }
 
-e_ActionType ScalePathNodeAction::GetActionType()
+e_ActionType ScalePathNodeAction::GetActionType() const
 {
     return ActionType_ScalePathNode;
 }

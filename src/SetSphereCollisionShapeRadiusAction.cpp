@@ -29,9 +29,14 @@ SetSphereCollisionShapeRadiusAction::~SetSphereCollisionShapeRadiusAction()
     delete[] m_objects;
 }
 
-e_ActionType SetSphereCollisionShapeRadiusAction::GetActionType()
+e_ActionType SetSphereCollisionShapeRadiusAction::GetActionType() const
 {
     return ActionType_SetSphereCollisionShapeRadius;
+}
+
+void SetSphereCollisionShapeRadiusAction::SetData(void* a_data)
+{
+    m_newRadius = *(float*)a_data;
 }
 
 bool SetSphereCollisionShapeRadiusAction::Redo()

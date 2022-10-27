@@ -30,9 +30,14 @@ SetBoxCollisionShapeHalfExtentsAction::~SetBoxCollisionShapeHalfExtentsAction()
     delete[] m_oldHalfExtents;
 }
 
-e_ActionType SetBoxCollisionShapeHalfExtentsAction::GetActionType()
+e_ActionType SetBoxCollisionShapeHalfExtentsAction::GetActionType() const
 {
     return ActionType_SetBoxCollisionShapeHalfExtents;
+}
+
+void SetBoxCollisionShapeHalfExtentsAction::SetData(void* a_data)
+{
+    m_newHalfExtents = *(glm::vec3*)a_data;
 }
 
 bool SetBoxCollisionShapeHalfExtentsAction::Redo()

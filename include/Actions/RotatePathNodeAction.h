@@ -34,7 +34,7 @@ public:
     RotatePathNodeAction(Workspace* a_workspace, const unsigned int* a_indices, unsigned int a_indexCount, PathModel* a_model, const glm::vec3& a_startPos, const glm::vec3& a_axis, e_MirrorMode a_mirrorMode);
     virtual ~RotatePathNodeAction();
 
-    virtual e_ActionType GetActionType();
+    virtual e_ActionType GetActionType() const;
 
     inline void SetRotation(const glm::vec3& a_pos)
     {

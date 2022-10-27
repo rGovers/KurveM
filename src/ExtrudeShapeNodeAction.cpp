@@ -59,7 +59,7 @@ glm::vec2 ExtrudeShapeNodeAction::GetMirrorMultiplier(e_MirrorMode a_mode) const
     return mul;
 }
 
-e_ActionType ExtrudeShapeNodeAction::GetActionType()
+e_ActionType ExtrudeShapeNodeAction::GetActionType() const
 {
     return ActionType_ExtrudeShapeNode;
 }

@@ -34,7 +34,7 @@ ScaleObjectRelativeAction::~ScaleObjectRelativeAction()
     delete[] m_oldScale;
 }
 
-e_ActionType ScaleObjectRelativeAction::GetActionType()
+e_ActionType ScaleObjectRelativeAction::GetActionType() const
 {
     return ActionType_ScaleObjectRelative;
 }

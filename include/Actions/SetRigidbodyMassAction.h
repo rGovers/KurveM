@@ -20,7 +20,7 @@ public:
     SetRigidbodyMassAction(Object* const* a_objects, unsigned int a_objectCount, float a_mass);
     virtual ~SetRigidbodyMassAction();
 
-    virtual e_ActionType GetActionType();
+    virtual e_ActionType GetActionType() const;
 
     inline void SetMass(float a_value)
     {

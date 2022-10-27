@@ -31,9 +31,14 @@ SetSoftbodyMassAction::~SetSoftbodyMassAction()
     delete[] m_oldMass;
 }
 
-e_ActionType SetSoftbodyMassAction::GetActionType()
+e_ActionType SetSoftbodyMassAction::GetActionType() const
 {
     return ActionType_SetSoftbodyMass;
+}
+
+void SetSoftbodyMassAction::SetData(void* a_data)
+{
+    m_newMass = *(float*)a_data;
 }
 
 bool SetSoftbodyMassAction::Redo()

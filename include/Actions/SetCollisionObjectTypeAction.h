@@ -30,7 +30,7 @@ public:
     SetCollisionObjectTypeAction(e_CollisionObjectType a_type, Object* const* a_objs, unsigned int a_objectCount, Workspace* a_workspace, PhysicsEngine* a_engine);
     virtual ~SetCollisionObjectTypeAction();
 
-    virtual e_ActionType GetActionType();
+    virtual e_ActionType GetActionType() const;
 
     inline void SetType(e_CollisionObjectType a_type)
     {

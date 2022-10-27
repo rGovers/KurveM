@@ -33,9 +33,14 @@ SetCurveArmatureAction::~SetCurveArmatureAction()
     delete[] m_objects;
 }
 
-e_ActionType SetCurveArmatureAction::GetActionType() 
+e_ActionType SetCurveArmatureAction::GetActionType() const
 {
     return ActionType_SetCurveArmature;
+}
+
+void SetCurveArmatureAction::SetData(void* a_data)
+{
+    m_newID = *(long long*)a_data;
 }
 
 bool SetCurveArmatureAction::Redo()

@@ -31,7 +31,7 @@ SetPathArmatureAction::~SetPathArmatureAction()
     delete[] m_objects;
 }
 
-e_ActionType SetPathArmatureAction::GetActionType()
+e_ActionType SetPathArmatureAction::GetActionType() const
 {
     return ActionType_SetPathArmature;
 }

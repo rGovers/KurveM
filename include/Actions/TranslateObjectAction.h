@@ -23,12 +23,14 @@ public:
     TranslateObjectAction(const glm::vec3& a_newPos, Object** a_objects, unsigned int a_objectCount);
     virtual ~TranslateObjectAction();
 
-    virtual e_ActionType GetActionType();
+    virtual e_ActionType GetActionType() const;
 
     inline void SetTranslation(const glm::vec3& a_newPos)
     {
         m_newPos = a_newPos;
     }
+
+    virtual void SetData(void* a_data);
 
     virtual bool Redo();
     virtual bool Execute();

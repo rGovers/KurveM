@@ -36,7 +36,9 @@ enum e_MirrorMode
     MirrorMode_XY = MirrorMode_X | MirrorMode_Y,
     MirrorMode_XZ = MirrorMode_X | MirrorMode_Z,
     MirrorMode_XYZ = MirrorMode_X | MirrorMode_Y | MirrorMode_Z,
-    MirrorMode_YZ = MirrorMode_Y | MirrorMode_Z
+    MirrorMode_YZ = MirrorMode_Y | MirrorMode_Z,
+
+    MirrorMode_End = MirrorMode_XYZ + 1
 };
 
 enum e_EditorFaceCullingMode
@@ -48,12 +50,23 @@ enum e_EditorFaceCullingMode
     EditorFaceCullingMode_End
 };
 
+enum e_EditorDrawMode
+{
+    EditorDrawMode_Shaded,
+    EditorDrawMode_Solid,
+    EditorDrawMode_Wireframe,
+    EditorDrawMode_Render,
+    EditorDrawMode_End
+};
+
 class Editor
 {
 private:
     EditorInputController*    m_inputController;
 
     e_EditorFaceCullingMode   m_faceCullingMode;
+    e_EditorDrawMode          m_drawMode;
+
     e_EditorMode              m_editorMode;
          
     ShaderProgram*            m_gridShader;
@@ -203,6 +216,15 @@ public:
     inline void SetEditorFaceCullingMode(e_EditorFaceCullingMode a_cullingMode)
     {
         m_faceCullingMode = a_cullingMode;
+    }
+
+    inline e_EditorDrawMode GetEditorDrawMode() const
+    {
+        return m_drawMode;
+    }
+    inline void SetEditorDrawMode(e_EditorDrawMode a_drawMode)
+    {
+        m_drawMode = a_drawMode;
     }
 
     void ClearSelectedNodes();

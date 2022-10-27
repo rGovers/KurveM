@@ -29,7 +29,7 @@ public:
     AddPathNodeWeightAction(PathModel* a_model, Workspace* a_workspace);
     virtual ~AddPathNodeWeightAction();
 
-    virtual e_ActionType GetActionType();
+    virtual e_ActionType GetActionType() const;
 
     void AddNodeDelta(unsigned int a_index, long long a_bone, float a_delta);
 

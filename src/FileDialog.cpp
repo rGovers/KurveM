@@ -10,7 +10,16 @@
 #define BASELENGTH 1
 #endif
 
+static bool sort_str(const char* a_first, const char* a_second)
+{
+    return strcmp(a_first, a_second) < 0;
+}
+
 bool FileDialog::GenerateFilesAndDirs(std::list<char*>* a_dirs, std::list<char*>* a_files, const char* a_path, const char* a_ext)
+{
+    return GenerateFilesAndDirs(a_dirs, a_files, a_path, &a_ext, 1);
+}
+bool FileDialog::GenerateFilesAndDirs(std::list<char*>* a_dirs, std::list<char*>* a_files, const char* a_path, const char* const* a_ext, int a_extCount)
 {
     if (std::filesystem::exists(a_path))
     {
@@ -21,42 +30,48 @@ bool FileDialog::GenerateFilesAndDirs(std::list<char*>* a_dirs, std::list<char*>
         {
             if (iter.is_directory())
             {
-                // Have to use string otherwise I get garbage data
                 const std::string str = iter.path().filename().u8string();
 
-                const int len = str.length() + 1;
+                const int len = (int)str.length() + 1;
 
-                char* directory = new char[len];
-
+                char* dir = new char[len];
                 for (int i = 0; i < len; ++i)
                 {
-                    directory[i] = str[i];
+                    dir[i] = str[i];
                 }
-                directory[len - 1] = 0;
+                dir[len - 1] = 0;
 
-                a_dirs->emplace_back(directory);
+                a_dirs->emplace_back(dir);
             }
             else if (iter.is_regular_file())
             {
                 const std::string extStr = iter.path().extension().u8string();
-                if (extStr == a_ext)
+
+                for (int i = 0; i < a_extCount; ++i)
                 {
-                    const std::string str = iter.path().filename().u8string();
-
-                    const int len = str.length() + 1;
-
-                    char* fileName = new char[len];
-
-                    for (int i = 0; i < len; ++i)
+                    if (extStr == a_ext[i])
                     {
-                        fileName[i] = str[i];
-                    }
-                    fileName[len - 1] = 0;
+                        const std::string str = iter.path().filename().u8string();
 
-                    a_files->emplace_back(fileName);
+                        const int len = str.length() + 1;
+
+                        char* fileName = new char[len];
+                        for (int i = 0; i < len; ++i)
+                        {
+                            fileName[i] = str[i];
+                        }
+                        fileName[len - 1] = 0;
+
+                        a_files->emplace_back(fileName);
+
+                        break;
+                    }
                 }
             }
         }
+
+        a_dirs->sort(sort_str);
+        a_files->sort(sort_str);
 
         return true;
     }

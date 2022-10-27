@@ -43,7 +43,7 @@ ExtrudeArmatureNodeAction::~ExtrudeArmatureNodeAction()
     delete[] m_nodes;
 }
 
-e_ActionType ExtrudeArmatureNodeAction::GetActionType() 
+e_ActionType ExtrudeArmatureNodeAction::GetActionType() const
 {
     return ActionType_ExtrudeArmatureNode;
 }

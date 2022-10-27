@@ -31,7 +31,7 @@ SetRigidbodyMassAction::~SetRigidbodyMassAction()
     delete[] m_oldMass;
 }
 
-e_ActionType SetRigidbodyMassAction::GetActionType()
+e_ActionType SetRigidbodyMassAction::GetActionType() const
 {
     return ActionType_SetRigidbodyMass;
 }

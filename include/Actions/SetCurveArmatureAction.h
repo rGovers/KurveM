@@ -23,12 +23,13 @@ public:
     SetCurveArmatureAction(Workspace* a_workspace, Object** a_objects, unsigned int a_objectCount, long long a_id);
     virtual ~SetCurveArmatureAction();
 
-    virtual e_ActionType GetActionType();
+    virtual e_ActionType GetActionType() const;
 
     inline void SetID(long long a_id)
     {
         m_newID = a_id;
     }
+    virtual void SetData(void* a_data);
 
     virtual bool Redo();
     virtual bool Execute();

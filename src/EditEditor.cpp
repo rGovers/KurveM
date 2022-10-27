@@ -273,7 +273,7 @@ void EditEditor::DrawObject(Camera* a_camera, Object* a_object, const glm::vec2&
 
     const glm::vec3 camFor = glm::normalize(camTransformMatrix[2]);
 
-    a_object->DrawBase(a_camera, a_winSize);
+    a_object->DrawBase(m_editor->GetEditorDrawMode(), a_camera, a_winSize);
 
     const Object* obj = m_workspace->GetSelectedObject();
 
@@ -369,6 +369,8 @@ NextArmatureDrawNodeLoop:;
                     Gizmos::DrawCurve(steps, modelMatrix, sNodes[FaceIndex_4Point_BD], sNodes[FaceIndex_4Point_DB], ColorTheme::Active);
                     Gizmos::DrawCurve(steps, modelMatrix, sNodes[FaceIndex_4Point_DC], sNodes[FaceIndex_4Point_CD], ColorTheme::Active);
                     Gizmos::DrawCurve(steps, modelMatrix, sNodes[FaceIndex_4Point_CA], sNodes[FaceIndex_4Point_AC], ColorTheme::Active);
+
+                    break;
                 }
                 }
             }

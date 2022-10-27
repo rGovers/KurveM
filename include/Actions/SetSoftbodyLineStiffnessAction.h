@@ -20,7 +20,7 @@ public:
     SetSoftbodyLineStiffnessAction(Object* const* a_objects, unsigned int a_objectCount, float a_stiffness);
     virtual ~SetSoftbodyLineStiffnessAction();
 
-    virtual e_ActionType GetActionType();
+    virtual e_ActionType GetActionType() const;
 
     inline void SetStiffness(float a_value)
     {

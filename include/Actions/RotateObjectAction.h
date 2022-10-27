@@ -24,12 +24,14 @@ public:
     RotateObjectAction(const glm::quat& a_newRotation, Object** a_objects, unsigned int a_objectCount);
     virtual ~RotateObjectAction();
 
-    virtual e_ActionType GetActionType();
+    virtual e_ActionType GetActionType() const;
 
     inline void SetRotation(const glm::quat& a_newRotation)
     {
         m_newRotation = a_newRotation;
     }
+
+    virtual void SetData(void* a_data);
 
     virtual bool Redo();
     virtual bool Execute();

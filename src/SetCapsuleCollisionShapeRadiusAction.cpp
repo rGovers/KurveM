@@ -28,9 +28,14 @@ SetCapsuleCollisionShapeRadiusAction::~SetCapsuleCollisionShapeRadiusAction()
     delete[] m_objects;
 }
 
-e_ActionType SetCapsuleCollisionShapeRadiusAction::GetActionType()
+e_ActionType SetCapsuleCollisionShapeRadiusAction::GetActionType() const
 {
     return ActionType_SetCapsuleCollisionShapeRadius;
+}
+
+void SetCapsuleCollisionShapeRadiusAction::SetData(void* a_data)
+{
+    m_newRadius = *(float*)a_data;
 }
 
 bool SetCapsuleCollisionShapeRadiusAction::Redo()

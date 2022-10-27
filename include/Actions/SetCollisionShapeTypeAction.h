@@ -26,12 +26,13 @@ public:
     SetCollisionShapeTypeAction(e_CollisionShapeType a_type, Object* const* a_objs, unsigned int a_objectCount);
     virtual ~SetCollisionShapeTypeAction();
 
-    virtual e_ActionType GetActionType();
+    virtual e_ActionType GetActionType() const;
 
     inline void SetType(e_CollisionShapeType a_type)
     {
         m_type = a_type;
     }
+    virtual void SetData(void* a_data);
 
     virtual bool Redo();
     virtual bool Execute();

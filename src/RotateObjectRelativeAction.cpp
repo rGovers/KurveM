@@ -51,7 +51,7 @@ RotateObjectRelativeAction::~RotateObjectRelativeAction()
     delete[] m_objects;
 }
 
-e_ActionType RotateObjectRelativeAction::GetActionType() 
+e_ActionType RotateObjectRelativeAction::GetActionType() const
 {
     return ActionType_RotateObjectRelative;
 }

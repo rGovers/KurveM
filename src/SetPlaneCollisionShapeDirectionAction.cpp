@@ -28,9 +28,14 @@ SetPlaneCollisionShapeDirectionAction::~SetPlaneCollisionShapeDirectionAction()
     delete[] m_oldDir;
 }
 
-e_ActionType SetPlaneCollisionShapeDirectionAction::GetActionType()
+e_ActionType SetPlaneCollisionShapeDirectionAction::GetActionType() const
 {
     return ActionType_SetPlaneCollisionShapeDirection;
+}
+
+void SetPlaneCollisionShapeDirectionAction::SetData(void* a_data)
+{
+    m_newDir = *(glm::vec3*)a_data;
 }
 
 bool SetPlaneCollisionShapeDirectionAction::Redo()

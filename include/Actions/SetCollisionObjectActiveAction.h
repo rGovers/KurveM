@@ -20,12 +20,13 @@ public:
     SetCollisionObjectActiveAction(Object* const* a_objects, unsigned int a_objectCount, bool a_state);
     virtual ~SetCollisionObjectActiveAction();
 
-    virtual e_ActionType GetActionType();
+    virtual e_ActionType GetActionType() const;
 
     inline void SetState(bool a_value)
     {
         m_newState = a_value;
     }
+    virtual void SetData(void* a_data);
 
     virtual bool Redo();
     virtual bool Execute();

@@ -73,7 +73,7 @@ glm::vec3 ScaleCurveNodeAction::GetMirrorMultiplier(e_MirrorMode a_mode) const
     return mul;
 }
 
-e_ActionType ScaleCurveNodeAction::GetActionType()
+e_ActionType ScaleCurveNodeAction::GetActionType() const
 {
     return ActionType_ScaleCurveNode;
 }

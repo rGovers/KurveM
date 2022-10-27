@@ -24,7 +24,7 @@ InsertPathLineAction::~InsertPathLineAction()
     delete[] m_nodeIndices;
 }
 
-e_ActionType InsertPathLineAction::GetActionType()
+e_ActionType InsertPathLineAction::GetActionType() const
 {
     return ActionType_InsertPathLine;
 }

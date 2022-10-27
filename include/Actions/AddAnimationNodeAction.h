@@ -25,7 +25,7 @@ public:
     AddAnimationNodeAction(Animation* a_animation, Object* a_object, const AnimationNode& a_node);
     virtual ~AddAnimationNodeAction();
 
-    virtual e_ActionType GetActionType();
+    virtual e_ActionType GetActionType() const;
 
     virtual bool Redo();
     virtual bool Execute();

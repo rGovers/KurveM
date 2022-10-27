@@ -22,7 +22,7 @@ public:
     DeleteObjectAction(Workspace* a_workspace, Object* a_object);
     virtual ~DeleteObjectAction();
 
-    virtual e_ActionType GetActionType();
+    virtual e_ActionType GetActionType() const;
 
     virtual bool Redo();
     virtual bool Execute();

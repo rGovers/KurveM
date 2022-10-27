@@ -34,7 +34,7 @@ TranslateObjectRelativeAction::~TranslateObjectRelativeAction()
     delete[] m_oldPos;
 }
 
-e_ActionType TranslateObjectRelativeAction::GetActionType()
+e_ActionType TranslateObjectRelativeAction::GetActionType() const
 {
     return ActionType_TranslateObjectRelative;
 }

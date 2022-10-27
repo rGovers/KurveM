@@ -21,7 +21,7 @@ public:
     CreateAnimationAction(Workspace* a_workspace, const char* a_name);
     virtual ~CreateAnimationAction();
 
-    virtual e_ActionType GetActionType(); 
+    virtual e_ActionType GetActionType() const; 
 
     virtual bool Redo();
     virtual bool Execute();

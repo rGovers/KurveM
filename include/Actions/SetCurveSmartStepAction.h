@@ -25,12 +25,13 @@ public:
     SetCurveSmartStepAction(Workspace* a_workspace, Object** a_objects, unsigned int a_objectCount, bool a_value);
     virtual ~SetCurveSmartStepAction();
 
-    virtual e_ActionType GetActionType();
+    virtual e_ActionType GetActionType() const;
 
     inline void SetValue(bool a_value)
     {
         m_newValue = a_value;
     }
+    virtual void SetData(void* a_data);
 
     virtual bool Redo();
     virtual bool Execute();

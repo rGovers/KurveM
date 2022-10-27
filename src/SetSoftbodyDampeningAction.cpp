@@ -30,7 +30,7 @@ SetSoftbodyDampeningAction::~SetSoftbodyDampeningAction()
     delete[] m_objects;
 }
 
-e_ActionType SetSoftbodyDampeningAction::GetActionType()
+e_ActionType SetSoftbodyDampeningAction::GetActionType() const
 {
     return ActionType_SetSoftbodyDampening;
 }

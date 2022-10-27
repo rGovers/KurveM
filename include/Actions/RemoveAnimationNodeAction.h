@@ -25,7 +25,7 @@ public:
     RemoveAnimationNodeAction(Animation* a_animation, Object* a_object, const AnimationNode& a_node);
     virtual ~RemoveAnimationNodeAction();
 
-    virtual e_ActionType GetActionType();
+    virtual e_ActionType GetActionType() const;
 
     virtual bool Redo();
     virtual bool Execute();

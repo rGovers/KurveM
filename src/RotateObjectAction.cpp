@@ -29,9 +29,14 @@ RotateObjectAction::~RotateObjectAction()
     delete[] m_oldRotation;
 }
 
-e_ActionType RotateObjectAction::GetActionType()
+e_ActionType RotateObjectAction::GetActionType() const
 {
     return ActionType_RotateObject;
+}
+
+void RotateObjectAction::SetData(void* a_data)
+{
+    m_newRotation = *(glm::quat*)a_data;
 }
 
 bool RotateObjectAction::Redo()

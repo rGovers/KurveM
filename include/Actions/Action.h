@@ -6,6 +6,8 @@ enum e_ActionType
     ActionType_AddAnimationNode,
     ActionType_AddCurveNodeWeight,
     ActionType_AddPathNodeWeight,
+    ActionType_AddShaderVariable,
+    ActionType_AddVertexInput,
     ActionType_CreateAnimation,
     ActionType_CreateObject,
     ActionType_DeleteAnimation,
@@ -52,6 +54,7 @@ enum e_ActionType
     ActionType_SetPathArmature,
     ActionType_SetPathPathSteps,
     ActionType_SetPathShapeSteps,
+    ActionType_SetPixelShader,
     ActionType_SetPlaneCollisionShapeDirection,
     ActionType_SetPlaneCollisionShapeDistance,
     ActionType_SetSoftbodyDampening,
@@ -63,6 +66,14 @@ enum e_ActionType
     ActionType_SetSoftbodyLineVolumeStiffness,
     ActionType_SetRigidbodyMass,
     ActionType_SetSoftbodyMass,
+    ActionType_SetShaderVariableInputType,
+    ActionType_SetShaderVariableSlot,
+    ActionType_SetShaderVariableType,
+    ActionType_SetShaderVariableValue,
+    ActionType_SetVertexInputSlot,
+    ActionType_SetVertexInputType,
+    ActionType_SetVertexInputVertexSlot,
+    ActionType_SetVertexShader,
     ActionType_SymmetricPathNodeHandle,
     ActionType_TranslateObject,
     ActionType_TranslateObjectRelative,
@@ -78,7 +89,7 @@ protected:
 public:
     virtual ~Action() { }
 
-    virtual e_ActionType GetActionType() { return ActionType_Null; } 
+    virtual e_ActionType GetActionType() const { return ActionType_Null; } 
 
     virtual void SetData(void* a_data) { } 
 

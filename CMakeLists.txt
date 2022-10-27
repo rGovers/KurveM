@@ -33,6 +33,11 @@ FileToHeader(
     HEADER_FILE "include/Shaders/EditorStandardPixel.h"
     VARIABLE_NAME "EditorStandardPixel")
 FileToHeader(
+    SOURCE_FILE "shaders/editorStandardSolid.frag"
+    HEADER_FILE "include/Shaders/EditorStandardSolidPixel.h"
+    VARIABLE_NAME "EditorStandardSolidPixel")
+
+FileToHeader(
     SOURCE_FILE "shaders/animatorStandard.vert"
     HEADER_FILE "include/Shaders/AnimatorStandardVertex.h"
     VARIABLE_NAME "AnimatorStandardVertex")
@@ -41,6 +46,11 @@ FileToHeader(
     HEADER_FILE "include/Shaders/AnimatorStandardPixel.h"
     VARIABLE_NAME "AnimatorStandardPixel")
 FileToHeader(
+    SOURCE_FILE "shaders/animatorStandardSolid.frag"
+    HEADER_FILE "include/Shaders/AnimatorStandardSolidPixel.h"
+    VARIABLE_NAME "AnimatorStandardSolidPixel")
+
+FileToHeader(
     SOURCE_FILE "shaders/animatorSBody.vert"
     HEADER_FILE "include/Shaders/AnimatorSoftbodyVertex.h"
     VARIABLE_NAME "AnimatorSoftbodyVertex")
@@ -48,6 +58,11 @@ FileToHeader(
     SOURCE_FILE "shaders/animatorSBody.frag"
     HEADER_FILE "include/Shaders/AnimatorSoftbodyPixel.h"
     VARIABLE_NAME "AnimatorSoftbodyPixel")
+FileToHeader(
+    SOURCE_FILE "shaders/animatorSBodySolid.frag"
+    HEADER_FILE "include/Shaders/AnimatorSoftbodySolidPixel.h"
+    VARIABLE_NAME "AnimatorSoftbodySolidPixel")
+
 FileToHeader(
     SOURCE_FILE "shaders/weightStandard.vert"
     HEADER_FILE "include/Shaders/WeightStandardVertex.h"

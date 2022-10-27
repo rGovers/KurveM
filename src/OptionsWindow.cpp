@@ -25,9 +25,11 @@ OptionsWindow::~OptionsWindow()
 
 }
 
-void OptionsWindow::EditorFaceButton(const char* a_text, const char* a_path, e_EditorFaceCullingMode a_face, const char* a_tooltip)
+void OptionsWindow::EditorFaceButton(e_EditorFaceCullingMode a_face)
 {
-    if (ImGuiExt::ImageToggleButton(a_text, a_path, m_editor->GetEditorFaceCullingMode() == a_face, glm::vec2(16, 16)))
+    const char* name = DisplayFaceName[a_face];
+
+    if (ImGuiExt::ImageToggleButton(name, DisplayFacePaths[a_face], m_editor->GetEditorFaceCullingMode() == a_face, glm::vec2(16.0f)))
     {
         m_editor->SetEditorFaceCullingMode(a_face);
     }
@@ -36,15 +38,38 @@ void OptionsWindow::EditorFaceButton(const char* a_text, const char* a_path, e_E
     {
         ImGui::BeginTooltip();
 
-        ImGui::Text(a_text);
+        ImGui::Text(name);
 
         ImGui::Separator();
 
-        ImGui::Text(a_tooltip);
+        ImGui::Text(DisplayFaceTooltip[a_face]);
 
         ImGui::EndTooltip();
     }
 }
+void OptionsWindow::EditorDrawButton(e_EditorDrawMode a_mode)
+{
+    const char* name = DrawName[a_mode];
+
+    if (ImGuiExt::ImageToggleButton(name, "", m_editor->GetEditorDrawMode() == a_mode, glm::vec2(16.0f)))
+    {
+        m_editor->SetEditorDrawMode(a_mode);
+    }
+
+    if (ImGui::IsItemHovered())
+    {
+        ImGui::BeginTooltip();
+
+        ImGui::Text(name);
+
+        ImGui::Separator();
+
+        ImGui::Text(DrawTooltip[a_mode]);
+
+        ImGui::EndTooltip();
+    }
+}
+
 void OptionsWindow::EditorMirrorButton(const char* a_text, const char* a_path, e_MirrorMode a_mode, const char* a_tooltip)
 {
     e_MirrorMode mode = m_editor->GetMirrorMode();
@@ -134,13 +159,23 @@ void OptionsWindow::Update(double a_delta)
 
         ImGui::BeginGroup();
 
-        EditorFaceButton("Front Faces", "Textures/CULL_BACK.png", EditorFaceCullingMode_Back, FrontFaceTooltip);
-        ImGui::SameLine();
-        EditorFaceButton("Back Faces", "Textures/CULL_FRONT.png", EditorFaceCullingMode_Front, BackFaceTooltip);
-        ImGui::SameLine();
-        EditorFaceButton("Both Faces", "Textures/CULL_NONE.png", EditorFaceCullingMode_None, BothFaceTooltip);
-        ImGui::SameLine();
-        EditorFaceButton("No Faces", "Textures/CULL_ALL.png", EditorFaceCullingMode_All, NoFaceTooltip);
+        for (int i = 0; i < EditorFaceCullingMode_End; ++i)
+        {
+            EditorFaceButton((e_EditorFaceCullingMode)i);
+            ImGui::SameLine();
+        }
+
+        ImGui::EndGroup();
+
+        ImGui::NextColumn();
+
+        ImGui::BeginGroup();
+
+        for (int i = 0; i < EditorDrawMode_End; ++i)
+        {
+            EditorDrawButton((e_EditorDrawMode)i);
+            ImGui::SameLine();
+        }
 
         ImGui::EndGroup();
 

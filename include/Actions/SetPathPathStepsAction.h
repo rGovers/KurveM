@@ -22,7 +22,7 @@ public:
     SetPathPathStepsAction(Workspace* a_workspace, Object* const* a_objects, unsigned int a_objectCount, int a_steps);
     virtual ~SetPathPathStepsAction();
 
-    virtual e_ActionType GetActionType();
+    virtual e_ActionType GetActionType() const;
 
     inline void SetSteps(int a_steps)
     {

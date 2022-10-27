@@ -30,7 +30,7 @@ SetSoftbodyFaceVolumeStiffnessAction::~SetSoftbodyFaceVolumeStiffnessAction()
     delete[] m_oldStiffness;
 }
 
-e_ActionType SetSoftbodyFaceVolumeStiffnessAction::GetActionType()
+e_ActionType SetSoftbodyFaceVolumeStiffnessAction::GetActionType() const
 {
     return ActionType_SetSoftbodyFaceVolumeStiffness;
 }

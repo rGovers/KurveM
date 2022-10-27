@@ -63,7 +63,7 @@ glm::vec3 ExtrudePathNodeAction::GetMirrorMultiplier(e_MirrorMode a_mode) const
     return mul;
 }
 
-e_ActionType ExtrudePathNodeAction::GetActionType()
+e_ActionType ExtrudePathNodeAction::GetActionType() const
 {
     return ActionType_ExtrudePathNode;
 }

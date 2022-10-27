@@ -282,7 +282,7 @@ InsertFaceAction::~InsertFaceAction()
     delete[] m_nodeIndices;
 }
 
-e_ActionType InsertFaceAction::GetActionType()
+e_ActionType InsertFaceAction::GetActionType() const
 {
     return ActionType_InsertFace;
 }

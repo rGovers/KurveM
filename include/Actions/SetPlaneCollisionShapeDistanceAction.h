@@ -20,12 +20,13 @@ public:
     SetPlaneCollisionShapeDistanceAction(Object* const* a_objects, unsigned int a_objectCount, float a_distance);
     virtual ~SetPlaneCollisionShapeDistanceAction();
 
-    virtual e_ActionType GetActionType();
+    virtual e_ActionType GetActionType() const;
 
     inline void SetDistance(float a_value)
     {
         m_newDist = a_value;
     }
+    virtual void SetData(void* a_data);
 
     virtual bool Redo();
     virtual bool Execute();

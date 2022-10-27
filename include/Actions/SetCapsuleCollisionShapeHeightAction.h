@@ -20,12 +20,13 @@ public:
     SetCapsuleCollisionShapeHeightAction(Object* const* a_objects, unsigned int a_objectCount, float a_height);
     virtual ~SetCapsuleCollisionShapeHeightAction();
 
-    virtual e_ActionType GetActionType();
+    virtual e_ActionType GetActionType() const;
 
     inline void SetHeight(float a_value)
     {
         m_newHeight = a_value;
     }
+    virtual void SetData(void* a_data);
 
     virtual bool Redo();
     virtual bool Execute();

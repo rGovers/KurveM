@@ -95,14 +95,14 @@ private:
 
     void ClearBuffers();
 
-    char* GetHomePath() const;
-
 protected:
 
 public:
     Workspace();
     ~Workspace();
 
+    char* GetHomePath() const;
+    
     void New();
     void Open(const char* a_dir);
     void Save() const;

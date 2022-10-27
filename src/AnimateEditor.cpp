@@ -30,19 +30,16 @@ void AnimateEditor::DrawObject(Camera* a_camera, Object* a_object, const glm::ve
     const Transform* camTransform = a_camera->GetTransform();
     if (camTransform != nullptr)
     {
-        a_object->DrawAnimator(a_camera, a_winSize);
+        a_object->DrawAnimator(m_editor->GetEditorDrawMode(), a_camera, a_winSize);
 
         const e_ObjectType objectType = a_object->GetObjectType();
-
-        const glm::mat4 camMat = camTransform->ToMatrix();
-
-        const glm::vec3 camFor = glm::normalize(camMat[2]);
 
         switch (objectType)
         {
         case ObjectType_ArmatureNode:
         {
             const glm::vec3 translation = a_object->GetGlobalTranslation();
+            const glm::vec3 camFor = glm::normalize(camTransform->Forward());
 
             Gizmos::DrawCircleFilled(translation, camFor, 0.01f, 20, ColorTheme::Active);
 

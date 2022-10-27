@@ -20,7 +20,7 @@ public:
     SetSoftbodyFaceStiffnessAction(Object* const* a_objects, unsigned int a_objectCount, float a_stiffness);
     virtual ~SetSoftbodyFaceStiffnessAction();
 
-    virtual e_ActionType GetActionType();
+    virtual e_ActionType GetActionType() const;
 
     inline void SetStiffness(float a_value)
     {

@@ -32,9 +32,14 @@ SetCurveSmartStepAction::~SetCurveSmartStepAction()
     delete[] m_objects;
 }
 
-e_ActionType SetCurveSmartStepAction::GetActionType() 
+e_ActionType SetCurveSmartStepAction::GetActionType() const
 {
     return ActionType_SetCurveSmartStep;
+}
+
+void SetCurveSmartStepAction::SetData(void* a_data)
+{
+    m_newValue = *(bool*)a_data;
 }
 
 bool SetCurveSmartStepAction::Redo()

@@ -113,7 +113,7 @@ const char* CreateObjectAction::GetName() const
     return "New Object";
 }
 
-e_ActionType CreateObjectAction::GetActionType()
+e_ActionType CreateObjectAction::GetActionType() const
 {
     return ActionType_CreateObject;
 }

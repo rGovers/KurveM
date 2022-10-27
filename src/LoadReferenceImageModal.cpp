@@ -160,7 +160,7 @@ bool LoadReferenceImageModal::Execute()
             Action* action = new CreateObjectAction(m_workspace, m_parent, m_fPath);
             if (!m_workspace->PushAction(action))
             {
-                printf("Error loading reference image");
+                printf("Error loading reference image \n");
 
                 delete action;
             }

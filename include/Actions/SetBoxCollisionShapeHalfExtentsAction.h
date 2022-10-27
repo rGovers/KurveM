@@ -23,12 +23,13 @@ public:
     SetBoxCollisionShapeHalfExtentsAction(Object* const* a_objects, unsigned int a_objectCount, const glm::vec3& a_halfExtents);
     virtual ~SetBoxCollisionShapeHalfExtentsAction();
 
-    virtual e_ActionType GetActionType();
+    virtual e_ActionType GetActionType() const;
 
     inline void SetHalfExtents(const glm::vec3& a_value)
     {
         m_newHalfExtents = a_value;
     }
+    virtual void SetData(void* a_data);
 
     virtual bool Redo();
     virtual bool Execute();

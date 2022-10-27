@@ -25,7 +25,7 @@ FlipFaceAction::~FlipFaceAction()
     delete[] m_nodeIndices;
 }
 
-e_ActionType FlipFaceAction::GetActionType()
+e_ActionType FlipFaceAction::GetActionType() const
 {
     return ActionType_FlipFace;
 }

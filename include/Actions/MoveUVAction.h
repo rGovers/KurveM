@@ -35,7 +35,7 @@ public:
         m_endPos = a_pos;
     }
 
-    virtual e_ActionType GetActionType();
+    virtual e_ActionType GetActionType() const;
 
     virtual bool Redo();
     virtual bool Execute();

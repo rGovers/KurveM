@@ -18,7 +18,7 @@ DeleteAnimationAction::~DeleteAnimationAction()
     }
 }
 
-e_ActionType DeleteAnimationAction::GetActionType()
+e_ActionType DeleteAnimationAction::GetActionType() const
 {
     return ActionType_DeleteAnimation;
 }

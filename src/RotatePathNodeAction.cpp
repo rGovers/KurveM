@@ -42,7 +42,7 @@ RotatePathNodeAction::~RotatePathNodeAction()
     delete[] m_mirrorIndices;
 }
 
-e_ActionType RotatePathNodeAction::GetActionType()
+e_ActionType RotatePathNodeAction::GetActionType() const
 {
     return ActionType_RotatePathNode;
 }

@@ -6,6 +6,7 @@
 #include <list>
 #include <vector>
 
+#include "EditorControls/Editor.h"
 #include "Physics/CollisionObjects/CollisionObject.h"
 #include "Physics/CollisionShapes/CollisionShape.h"
 
@@ -17,6 +18,7 @@ class Model;
 class PathModel;
 class PhysicsEngine;
 class ShaderProgram;
+class ShaderSettings;
 class ShaderStorageBuffer;
 class Texture;
 class Transform;
@@ -82,14 +84,7 @@ private:
     unsigned int         m_armatureMatrixCount;
     glm::mat4*           m_armatureMatrices;
 
-    ShaderProgram*       m_baseProgram;
-
-    ShaderProgram*       m_animatorProgram;
-    ShaderProgram*       m_animatorSBodyProgram;
- 
-    ShaderProgram*       m_weightProgram;
-
-    ShaderProgram*       m_referenceProgram;
+    ShaderSettings*      m_shaderSettings;
 
     CurveModel*          m_curveModel;
     PathModel*           m_pathModel;
@@ -98,8 +93,8 @@ private:
     CollisionObject*     m_collisionObject;
 
     void UpdateMatrices(const glm::mat4& a_parent, const glm::mat4& a_animParent, Object* a_obj, std::vector<glm::mat4>* a_matrices) const;
-    void DrawModel(const Model* model, const glm::mat4& a_world, const glm::mat4& a_view, const glm::mat4& a_proj);
-    void DrawModelAnim(const Model* a_model, const Object* a_armature, unsigned int a_nodeCount, unsigned int a_armatureNodeCount, const glm::mat4& a_world, const glm::mat4& a_view, const glm::mat4& a_proj);
+    void DrawModel(e_EditorDrawMode a_drawMode, const Model* model, const glm::mat4& a_world, const glm::mat4& a_view, const glm::mat4& a_proj);
+    void DrawModelAnim(e_EditorDrawMode a_drawMode, const Model* a_model, const Object* a_armature, unsigned int a_nodeCount, unsigned int a_armatureNodeCount, const glm::mat4& a_world, const glm::mat4& a_view, const glm::mat4& a_proj);
     void DrawModelWeight(const Model* a_model, const Object* a_armature, unsigned int a_bone, unsigned int a_boneCount, const glm::mat4& a_world, const glm::mat4& a_view, const glm::mat4& a_proj);
 
 protected:
@@ -126,6 +121,11 @@ public:
     char* GetNameNoWhitespace() const;
     char* GetIDName() const;
     void SetName(const char* a_name);
+
+    inline ShaderSettings* GetShaderSettings() const
+    {
+        return m_shaderSettings;
+    }
 
     inline long long GetID() const
     {
@@ -223,7 +223,7 @@ public:
 
     e_AnimatorDrawMode GetAnimatorDrawMode() const;
 
-    void DrawBase(const Camera* a_camera, const glm::vec2& a_winSize);
-    void DrawAnimator(const Camera* a_camera, const glm::vec2& a_winSize);
+    void DrawBase(e_EditorDrawMode a_drawMode, const Camera* a_camera, const glm::vec2& a_winSize);
+    void DrawAnimator(e_EditorDrawMode a_drawMode, const Camera* a_camera, const glm::vec2& a_winSize);
     void DrawWeight(const Camera* a_camera, const glm::vec2& a_winSize, unsigned int a_bone, unsigned int a_boneCount);
 };

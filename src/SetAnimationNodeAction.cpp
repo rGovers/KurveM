@@ -14,9 +14,14 @@ SetAnimationNodeAction::~SetAnimationNodeAction()
 
 }
 
-e_ActionType SetAnimationNodeAction::GetActionType()
+e_ActionType SetAnimationNodeAction::GetActionType() const
 {
     return ActionType_SetAnimationNode;
+}
+
+void SetAnimationNodeAction::SetData(void* a_data)
+{
+    m_node = *(AnimationNode*)a_data;
 }
 
 bool SetAnimationNodeAction::Redo()

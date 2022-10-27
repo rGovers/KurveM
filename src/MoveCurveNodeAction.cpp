@@ -67,7 +67,7 @@ glm::vec3 MoveCurveNodeAction::GetMirrorMultiplier(e_MirrorMode a_mode) const
     return mul;
 }
 
-e_ActionType MoveCurveNodeAction::GetActionType()
+e_ActionType MoveCurveNodeAction::GetActionType() const
 {
     return ActionType_MoveCurveNode;
 }

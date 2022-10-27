@@ -33,7 +33,7 @@ MoveUVAction::~MoveUVAction()
     delete[] m_nodeIndices;
 }
 
-e_ActionType MoveUVAction::GetActionType()
+e_ActionType MoveUVAction::GetActionType() const
 {
     return ActionType_MoveUVAction;
 }

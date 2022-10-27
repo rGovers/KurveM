@@ -947,11 +947,6 @@ void CurveModel::GetModelData(bool a_smartStep, int a_steps, unsigned int** a_in
                         const glm::vec3 pA = vL + (vSL * nIStep);
                         const glm::vec3 pB = vR + (vSR * nIStep);
 
-                        const glm::vec3 v1 = pA - point;
-                        const glm::vec3 v2 = pB - point;
-
-                        const glm::vec3 normal = glm::normalize(glm::cross(v2, v1));
-
                         const glm::vec2 uv = BlendUV(vUVL, vUVR, aS);
 
                         glm::vec4 bone;
@@ -968,7 +963,7 @@ void CurveModel::GetModelData(bool a_smartStep, int a_steps, unsigned int** a_in
                             }
                         }
 
-                        dirtyVertices.emplace_back(Vertex{ glm::vec4(point, 1.0f), normal, uv, bone, weight, bodyI, glm::vec4(0.0f) });
+                        dirtyVertices.emplace_back(Vertex{ glm::vec4(point, 1.0f), glm::vec3(0.0f), uv, bone, weight, bodyI, glm::vec4(0.0f) });
 
                         if (i < step)
                         {
@@ -1134,17 +1129,10 @@ void CurveModel::GetModelData(bool a_smartStep, int a_steps, unsigned int** a_in
                         const glm::vec3 pointT = (LM + TF) * 0.5f;
                         const glm::vec3 pointB = (LM + TB) * 0.5f;
 
-                        const glm::vec3 vAA = pointR - point;
-                        const glm::vec3 vAB = pointT - point;
-                        const glm::vec3 vBA = pointL - point;
-                        const glm::vec3 vBB = pointB - point;
-
                         const glm::vec2 hUV = glm::mix(pointAB, pointCD, jStep);
                         const glm::vec2 vUV = glm::mix(pointAC, pointBD, iStep);
 
                         const glm::vec2 uv = (hUV + vUV) * 0.5f;
-
-                        const glm::vec3 normal = -glm::normalize(glm::cross(vAB, vAA) + glm::cross(vBB, vBA));
 
                         glm::vec4 pointACBn;
                         glm::vec4 pointBDBn;
@@ -1178,7 +1166,7 @@ void CurveModel::GetModelData(bool a_smartStep, int a_steps, unsigned int** a_in
 
                         const glm::vec4 bodyWA = glm::vec4((bdHM + bdVM) * 0.25f, (bdHMI + bdVM) * 0.25f, (bdHM + bdVMI) * 0.25f, (bdHMI + bdVMI) * 0.25f);
 
-                        dirtyVertices.emplace_back(Vertex{ glm::vec4(point, 1.0f), normal, uv, bone, weight, bodyI, bodyWA });
+                        dirtyVertices.emplace_back(Vertex{ glm::vec4(point, 1.0f), glm::vec3(0.0f), uv, bone, weight, bodyI, bodyWA });
 
                         if (nI < xSize && nJ < ySize)
                         {
@@ -1244,6 +1232,11 @@ void CurveModel::GetModelData(bool a_smartStep, int a_steps, unsigned int** a_in
         {
             const unsigned int setACount = iter->SetCount[0];
             const unsigned int setBCount = iter->SetCount[1];
+            if (setACount <= 0 || setBCount <= 0)
+            {
+                continue;
+            }
+            
             char bufferIndexA;
             char bufferIndexB;
             if (setACount > setBCount)
@@ -1283,13 +1276,6 @@ void CurveModel::GetModelData(bool a_smartStep, int a_steps, unsigned int** a_in
             }
         }
 
-        *a_vertexCount = (unsigned int)dirtyVertices.size();
-        *a_vertices = new Vertex[*a_vertexCount];
-        for (unsigned int i = 0; i < *a_vertexCount; ++i)
-        {
-            (*a_vertices)[i] = dirtyVertices[i];
-        }
-
         *a_indexCount = (unsigned int)dirtyIndices.size();
         *a_indices = new unsigned int[*a_indexCount];
         for (unsigned int i = 0; i < *a_indexCount; ++i)
@@ -1303,6 +1289,41 @@ void CurveModel::GetModelData(bool a_smartStep, int a_steps, unsigned int** a_in
             }
 
             (*a_indices)[i] = index;
+        }
+
+        for (unsigned int i = 0; i < *a_indexCount; i += 3)
+        {
+            const unsigned int indexA = (*a_indices)[i + 0];
+            const unsigned int indexB = (*a_indices)[i + 1];
+            const unsigned int indexC = (*a_indices)[i + 2];
+
+            Vertex& vertA = dirtyVertices[indexA];
+            Vertex& vertB = dirtyVertices[indexB];
+            Vertex& vertC = dirtyVertices[indexC];
+
+            const glm::vec3 posA = vertA.Position.xyz();
+            const glm::vec3 posB = vertB.Position.xyz();
+            const glm::vec3 posC = vertC.Position.xyz();
+
+            const glm::vec3 v1 = posB - posA;
+            const glm::vec3 v2 = posC - posA;
+
+            const glm::vec3 normal = glm::cross(v2, v1);
+
+            vertA.Normal += normal;
+            vertB.Normal += normal;
+            vertC.Normal += normal;
+        }
+
+        *a_vertexCount = (unsigned int)dirtyVertices.size();
+        *a_vertices = new Vertex[*a_vertexCount];
+        for (unsigned int i = 0; i < *a_vertexCount; ++i)
+        {
+            Vertex vert = dirtyVertices[i];
+
+            vert.Normal = glm::normalize(vert.Normal);
+
+            (*a_vertices)[i] = vert;
         }
 
         for (auto iter = dirtyEdges.begin(); iter != dirtyEdges.end(); ++iter)

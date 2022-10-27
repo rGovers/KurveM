@@ -145,7 +145,7 @@ bool ObjectEditor::IsInteractingTransform(Camera* a_camera, const glm::vec3& a_p
 
 void ObjectEditor::DrawObject(Camera* a_camera, Object* a_object, const glm::vec2& a_winSize)
 {
-    a_object->DrawBase(a_camera, a_winSize);
+    a_object->DrawBase(m_editor->GetEditorDrawMode(), a_camera, a_winSize);
 }
 
 void ObjectEditor::LeftClicked(Camera* a_camera, const glm::vec2& a_cursorPos, const glm::vec2& a_winSize)

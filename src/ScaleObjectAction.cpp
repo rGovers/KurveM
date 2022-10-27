@@ -29,9 +29,14 @@ ScaleObjectAction::~ScaleObjectAction()
     delete[] m_oldScale;
 }
 
-e_ActionType ScaleObjectAction::GetActionType()
+e_ActionType ScaleObjectAction::GetActionType() const
 {
     return ActionType_ScaleObject;
+}
+
+void ScaleObjectAction::SetData(void* a_data)
+{
+    m_newScale = *(glm::vec3*)a_data;
 }
 
 void ScaleObjectAction::SetScale(const glm::vec3& a_newScale)

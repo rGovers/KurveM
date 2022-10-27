@@ -12,7 +12,7 @@ AddAnimationNodeAction::~AddAnimationNodeAction()
 
 }
 
-e_ActionType AddAnimationNodeAction::GetActionType()
+e_ActionType AddAnimationNodeAction::GetActionType() const
 {
     return ActionType_AddAnimationNode;
 }

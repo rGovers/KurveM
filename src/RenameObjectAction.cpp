@@ -27,7 +27,7 @@ RenameObjectAction::~RenameObjectAction()
 
 void RenameObjectAction::SetNewName(const char* a_newName)
 {
-    int len = strlen(a_newName);
+    const int len = (int)strlen(a_newName);
 
     m_newName = new char[len + 1];
 
@@ -37,9 +37,14 @@ void RenameObjectAction::SetNewName(const char* a_newName)
     }
 }
 
-e_ActionType RenameObjectAction::GetActionType() 
+e_ActionType RenameObjectAction::GetActionType() const
 {
     return ActionType_RenameObject;
+}
+
+void RenameObjectAction::SetData(void* a_data)
+{
+    SetNewName((char*)a_data);
 }
 
 bool RenameObjectAction::Redo()

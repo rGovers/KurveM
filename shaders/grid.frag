@@ -29,12 +29,12 @@ void main()
 
     vec4 col = vec4(0.4.xxx, 1 - min(l, 1));
     
-    if(fragPos.z > -0.0025 && fragPos.z < 0.0025)
+    if(fragPos.z > -0.025 && fragPos.z < 0.025)
     {
         col = vec4(1, 0, 0, 1);
     }
     
-    if(fragPos.x > -0.0025 && fragPos.x < 0.0025)
+    if(fragPos.x > -0.025 && fragPos.x < 0.025)
     {
         col = vec4(0, 0, 1, 1);
     }
@@ -42,7 +42,7 @@ void main()
     vec4 cPos = proj * view * vec4(fragPos, 1);
     float v = cPos.z / cPos.w;
 
-    gl_FragDepth = v;
+    gl_FragDepth = v * 0.5f + 0.5f;
 
     float oV = v * 2 - 1;
     float lD = (2 * 0.1 * 100) / (100 + 0.1 - oV * (100 - 0.1));

@@ -38,7 +38,7 @@ public:
         m_endCursorPos = a_value;
     }
 
-    virtual e_ActionType GetActionType();
+    virtual e_ActionType GetActionType() const;
 
     virtual bool Redo();
     virtual bool Execute();

@@ -30,7 +30,7 @@ SetSoftbodyLineAngularStiffnessAction::~SetSoftbodyLineAngularStiffnessAction()
     delete[] m_oldStiffness;
 }
 
-e_ActionType SetSoftbodyLineAngularStiffnessAction::GetActionType()
+e_ActionType SetSoftbodyLineAngularStiffnessAction::GetActionType() const
 {
     return ActionType_SetSoftbodyLineAngularStiffness;
 }

@@ -63,7 +63,7 @@ glm::vec3 SymmetricPathNodeHandleAction::GetMirrorMultiplier(e_MirrorMode a_mode
     return mul;
 }
 
-e_ActionType SymmetricPathNodeHandleAction::GetActionType()
+e_ActionType SymmetricPathNodeHandleAction::GetActionType() const
 {
     return ActionType_SymmetricPathNodeHandle;
 }

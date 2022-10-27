@@ -58,7 +58,7 @@ glm::vec2 MoveShapeNodeAction::GetMirrorMultiplier(e_MirrorMode a_mode) const
     return mul;
 }
 
-e_ActionType MoveShapeNodeAction::GetActionType()
+e_ActionType MoveShapeNodeAction::GetActionType() const
 {
     return ActionType_MoveShapeNode;
 }

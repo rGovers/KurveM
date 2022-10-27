@@ -12,7 +12,7 @@ RemoveAnimationNodeAction::~RemoveAnimationNodeAction()
 
 }
 
-e_ActionType RemoveAnimationNodeAction::GetActionType()
+e_ActionType RemoveAnimationNodeAction::GetActionType() const
 {
     return ActionType_RemoveAnimationNode;
 }

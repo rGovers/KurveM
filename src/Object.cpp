@@ -14,17 +14,10 @@
 #include "Physics/CollisionShapes/MeshCollisionShape.h"
 #include "ShaderPixel.h"
 #include "ShaderProgram.h"
-#include "Shaders/AnimatorSoftbodyPixel.h"
-#include "Shaders/AnimatorSoftbodyVertex.h"
-#include "Shaders/AnimatorStandardPixel.h"
-#include "Shaders/AnimatorStandardVertex.h"
-#include "Shaders/EditorStandardPixel.h"
-#include "Shaders/EditorStandardVertex.h"
-#include "Shaders/ReferenceImagePixel.h"
-#include "Shaders/ReferenceImageVertex.h"
-#include "Shaders/WeightStandardPixel.h"
-#include "Shaders/WeightStandardVertex.h"
+#include "ShaderSettings.h"
 #include "ShaderStorageBuffer.h"
+#include "ShaderVariables/ShaderVariable.h"
+#include "ShaderVariables/VertexInput.h"
 #include "ShaderVertex.h"
 #include "Texture.h"
 #include "Transform.h"
@@ -64,34 +57,7 @@ Object::Object(const char* a_name, e_ObjectType a_objectType)
 
     m_armatureBody = nullptr;
 
-    m_baseProgram = Datastore::GetShaderProgram("SHADER_EDITORSTANDARD");
-    if (m_baseProgram == nullptr)
-    {
-        m_baseProgram = ShaderProgram::InitProgram("SHADER_EDITORSTANDARD", EDITORSTANDARDVERTEX, EDITORSTANDARDPIXEL);
-    }
-
-    m_animatorProgram = Datastore::GetShaderProgram("SHADER_ANIMATORSTANDARD");
-    if (m_animatorProgram == nullptr)
-    {
-        m_animatorProgram = ShaderProgram::InitProgram("SHADER_ANIMATORSTANDARD", ANIMATORSTANDARDVERTEX, ANIMATORSTANDARDPIXEL);
-    }
-    m_animatorSBodyProgram = Datastore::GetShaderProgram("SHADER_ANIMATORSBODY");
-    if (m_animatorSBodyProgram == nullptr)
-    {
-        m_animatorSBodyProgram = ShaderProgram::InitProgram("SHADER_ANIMATORSBODY", ANIMATORSOFTBODYVERTEX, ANIMATORSOFTBODYPIXEL);
-    }
-
-    m_weightProgram = Datastore::GetShaderProgram("SHADER_WEIGHTSTANDARD");
-    if (m_weightProgram == nullptr)
-    {
-        m_weightProgram = ShaderProgram::InitProgram("SHADER_WEIGHTSTANDARD", WEIGHTSTANDARDVERTEX, WEIGHTSTANDARDPIXEL);
-    }
-
-    m_referenceProgram = Datastore::GetShaderProgram("SHADER_REFERENCEIMAGE");
-    if (m_referenceProgram == nullptr)
-    {
-        m_referenceProgram = ShaderProgram::InitProgram("SHADER_REFERENCEIMAGE", REFERENCEIMAGEVERTEX, REFERENCEIMAGEPIXEL);
-    }
+    m_shaderSettings = new ShaderSettings();
 
     // Not the best but it works
     m_id = ObjectIDNum++;
@@ -109,6 +75,8 @@ Object::Object(const char* a_name, Object* a_rootObject) :
 }
 Object::~Object()
 {
+    delete m_shaderSettings;
+
     if (m_armatureBody != nullptr)
     {
         delete m_armatureBody;
@@ -346,22 +314,201 @@ void Object::SetGlobalTranslation(const glm::vec3& a_pos)
     m_transform->Translation() = pos.xyz() / pos.w;
 }
 
-void Object::DrawModel(const Model* a_model, const glm::mat4& a_world, const glm::mat4& a_view, const glm::mat4& a_proj)
+void Object::DrawModel(e_EditorDrawMode a_drawMode, const Model* a_model, const glm::mat4& a_world, const glm::mat4& a_view, const glm::mat4& a_proj)
 {
-    const unsigned int programHandle = m_baseProgram->GetHandle();
-    glUseProgram(programHandle);
+    const ShaderProgram* program = nullptr;
 
-    const unsigned int vao = a_model->GetVAO();
-    glBindVertexArray(vao);
+    switch (a_drawMode)
+    {
+    case EditorDrawMode_Wireframe:
+    {
+        program = Datastore::GetShaderProgram(ShaderProgram::EditorBaseSolid);
+        
+        break;
+    }
+    case EditorDrawMode_Solid:
+    {
+        program = Datastore::GetShaderProgram(ShaderProgram::EditorBaseSolid);
 
-    glUniformMatrix4fv(0, 1, false, (float *)&a_view);
-    glUniformMatrix4fv(1, 1, false, (float *)&a_proj);
-    glUniformMatrix4fv(2, 1, false, (float *)&a_world);
+        break;
+    }
+    case EditorDrawMode_Shaded:
+    {   
+        program = Datastore::GetShaderProgram(ShaderProgram::EditorBase);
 
-    glDrawElements(GL_TRIANGLES, a_model->GetIndexCount(), GL_UNSIGNED_INT, nullptr);
+        break;
+    }
+    case EditorDrawMode_Render:
+    {
+        program = m_shaderSettings->GetShader();
+
+        break;
+    }
+    }
+
+    if (program != nullptr)
+    {
+        const unsigned int programHandle = program->GetHandle();
+        glUseProgram(programHandle);
+
+        switch (a_drawMode)
+        {
+        case EditorDrawMode_Wireframe:
+        {
+            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
+            break;
+        }
+        default:
+        {
+            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+            break;
+        }
+        }
+
+        const unsigned int vao = a_model->GetVAO();
+        glBindVertexArray(vao);
+        
+        glBindVertexBuffer(0, a_model->GetVBO(), 0, sizeof(Vertex));
+
+        switch (a_drawMode)
+        {
+        case EditorDrawMode_Render:
+        {
+            const unsigned int inputCount = m_shaderSettings->GetVertexInputSize();
+            for (unsigned int i = 0; i < inputCount; ++i)
+            {
+                const VertexInput* input = m_shaderSettings->GetVertexInput(i);
+
+                if (input->Slot != -1 && input->Type != VertexInputType_Null && input->VertexSlot != VertexInputSlot_Null)
+                {
+                    switch (input->Type)
+                    {
+                    case VertexInputType_Float:
+                    case VertexInputType_Vec2:
+                    case VertexInputType_Vec3:
+                    case VertexInputType_Vec4:
+                    {
+                        glVertexAttribFormat(input->Slot, input->ToCount(), GL_FLOAT, GL_FALSE, input->ToOffset());
+
+                        break;
+                    }
+                    }
+                    glVertexAttribBinding(input->Slot, 0);
+                }
+            }
+
+            const unsigned int shaderVariableCount = m_shaderSettings->GetShaderVariableSize();
+            for (unsigned int i = 0; i < shaderVariableCount; ++i)
+            {
+                const ShaderVariable* var = m_shaderSettings->GetShaderVariable(i);
+
+                if (var->Slot != -1 && var->InputType != VariableInputType_Null)
+                {
+                    switch (var->InputType)
+                    {
+                    case VariableInputType_CameraView:
+                    {
+                        switch (var->Type)
+                        {
+                        case VariableType_Mat4:
+                        {
+                            glUniformMatrix4fv(var->Slot, 1, GL_FALSE, (float*)&a_view);
+
+                            break;
+                        }
+                        case VariableType_Mat3:
+                        {
+                            const glm::mat3 rot = (glm::mat3)a_view;
+
+                            glUniformMatrix3fv(var->Slot, 1, GL_FALSE, (float*)&rot);
+
+                            break;
+                        }
+                        }
+
+                        break;
+                    }
+                    case VariableInputType_CameraProj:
+                    {
+                        glUniformMatrix4fv(var->Slot, 1, GL_FALSE, (float*)&a_proj);
+
+                        break;
+                    }
+                    case VariableInputType_Transform:
+                    {
+                        switch (var->Type)
+                        {
+                        case VariableType_Mat4:
+                        {
+                            glUniformMatrix4fv(var->Slot, 1, GL_FALSE, (float*)&a_world);
+
+                            break;
+                        }
+                        case VariableType_Mat3:
+                        {
+                            const glm::mat3 rot = (glm::mat3)a_world;
+
+                            glUniformMatrix3fv(var->Slot, 1, GL_FALSE, (float*)&rot);
+
+                            break;
+                        }
+                        }
+
+                        break;
+                    }
+                    case VariableInputType_Value:
+                    {
+                        if (var->Variable != nullptr)
+                        {
+                            switch (var->Type)
+                            {
+                            case VariableType_Mat3:
+                            {
+                                glUniformMatrix3fv(var->Slot, 1, GL_FALSE, (float*)var->Variable);
+
+                                break;
+                            }
+                            case VariableType_Mat4:
+                            {
+                                glUniformMatrix4fv(var->Slot, 1, GL_FALSE, (float*)var->Variable);
+
+                                break;
+                            }
+                            }
+                        }
+
+                        break;
+                    }
+                    }
+                }
+            }
+
+            break;
+        }
+        default:
+        {
+            // Not the best way of doing it but it works
+            glVertexAttribFormat(Model::PositionBinding, 4, GL_FLOAT, GL_FALSE, offsetof(Vertex, Position));
+            glVertexAttribFormat(Model::NormalBinding, 3, GL_FLOAT, GL_FALSE, offsetof(Vertex, Normal));
+
+            glVertexAttribBinding(Model::PositionBinding, 0);
+            glVertexAttribBinding(Model::NormalBinding, 0);
+
+            glUniformMatrix4fv(0, 1, false, (float*)&a_view);
+            glUniformMatrix4fv(1, 1, false, (float*)&a_proj);
+            glUniformMatrix4fv(2, 1, false, (float*)&a_world);
+
+            break;
+        }
+        }
+
+        glDrawElements(GL_TRIANGLES, a_model->GetIndexCount(), GL_UNSIGNED_INT, nullptr);
+    }
 }
 
-void Object::DrawBase(const Camera* a_camera, const glm::vec2& a_winSize)
+void Object::DrawBase(e_EditorDrawMode a_drawMode, const Camera* a_camera, const glm::vec2& a_winSize)
 {
     if (IsGlobalVisible())
     {
@@ -376,27 +523,31 @@ void Object::DrawBase(const Camera* a_camera, const glm::vec2& a_winSize)
         {
             if (m_referenceImage != nullptr)
             {
-                glEnable(GL_BLEND);
-                glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);  
+                const ShaderProgram* program = Datastore::GetShaderProgram(ShaderProgram::EditorReferenceImage);
+                if (program != nullptr)
+                {
+                    glEnable(GL_BLEND);
+                    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);  
 
-                const unsigned int programHandle = m_referenceProgram->GetHandle();
-                glUseProgram(programHandle);
+                    const unsigned int programHandle = program->GetHandle();
+                    glUseProgram(programHandle);
 
-                const unsigned int vao = Model::GetEmpty()->GetVAO();
-                glBindVertexArray(vao);
+                    const unsigned int vao = Model::GetEmpty()->GetVAO();
+                    glBindVertexArray(vao);
 
-                glUniformMatrix4fv(0, 1, false, (float*)&view);
-                glUniformMatrix4fv(1, 1, false, (float*)&proj);
-                glUniformMatrix4fv(2, 1, false, (float*)&world);
+                    glUniformMatrix4fv(0, 1, false, (float*)&view);
+                    glUniformMatrix4fv(1, 1, false, (float*)&proj);
+                    glUniformMatrix4fv(2, 1, false, (float*)&world);
 
-                const unsigned int texHandle = m_referenceImage->GetHandle();
-                glActiveTexture(GL_TEXTURE0);
-                glBindTexture(GL_TEXTURE_2D, texHandle);  
-                glUniform1i(4, 0);
+                    const unsigned int texHandle = m_referenceImage->GetHandle();
+                    glActiveTexture(GL_TEXTURE0);
+                    glBindTexture(GL_TEXTURE_2D, texHandle);  
+                    glUniform1i(4, 0);
 
-                glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+                    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
-                glDisable(GL_BLEND);
+                    glDisable(GL_BLEND);
+                }
             }
 
             break;
@@ -408,7 +559,7 @@ void Object::DrawBase(const Camera* a_camera, const glm::vec2& a_winSize)
                 const Model* model = m_curveModel->GetDisplayModel();
                 if (model != nullptr)
                 {   
-                    DrawModel(model, world, view, proj);
+                    DrawModel(a_drawMode, model, world, view, proj);
                 }
             }
 
@@ -421,7 +572,7 @@ void Object::DrawBase(const Camera* a_camera, const glm::vec2& a_winSize)
                 const Model* model = m_pathModel->GetDisplayModel();
                 if (model != nullptr)
                 {
-                    DrawModel(model, world, view, proj);
+                    DrawModel(a_drawMode, model, world, view, proj);
                 }
             }
 
@@ -517,84 +668,207 @@ e_AnimatorDrawMode Object::GetAnimatorDrawMode() const
     return AnimatorDrawMode_Base;
 }
 
-void Object::DrawModelAnim(const Model* a_model, const Object* a_armature, unsigned int a_nodeCount, unsigned int a_armatureNodeCount, const glm::mat4& a_world, const glm::mat4& a_view, const glm::mat4& a_proj)
+void Object::DrawModelAnim(e_EditorDrawMode a_drawMode, const Model* a_model, const Object* a_armature, unsigned int a_nodeCount, unsigned int a_armatureNodeCount, const glm::mat4& a_world, const glm::mat4& a_view, const glm::mat4& a_proj)
 {
-    const e_AnimatorDrawMode drawMode = GetAnimatorDrawMode();
+    const e_AnimatorDrawMode animDrawMode = GetAnimatorDrawMode();
 
-    unsigned int programHandle = m_baseProgram->GetHandle();
+    const ShaderProgram* program = nullptr;
 
-    switch (drawMode)
+    switch (animDrawMode)
     {
     case AnimatorDrawMode_Bone:
     {
-        programHandle = m_animatorProgram->GetHandle();
+        switch (a_drawMode)
+        {
+        case EditorDrawMode_Shaded:
+        {
+            program = Datastore::GetShaderProgram(ShaderProgram::EditorAnimation);
+            
+            break;
+        }
+        case EditorDrawMode_Solid:
+        case EditorDrawMode_Wireframe:
+        {
+            program = Datastore::GetShaderProgram(ShaderProgram::EditorAnimationSolid);
+
+            break;
+        }
+        case EditorDrawMode_Render:
+        {
+            program = m_shaderSettings->GetShader();
+
+            break;
+        }
+        }
 
         break;
     }
     case AnimatorDrawMode_Softbody:
     case AnimatorDrawMode_BoneSoftbody:
     {   
-        programHandle = m_animatorSBodyProgram->GetHandle();
-
-        break;
-    }
-    }
-
-    glUseProgram(programHandle);
-
-    switch (drawMode)
-    {
-    case AnimatorDrawMode_Base:
-    {
-        glUniformMatrix4fv(2, 1, false, (float*)&a_world);
-
-        break;
-    }
-    case AnimatorDrawMode_Bone:
-    {
-        glUniformMatrix4fv(2, 1, false, (float*)&a_world);
-
-        glUniform1ui(3, a_armatureNodeCount);
-
-        const ShaderStorageBuffer* buffer = a_armature->m_armatureBuffer;
-        if (buffer != nullptr)
+        switch (a_drawMode)
         {
-            glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, buffer->GetHandle());
-        }
-
-        break;
-    }
-    case AnimatorDrawMode_Softbody:
-    case AnimatorDrawMode_BoneSoftbody:
-    {
-        if (m_collisionObject != nullptr)
+        case EditorDrawMode_Shaded:
         {
-            Softbody* body = (Softbody*)m_collisionObject;
-            body->UpdateDeltaStorageBuffer();
+            program = Datastore::GetShaderProgram(ShaderProgram::EditorAnimationSBody);
             
-            glUniform1ui(2, a_nodeCount);
+            break;
+        }
+        case EditorDrawMode_Solid:
+        case EditorDrawMode_Wireframe:
+        {
+            program = Datastore::GetShaderProgram(ShaderProgram::EditorAnimationSBodySolid);
 
-            const ShaderStorageBuffer* buffer = body->GetDeltaStorageBuffer();
-            if (buffer != nullptr)
-            {
-                glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, buffer->GetHandle());
-            }
+            break;
+        }
+        case EditorDrawMode_Render:
+        {
+            program = m_shaderSettings->GetShader();
+
+            break;
+        }
+        }
+
+        break;
+    }
+    default:
+    {
+        switch (a_drawMode)
+        {
+        case EditorDrawMode_Shaded:
+        {
+            program = Datastore::GetShaderProgram(ShaderProgram::EditorBase);
+
+            break;
+        }
+        case EditorDrawMode_Solid:
+        case EditorDrawMode_Wireframe:
+        {
+            program = Datastore::GetShaderProgram(ShaderProgram::EditorBaseSolid);
+
+            break;
+        }
+        case EditorDrawMode_Render:
+        {
+            program = m_shaderSettings->GetShader();
+
+            break;
+        }
         }
 
         break;
     }
     }
 
-    const unsigned int vao = a_model->GetVAO();
-    glBindVertexArray(vao);
+    if (program != nullptr)
+    {
+        const unsigned int handle = program->GetHandle();
 
-    glUniformMatrix4fv(0, 1, false, (float*)&a_view);
-    glUniformMatrix4fv(1, 1, false, (float*)&a_proj);
+        glUseProgram(handle);
 
-    glDrawElements(GL_TRIANGLES, a_model->GetIndexCount(), GL_UNSIGNED_INT, nullptr);
+        switch (a_drawMode)
+        {
+        case EditorDrawMode_Wireframe:
+        {
+            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
+            break;
+        }
+        default:
+        {
+            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+            break;
+        }
+        }
+
+        const unsigned int vao = a_model->GetVAO();
+        glBindVertexArray(vao);
+
+        glBindVertexBuffer(0, a_model->GetVBO(), 0, sizeof(Vertex));
+
+        switch (a_drawMode)
+        {
+        case EditorDrawMode_Render:
+        {
+            break;
+        }
+        default:
+        {
+            // Not the best way but it works
+            glVertexAttribFormat(Model::PositionBinding, 4, GL_FLOAT, GL_FALSE, offsetof(Vertex, Position));
+            glVertexAttribFormat(Model::NormalBinding, 3, GL_FALSE, GL_FALSE, offsetof(Vertex, Normal));
+
+            glVertexAttribBinding(Model::PositionBinding, 0);
+            glVertexAttribBinding(Model::NormalBinding, 0);
+
+            switch (animDrawMode)
+            {
+            case AnimatorDrawMode_Base:
+            {
+                glUniformMatrix4fv(2, 1, false, (float*)&a_world);
+
+                break;
+            }
+            case AnimatorDrawMode_Bone:
+            {
+                glVertexAttribFormat(Model::BoneBinding, 4, GL_FLOAT, GL_FALSE, offsetof(Vertex, Bones));
+                glVertexAttribFormat(Model::WeightBinding, 4, GL_FLOAT, GL_FALSE, offsetof(Vertex, Weights));
+
+                glVertexAttribBinding(Model::BoneBinding, 0);
+                glVertexAttribBinding(Model::WeightBinding, 0);
+
+                glUniformMatrix4fv(2, 1, false, (float*)&a_world);
+
+                glUniform1ui(3, a_armatureNodeCount);
+
+                const ShaderStorageBuffer* buffer = a_armature->m_armatureBuffer;
+                if (buffer != nullptr)
+                {
+                    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, buffer->GetHandle());
+                }
+
+                break;
+            }
+            case AnimatorDrawMode_Softbody:
+            case AnimatorDrawMode_BoneSoftbody:
+            {
+                if (m_collisionObject != nullptr)
+                {
+                    glVertexAttribFormat(Model::SoftbodyIndexBinding, 4, GL_FLOAT, GL_FALSE, offsetof(Vertex, BodyI));
+                    glVertexAttribFormat(Model::SoftbodyWeightBinding, 4, GL_FLOAT, GL_FALSE, offsetof(Vertex, BodyW));
+
+                    glVertexAttribBinding(Model::SoftbodyIndexBinding, 0);
+                    glVertexAttribBinding(Model::SoftbodyWeightBinding, 0);
+
+                    Softbody* body = (Softbody*)m_collisionObject;
+                    body->UpdateDeltaStorageBuffer();
+
+                    glUniform1ui(2, a_nodeCount);
+
+                    const ShaderStorageBuffer* buffer = body->GetDeltaStorageBuffer();
+                    if (buffer != nullptr)
+                    {
+                        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, buffer->GetHandle());
+                    }
+                }
+
+                break;
+            }
+            }
+
+            glUniformMatrix4fv(0, 1, false, (float*)&a_view);
+            glUniformMatrix4fv(1, 1, false, (float*)&a_proj);
+
+            break;
+        }
+        }
+
+        glDrawElements(GL_TRIANGLES, a_model->GetIndexCount(), GL_UNSIGNED_INT, nullptr);
+    }
 }
 
-void Object::DrawAnimator(const Camera* a_camera, const glm::vec2& a_winSize)
+void Object::DrawAnimator(e_EditorDrawMode a_drawMode, const Camera* a_camera, const glm::vec2& a_winSize)
 {
     constexpr glm::mat4 iden = glm::identity<glm::mat4>();
 
@@ -647,27 +921,31 @@ void Object::DrawAnimator(const Camera* a_camera, const glm::vec2& a_winSize)
         {
             if (m_referenceImage != nullptr)
             {
-                glEnable(GL_BLEND);
-                glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);  
+                const ShaderProgram* program = Datastore::GetShaderProgram(ShaderProgram::EditorReferenceImage);
+                if (program != nullptr)
+                {
+                    glEnable(GL_BLEND);
+                    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);  
 
-                const unsigned int programHandle = m_referenceProgram->GetHandle();
-                glUseProgram(programHandle);
+                    const unsigned int programHandle = program->GetHandle();
+                    glUseProgram(programHandle);
 
-                const unsigned int vao = Model::GetEmpty()->GetVAO();
-                glBindVertexArray(vao);
+                    const unsigned int vao = Model::GetEmpty()->GetVAO();
+                    glBindVertexArray(vao);
 
-                glUniformMatrix4fv(0, 1, false, (float*)&view);
-                glUniformMatrix4fv(1, 1, false, (float*)&proj);
-                glUniformMatrix4fv(2, 1, false, (float*)&world);
+                    glUniformMatrix4fv(0, 1, false, (float*)&view);
+                    glUniformMatrix4fv(1, 1, false, (float*)&proj);
+                    glUniformMatrix4fv(2, 1, false, (float*)&world);
 
-                const unsigned int texHandle = m_referenceImage->GetHandle();
-                glActiveTexture(GL_TEXTURE0);
-                glBindTexture(GL_TEXTURE_2D, texHandle);  
-                glUniform1i(4, 0);
+                    const unsigned int texHandle = m_referenceImage->GetHandle();
+                    glActiveTexture(GL_TEXTURE0);
+                    glBindTexture(GL_TEXTURE_2D, texHandle);  
+                    glUniform1i(4, 0);
 
-                glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+                    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
-                glDisable(GL_BLEND);
+                    glDisable(GL_BLEND);
+                }
             }
 
             break;
@@ -679,7 +957,7 @@ void Object::DrawAnimator(const Camera* a_camera, const glm::vec2& a_winSize)
                 const Model* model = m_curveModel->GetDisplayModel();
                 if (model != nullptr)
                 {
-                    DrawModelAnim(model, m_curveModel->GetArmature(), m_curveModel->GetNodeCount(), m_curveModel->GetArmatureNodeCount(), worldAnim, view, proj);
+                    DrawModelAnim(a_drawMode, model, m_curveModel->GetArmature(), m_curveModel->GetNodeCount(), m_curveModel->GetArmatureNodeCount(), worldAnim, view, proj);
                 }                
             }
 
@@ -692,7 +970,7 @@ void Object::DrawAnimator(const Camera* a_camera, const glm::vec2& a_winSize)
                 const Model* model = m_pathModel->GetDisplayModel();
                 if (model != nullptr)
                 {
-                    DrawModelAnim(model, m_pathModel->GetArmature(), m_pathModel->GetPathNodeCount(), m_pathModel->GetArmatureNodeCount(), worldAnim, view, proj);
+                    DrawModelAnim(a_drawMode, model, m_pathModel->GetArmature(), m_pathModel->GetPathNodeCount(), m_pathModel->GetArmatureNodeCount(), worldAnim, view, proj);
                 }
             }
 
@@ -704,19 +982,23 @@ void Object::DrawAnimator(const Camera* a_camera, const glm::vec2& a_winSize)
 
 void Object::DrawModelWeight(const Model* a_model, const Object* a_armature, unsigned int a_bone, unsigned int a_boneCount, const glm::mat4& a_world, const glm::mat4& a_view, const glm::mat4& a_proj)
 {
-    const unsigned int programHandle = m_weightProgram->GetHandle();
-    glUseProgram(programHandle);
+    const ShaderProgram* program = Datastore::GetShaderProgram(ShaderProgram::EditorWeight);
+    if (program != nullptr)
+    {
+        const unsigned int programHandle = program->GetHandle();
+        glUseProgram(programHandle);
 
-    const unsigned int vao = a_model->GetVAO();
-    glBindVertexArray(vao);
+        const unsigned int vao = a_model->GetVAO();
+        glBindVertexArray(vao);
 
-    glUniformMatrix4fv(0, 1, false, (float *)&a_view);
-    glUniformMatrix4fv(1, 1, false, (float *)&a_proj);
-    glUniformMatrix4fv(2, 1, false, (float *)&a_world);
-    glUniform1ui(5, a_boneCount);
-    glUniform1ui(6, a_bone);
+        glUniformMatrix4fv(0, 1, false, (float *)&a_view);
+        glUniformMatrix4fv(1, 1, false, (float *)&a_proj);
+        glUniformMatrix4fv(2, 1, false, (float *)&a_world);
+        glUniform1ui(5, a_boneCount);
+        glUniform1ui(6, a_bone);
 
-    glDrawElements(GL_TRIANGLES, a_model->GetIndexCount(), GL_UNSIGNED_INT, nullptr);
+        glDrawElements(GL_TRIANGLES, a_model->GetIndexCount(), GL_UNSIGNED_INT, nullptr);
+    }
 }
 void Object::DrawWeight(const Camera* a_camera, const glm::vec2& a_winSize, unsigned int a_bone, unsigned int a_boneCount)
 {

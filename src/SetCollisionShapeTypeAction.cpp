@@ -42,9 +42,14 @@ SetCollisionShapeTypeAction::~SetCollisionShapeTypeAction()
     delete[] m_oldShapes;
 }
 
-e_ActionType SetCollisionShapeTypeAction::GetActionType()
+e_ActionType SetCollisionShapeTypeAction::GetActionType() const
 {
     return ActionType_SetCollisionShapeType;
+}
+
+void SetCollisionShapeTypeAction::SetData(void* a_data)
+{
+    m_type = *(e_CollisionShapeType*)a_data;
 }
 
 bool SetCollisionShapeTypeAction::Redo()

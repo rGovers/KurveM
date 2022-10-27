@@ -23,9 +23,11 @@ public:
     ScaleObjectAction(const glm::vec3& a_newScale, Object** a_objects, unsigned int a_objectCount);
     ~ScaleObjectAction();
 
-    virtual e_ActionType GetActionType();
+    virtual e_ActionType GetActionType() const;
 
     void SetScale(const glm::vec3& a_newScale);
+
+    virtual void SetData(void* a_data);
 
     virtual bool Redo();
     virtual bool Execute();

@@ -31,7 +31,7 @@ CreateAnimationAction::~CreateAnimationAction()
     delete[] m_name;
 }
 
-e_ActionType CreateAnimationAction::GetActionType()
+e_ActionType CreateAnimationAction::GetActionType() const
 {
     return ActionType_CreateAnimation;
 }

@@ -26,7 +26,7 @@ public:
     TranslateObjectRelativeAction(const glm::vec3& a_startPos, const glm::vec3& a_axis, Object* const* a_objects, unsigned int a_objectCount);
     virtual ~TranslateObjectRelativeAction();
 
-    virtual e_ActionType GetActionType();
+    virtual e_ActionType GetActionType() const;
 
     inline void SetTranslation(const glm::vec3& a_endPos)
     {

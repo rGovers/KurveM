@@ -27,9 +27,14 @@ SetCollisionObjectActiveAction::~SetCollisionObjectActiveAction()
     delete[] m_objects;
 }
 
-e_ActionType SetCollisionObjectActiveAction::GetActionType()
+e_ActionType SetCollisionObjectActiveAction::GetActionType() const
 {
     return ActionType_SetCollisionObjectActive;
+}
+
+void SetCollisionObjectActiveAction::SetData(void* a_data)
+{
+    m_newState = *((bool*)a_data);
 }
 
 bool SetCollisionObjectActiveAction::Redo()

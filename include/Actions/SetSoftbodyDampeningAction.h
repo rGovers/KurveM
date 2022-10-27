@@ -20,7 +20,7 @@ public:
     SetSoftbodyDampeningAction(Object* const* a_objects, unsigned int a_objectCount, float a_dampening);
     virtual ~SetSoftbodyDampeningAction();
 
-    virtual e_ActionType GetActionType();
+    virtual e_ActionType GetActionType() const;
 
     inline void SetDampening(float a_value)
     {

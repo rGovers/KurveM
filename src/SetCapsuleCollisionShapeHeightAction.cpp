@@ -28,9 +28,14 @@ SetCapsuleCollisionShapeHeightAction::~SetCapsuleCollisionShapeHeightAction()
     delete[] m_oldHeight;
 }
 
-e_ActionType SetCapsuleCollisionShapeHeightAction::GetActionType()
+e_ActionType SetCapsuleCollisionShapeHeightAction::GetActionType() const
 {
     return ActionType_SetCapsuleCollisionShapeHeight;
+}
+
+void SetCapsuleCollisionShapeHeightAction::SetData(void* a_data)
+{
+    m_newHeight = *(float*)a_data;
 }
 
 bool SetCapsuleCollisionShapeHeightAction::Redo()

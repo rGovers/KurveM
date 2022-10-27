@@ -112,7 +112,7 @@ DeletePathNodeAction::~DeletePathNodeAction()
     delete[] m_lines;
 }
 
-e_ActionType DeletePathNodeAction::GetActionType()
+e_ActionType DeletePathNodeAction::GetActionType() const
 {
     return ActionType_DeletePathNode;
 }

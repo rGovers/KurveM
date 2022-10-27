@@ -63,7 +63,7 @@ glm::vec3 MovePathNodeAction::GetMirrorMultiplier(e_MirrorMode a_mode) const
     return mul;
 }
 
-e_ActionType MovePathNodeAction::GetActionType() 
+e_ActionType MovePathNodeAction::GetActionType() const
 {
     return ActionType_MovePathNode;
 }

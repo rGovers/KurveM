@@ -56,7 +56,7 @@ SetCollisionObjectTypeAction::~SetCollisionObjectTypeAction()
     delete[] m_oldCObjs;
 }
 
-e_ActionType SetCollisionObjectTypeAction::GetActionType()
+e_ActionType SetCollisionObjectTypeAction::GetActionType() const
 {
     return ActionType_SetCollisionObjectType;
 }

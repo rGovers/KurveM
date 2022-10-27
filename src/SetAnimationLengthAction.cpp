@@ -14,7 +14,7 @@ SetAnimationLengthAction::~SetAnimationLengthAction()
 
 }
 
-e_ActionType SetAnimationLengthAction::GetActionType()
+e_ActionType SetAnimationLengthAction::GetActionType() const
 {
     return ActionType_SetAnimationLength;
 }

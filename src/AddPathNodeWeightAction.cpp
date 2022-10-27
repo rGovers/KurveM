@@ -15,7 +15,7 @@ AddPathNodeWeightAction::~AddPathNodeWeightAction()
 
 }
 
-e_ActionType AddPathNodeWeightAction::GetActionType()
+e_ActionType AddPathNodeWeightAction::GetActionType() const
 {
     return ActionType_AddPathNodeWeight;
 }

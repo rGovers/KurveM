@@ -122,7 +122,7 @@ DeleteCurveNodeAction::~DeleteCurveNodeAction()
     }
 }
 
-e_ActionType DeleteCurveNodeAction::GetActionType()
+e_ActionType DeleteCurveNodeAction::GetActionType() const
 {
     return ActionType_DeleteCurveNode;
 }

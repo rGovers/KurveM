@@ -21,7 +21,7 @@ public:
     SetAnimationLengthAction(Animation* a_animation, float a_length);
     virtual ~SetAnimationLengthAction();
 
-    virtual e_ActionType GetActionType();
+    virtual e_ActionType GetActionType() const;
 
     inline void SetLength(float a_value)
     {

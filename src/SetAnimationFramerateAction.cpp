@@ -14,7 +14,7 @@ SetAnimationFramerateAction::~SetAnimationFramerateAction()
     
 }
 
-e_ActionType SetAnimationFramerateAction::GetActionType() 
+e_ActionType SetAnimationFramerateAction::GetActionType() const
 {
     return ActionType_SetAnimationFramerate;
 }

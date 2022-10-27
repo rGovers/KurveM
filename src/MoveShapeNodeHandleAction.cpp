@@ -43,7 +43,7 @@ glm::vec2 MoveShapeNodeHandleAction::GetMirrorMultiplier(e_MirrorMode a_mode) co
     return mul;
 }
 
-e_ActionType MoveShapeNodeHandleAction::GetActionType()
+e_ActionType MoveShapeNodeHandleAction::GetActionType() const
 {
     return ActionType_MoveShapeNodeHandle;
 }

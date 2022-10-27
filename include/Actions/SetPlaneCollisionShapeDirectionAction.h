@@ -23,12 +23,13 @@ public:
     SetPlaneCollisionShapeDirectionAction(Object* const* a_objects, unsigned int a_objectCount, const glm::vec3& a_dir);
     virtual ~SetPlaneCollisionShapeDirectionAction();
 
-    virtual e_ActionType GetActionType();
+    virtual e_ActionType GetActionType() const;
 
     inline void SetDirection(const glm::vec3& a_value)
     {
         m_newDir = a_value;
     }
+    virtual void SetData(void* a_data);
 
     virtual bool Redo();
     virtual bool Execute();

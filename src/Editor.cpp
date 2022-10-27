@@ -115,7 +115,11 @@ void Editor::Init()
     m_animTime = 0.0f;
 
     m_editorMode = EditorMode_Object;
+
+    m_drawMode = EditorDrawMode_Shaded;
     m_faceCullingMode = EditorFaceCullingMode_Back;
+
+    ShaderProgram::LoadBaseShaders();
 }
 
 void Editor::SetSelectedWeightNode(const Object* a_value)
@@ -748,6 +752,7 @@ void Editor::Update(double a_delta, const glm::vec2& a_winPos, const glm::vec2& 
     glDepthFunc(GL_LESS);  
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);  
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
     const unsigned int programHandle = m_gridShader->GetHandle();
     glUseProgram(programHandle);

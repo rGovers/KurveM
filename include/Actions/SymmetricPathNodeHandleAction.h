@@ -31,7 +31,7 @@ public:
     SymmetricPathNodeHandleAction(Workspace* a_workspace, const unsigned int* a_nodeIndices, unsigned int a_nodeCount, PathModel* a_model, e_MirrorMode a_mirrorMode);
     virtual ~SymmetricPathNodeHandleAction();
 
-    virtual e_ActionType GetActionType();
+    virtual e_ActionType GetActionType() const;
 
     virtual bool Redo();
     virtual bool Execute();

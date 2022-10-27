@@ -29,7 +29,7 @@ SetPathPathStepsAction::~SetPathPathStepsAction()
     delete[] m_objects;
 }
 
-e_ActionType SetPathPathStepsAction::GetActionType()
+e_ActionType SetPathPathStepsAction::GetActionType() const
 {
     return ActionType_SetPathPathSteps;
 }

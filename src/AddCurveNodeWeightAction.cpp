@@ -15,7 +15,7 @@ AddCurveNodeWeightAction::~AddCurveNodeWeightAction()
 
 }
 
-e_ActionType AddCurveNodeWeightAction::GetActionType()
+e_ActionType AddCurveNodeWeightAction::GetActionType() const
 {
     return ActionType_AddCurveNodeWeight;
 }

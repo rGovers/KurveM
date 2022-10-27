@@ -29,9 +29,14 @@ TranslateObjectAction::~TranslateObjectAction()
     delete[] m_oldPos;
 }
 
-e_ActionType TranslateObjectAction::GetActionType()
+e_ActionType TranslateObjectAction::GetActionType() const
 {
     return ActionType_TranslateObject;
+}
+
+void TranslateObjectAction::SetData(void* a_data)
+{
+    m_newPos = *(glm::vec3*)a_data;
 }
 
 bool TranslateObjectAction::Redo()

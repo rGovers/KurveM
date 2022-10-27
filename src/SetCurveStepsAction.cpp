@@ -33,9 +33,14 @@ SetCurveStepsAction::~SetCurveStepsAction()
     delete[] m_objects;
 }
 
-e_ActionType SetCurveStepsAction::GetActionType() 
+e_ActionType SetCurveStepsAction::GetActionType() const
 {
     return ActionType_SetCurveSteps;
+}
+
+void SetCurveStepsAction::SetData(void* a_data)
+{
+    m_newSteps = *(int*)a_data;
 }
 
 bool SetCurveStepsAction::Redo()
